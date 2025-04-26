@@ -17,8 +17,9 @@
 		"@tanstack/router-plugin": "^1.109.2",
 		"@tanstack/solid-router": "^1.110.0",
 		"@tanstack/solid-router-devtools": "^1.109.2",
-		"drizzle-zero": "0.8.1",
+		"clerk-solidjs": "^2.0.10",
 		"drizzle-kit": "^0.31.0",
+		"drizzle-zero": "0.8.1",
 		"solid-js": "^1.9.4",
 		"tailwind-variants": "^1.0.0",
 		"tailwindcss": "^4.0.6"
