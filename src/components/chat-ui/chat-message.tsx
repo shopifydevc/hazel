@@ -33,7 +33,7 @@ export function ChatMessage(props: {
 	isGroupStart: boolean
 	isGroupEnd: boolean
 }) {
-	const showAvatar = props.isGroupStart
+	const showAvatar = createMemo(() => props.isGroupStart)
 
 	const messageTime = createMemo(() => {
 		return new Date(props.message.createdAt!).toLocaleTimeString("en-US", {
@@ -75,19 +75,19 @@ export function ChatMessage(props: {
 				</Button>
 			</Show>
 			<div class="flex gap-4">
-				<Show when={showAvatar}>
+				<Show when={showAvatar()}>
 					<Avatar>
 						<AvatarImage src={props.message.author?.avatarUrl} />
 						<AvatarFallback>{props.message.author?.displayName.slice(0, 2)}</AvatarFallback>
 					</Avatar>
 				</Show>
-				<Show when={!showAvatar}>
+				<Show when={!showAvatar()}>
 					<div class="w-10 items-center justify-end pr-1 text-[10px] text-muted-foreground leading-tight opacity-0 group-hover:opacity-100">
 						{messageTime()}
 					</div>
 				</Show>
 				<div class="min-w-0 flex-1">
-					<Show when={showAvatar}>
+					<Show when={showAvatar()}>
 						<div class="flex items-baseline gap-2">
 							<span class="font-semibold">{props.message.author?.displayName}</span>
 							<span class="text-muted-foreground text-xs">{messageTime()}</span>

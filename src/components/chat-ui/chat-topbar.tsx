@@ -1,7 +1,7 @@
 import { useQuery } from "@rocicorp/zero/solid"
 import { useParams } from "@tanstack/solid-router"
 import { useAuth } from "clerk-solidjs"
-import { For, Show, createEffect, createMemo } from "solid-js"
+import { For, Show, createMemo } from "solid-js"
 import { useZero } from "~/lib/zero-context"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 import { Button } from "../ui/button"

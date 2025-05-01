@@ -1,3 +1,4 @@
+import { useAuth } from "clerk-solidjs"
 import { For, createMemo } from "solid-js"
 import type { Message } from "~/lib/hooks/data/use-chat-messages"
 import { newId } from "~/lib/id-helpers"
@@ -15,7 +16,8 @@ type ReactionTagsProps = {
 
 export function ReactionTags(props: ReactionTagsProps) {
 	const z = useZero()
-	const userId = z.userID
+
+	const { userId } = useAuth()
 
 	const reactionGroups = createMemo(() => {
 		const groups: Record<string, { emoji: string; reactions: MessageReaction[] }> = {}
@@ -29,7 +31,7 @@ export function ReactionTags(props: ReactionTagsProps) {
 	})
 
 	const currentSelectedEmojis = createMemo(() => {
-		return props.message.reactions.filter((reaction) => reaction.userId === userId)
+		return props.message.reactions.filter((reaction) => reaction.userId === userId())
 	})
 
 	return (
@@ -52,7 +54,7 @@ export function ReactionTags(props: ReactionTagsProps) {
 								} else {
 									z.mutate.reactions.insert({
 										messageId: props.message.id,
-										userId,
+										userId: userId()!,
 										emoji: group.emoji,
 										id: newId("reactions"),
 									})
