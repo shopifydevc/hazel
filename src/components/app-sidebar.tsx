@@ -1,12 +1,11 @@
 import { Link, useParams } from "@tanstack/solid-router"
 import { useAuth } from "clerk-solidjs"
 import { For, createMemo } from "solid-js"
-import { twMerge } from "tailwind-merge"
 import { useDmChannels } from "~/lib/hooks/data/use-dm-channels"
 import { useServerChannels } from "~/lib/hooks/data/use-server-channels"
 import type { Channel } from "~/lib/schema"
 import { IconHashtag } from "./icons/hashtag"
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
+import { Avatar } from "./ui/avatar"
 import { Sidebar, SidebarItem } from "./ui/sidebar"
 
 export interface SidebarProps {
@@ -95,8 +94,8 @@ const DmChannelLink = (props: DmChannelLinkProps) => {
 						{(friend) => (
 							<div class="inline-block">
 								<Avatar class="size-7">
-									<AvatarImage src={friend.avatarUrl} alt={friend.tag} />
-									<AvatarFallback>{friend.displayName}</AvatarFallback>
+									<Avatar.Image src={friend.avatarUrl} alt={friend.tag} />
+									<Avatar.Fallback>{friend.displayName}</Avatar.Fallback>
 								</Avatar>
 							</div>
 						)}

@@ -4,7 +4,7 @@ import { twMerge } from "tailwind-merge"
 
 type CardProps = JSX.HTMLAttributes<HTMLDivElement>
 
-const Card: Component<CardProps> = (props) => {
+const CardRoot: Component<CardProps> = (props) => {
 	const [local, rest] = splitProps(props, ["class"])
 	return <div class={twMerge("rounded-xl border bg-card text-card-foreground shadow", local.class)} {...rest} />
 }
@@ -44,4 +44,12 @@ const CardFooter: Component<CardFooterProps> = (props) => {
 	return <div class={twMerge("flex items-center p-6 pt-0", local.class)} {...rest} />
 }
 
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
+export { CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
+
+export const Card = Object.assign(CardRoot, {
+	Header: CardHeader,
+	Footer: CardFooter,
+	Title: CardTitle,
+	Description: CardDescription,
+	Content: CardContent,
+})

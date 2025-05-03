@@ -1,6 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/solid-router"
-import { For, Show } from "solid-js"
-import { Card, CardDescription, CardHeader, CardTitle } from "~/components/ui/card"
+import { For } from "solid-js"
+import { Card } from "~/components/ui/card"
 import { useUserServers } from "~/lib/hooks/data/use-user-servers"
 
 export const Route = createFileRoute("/_app/")({
@@ -17,10 +17,10 @@ function App() {
 					{(server) => (
 						<Link to="/$serverId" params={{ serverId: server.id }}>
 							<Card>
-								<CardHeader>
-									<CardTitle>{server.name}</CardTitle>
-									<CardDescription>{server.owner?.displayName}</CardDescription>
-								</CardHeader>
+								<Card.Header>
+									<Card.Title>{server.name}</Card.Title>
+									<Card.Description>{server.owner?.displayName}</Card.Description>
+								</Card.Header>
 							</Card>
 						</Link>
 					)}

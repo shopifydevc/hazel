@@ -1,28 +1,28 @@
-import { Dialog } from "@ark-ui/solid"
+import { Dialog as ArkDialog } from "@ark-ui/solid"
 import { type JSX, splitProps } from "solid-js"
 import { Portal } from "solid-js/web"
 import { twMerge } from "tailwind-merge"
 
-export const DialogRoot = Dialog.Root
-export const DialogTrigger = Dialog.Trigger
+export const DialogRoot = ArkDialog.Root
+export const DialogTrigger = ArkDialog.Trigger
 
-export const DialogBackdrop = (props: Dialog.BackdropProps) => {
+export const DialogBackdrop = (props: ArkDialog.BackdropProps) => {
 	return (
-		<Dialog.Backdrop
+		<ArkDialog.Backdrop
 			class="data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/80 data-[state=closed]:animate-out data-[state=open]:animate-in"
 			{...props}
 		/>
 	)
 }
 
-export const DialogContent = (props: Dialog.ContentProps) => {
+export const DialogContent = (props: ArkDialog.ContentProps) => {
 	const [local, rest] = splitProps(props, ["class", "children"])
 
 	return (
 		<Portal>
 			<DialogBackdrop />
-			<Dialog.Positioner>
-				<Dialog.Content
+			<ArkDialog.Positioner>
+				<ArkDialog.Content
 					class={twMerge(
 						local.class,
 						"data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-top-[48%] fixed top-[50%] left-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=closed]:animate-out data-[state=open]:animate-in sm:rounded-lg",
@@ -30,8 +30,8 @@ export const DialogContent = (props: Dialog.ContentProps) => {
 					{...rest}
 				>
 					{local.children}
-				</Dialog.Content>
-			</Dialog.Positioner>
+				</ArkDialog.Content>
+			</ArkDialog.Positioner>
 		</Portal>
 	)
 }
@@ -50,14 +50,27 @@ export const DialogFooter = (props: JSX.IntrinsicElements["div"]) => {
 	)
 }
 
-export const DialogTitle = (props: Dialog.TitleProps) => {
+export const DialogTitle = (props: ArkDialog.TitleProps) => {
 	const [local, rest] = splitProps(props, ["class"])
 
-	return <Dialog.Title class={twMerge("font-semibold text-lg leading-none tracking-tight", local.class)} {...rest} />
+	return (
+		<ArkDialog.Title class={twMerge("font-semibold text-lg leading-none tracking-tight", local.class)} {...rest} />
+	)
 }
 
-export const DialogDescription = (props: Dialog.TitleProps) => {
+export const DialogDescription = (props: ArkDialog.TitleProps) => {
 	const [local, rest] = splitProps(props, ["class"])
 
-	return <Dialog.Description class={twMerge("text-muted-foreground text-sm", local.class)} {...rest} />
+	return <ArkDialog.Description class={twMerge("text-muted-foreground text-sm", local.class)} {...rest} />
 }
+
+const Dialog = Object.assign(DialogRoot, {
+	Backdrop: DialogBackdrop,
+	Content: DialogContent,
+	Header: DialogHeader,
+	Footer: DialogFooter,
+	Title: DialogTitle,
+	Description: DialogDescription,
+})
+
+export { Dialog }

@@ -1,16 +1,9 @@
-import { Dialog, DialogCloseTrigger } from "@ark-ui/solid"
+import { DialogCloseTrigger } from "@ark-ui/solid"
 import { useNavigate } from "@tanstack/solid-router"
 import { createSignal } from "solid-js"
-import { Portal } from "solid-js/web"
+
 import { Button } from "~/components/ui/button"
-import {
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogRoot,
-	DialogTitle,
-} from "~/components/ui/dialog"
+import { Dialog } from "~/components/ui/dialog"
 import { TextField } from "~/components/ui/text-field"
 import { newId } from "~/lib/id-helpers"
 import { useZero } from "~/lib/zero-context"
@@ -34,12 +27,12 @@ export const Serveronboarding = () => {
 					Join a Server
 				</Button>
 			</div>
-			<DialogRoot open={createModalOpen()} onOpenChange={(details) => setCreateModalOpen(details.open)}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Join a Server</DialogTitle>
-						<DialogDescription>Enter an invite code to join an existing server.</DialogDescription>
-					</DialogHeader>
+			<Dialog open={createModalOpen()} onOpenChange={(details) => setCreateModalOpen(details.open)}>
+				<Dialog.Content>
+					<Dialog.Header>
+						<Dialog.Title>Join a Server</Dialog.Title>
+						<Dialog.Description>Enter an invite code to join an existing server.</Dialog.Description>
+					</Dialog.Header>
 					<form
 						class="flex flex-col gap-4"
 						onSubmit={async (e) => {
@@ -122,7 +115,7 @@ export const Serveronboarding = () => {
 							placeholder="Enter your server name"
 						/>
 
-						<DialogFooter class="justify-between!">
+						<Dialog.Footer class="justify-between!">
 							<DialogCloseTrigger
 								asChild={(props) => (
 									<Button type="button" {...props} intent="outline">
@@ -131,10 +124,10 @@ export const Serveronboarding = () => {
 								)}
 							/>
 							<Button type="submit">Create Server</Button>
-						</DialogFooter>
+						</Dialog.Footer>
 					</form>
-				</DialogContent>
-			</DialogRoot>
+				</Dialog.Content>
+			</Dialog>
 		</div>
 	)
 }
