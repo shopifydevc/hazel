@@ -1,9 +1,13 @@
+import { PopoverIndicator } from "@ark-ui/solid"
 import { createFileRoute } from "@tanstack/solid-router"
+import { IconCheck } from "~/components/icons/check"
 import { IconPhone } from "~/components/icons/phone"
 import { Avatar } from "~/components/ui/avatar"
 import { Button } from "~/components/ui/button"
 import { Card } from "~/components/ui/card"
 import { Dialog } from "~/components/ui/dialog"
+import { Popover } from "~/components/ui/popover"
+import { TextField } from "~/components/ui/text-field"
 import { Tooltip } from "~/components/ui/tooltip"
 
 export const Route = createFileRoute("/internal")({
@@ -103,6 +107,39 @@ function RouteComponent() {
 						<p>Add to library</p>
 					</Tooltip.Content>
 				</Tooltip>
+			</div>
+
+			<div class="flex flex-row gap-3">
+				<Popover>
+					<Popover.Trigger
+						asChild={(props) => (
+							<Button class="w-auto" intent="outline" {...props()}>
+								Popover
+							</Button>
+						)}
+					/>
+					<Popover.Content>
+						<Popover.Title>Popover Title</Popover.Title>
+						<Popover.Description>Popover Description</Popover.Description>
+					</Popover.Content>
+				</Popover>
+				<Popover>
+					<Popover.Trigger
+						asChild={(props) => (
+							<Button class="w-auto" intent="outline" {...props()}>
+								Popover with Arrow
+							</Button>
+						)}
+					/>
+					<Popover.Content withArrow>
+						<Popover.Title>Popover Title</Popover.Title>
+						<Popover.Description>Popover Description</Popover.Description>
+					</Popover.Content>
+				</Popover>
+			</div>
+			<div class="flex flex-row gap-3">
+				<TextField label="Label" placeholder="Placeholder" />
+				<TextField label="Label" placeholder="Placeholder" helperText="Helper Text" />
 			</div>
 		</div>
 	)
