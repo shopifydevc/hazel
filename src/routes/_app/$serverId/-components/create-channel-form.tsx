@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/solid-router"
 import { type } from "arktype"
 import type { Accessor } from "solid-js"
 import { Button } from "~/components/ui/button"
+import { SelectNative } from "~/components/ui/select-native"
 import { TextField } from "~/components/ui/text-field"
 import { newId } from "~/lib/id-helpers"
 import { useZero } from "~/lib/zero-context"
@@ -77,7 +78,7 @@ export const CreateChannelForm = (props: CreateChannelFormProps) => {
 			<form.Field
 				name="channelType"
 				children={(field) => (
-					<TextField
+					<SelectNative
 						label="Channel Type"
 						name={field().name}
 						value={field().state.value}
@@ -85,7 +86,10 @@ export const CreateChannelForm = (props: CreateChannelFormProps) => {
 						onInput={(e) => field().handleChange(e.target.value)}
 						isInvalid={field().state.meta.errors.length > 0}
 						errorText={field().state.meta.errors.join(", ")}
-					/>
+					>
+						<option value="public">Public</option>
+						<option value="private">Private</option>
+					</SelectNative>
 				)}
 			/>
 

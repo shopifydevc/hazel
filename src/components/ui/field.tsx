@@ -5,12 +5,14 @@ import {
 	type FieldInputProps,
 	type FieldLabelProps,
 	type FieldRootProps,
+	type FieldSelectProps,
 } from "@ark-ui/solid"
-import { type JSX, splitProps } from "solid-js"
+import { type JSX, Show, splitProps } from "solid-js"
 import { tv } from "tailwind-variants"
 import { focusStyles } from "~/lib/primitive"
 
 import { twMerge } from "tailwind-merge"
+import { IconChevronDown } from "../icons/chevron-down"
 
 const fieldStyles = tv({
 	slots: {
@@ -85,5 +87,28 @@ export const FieldInput = (props: FieldInputProps) => {
 				classProps.class,
 			)}
 		/>
+	)
+}
+
+export const FieldSelect = (props: FieldSelectProps) => {
+	const [classProps, rest] = splitProps(props, ["class", "multiple"])
+
+	return (
+		<div class="relative flex w-full">
+			<Field.Select
+				{...rest}
+				class={twMerge(
+					"peer inline-flex w-full cursor-pointer appearance-none items-center rounded-md text-foreground text-sm shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 has-[option[disabled]:checked]:text-muted-foreground aria-[invalid=true]:border-destructive aria-[invalid=true]:ring-destructive/20 dark:aria-[invalid=true]:ring-destructive/40",
+					classProps.multiple ? "py-1 *:px-3 *:py-1 [&_option:checked]:bg-accent" : "h-9 ps-3 pe-8",
+					classProps.class,
+				)}
+				multiple={classProps.multiple}
+			/>
+			<Show when={!classProps.multiple}>
+				<span class="pointer-events-none absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center text-muted-foreground/80 peer-disabled:opacity-50 peer-aria-[invalid=true]:text-destructive/80">
+					<IconChevronDown class="size-4" aria-hidden="true" />
+				</span>
+			</Show>
+		</div>
 	)
 }
