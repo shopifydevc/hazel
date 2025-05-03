@@ -29,7 +29,6 @@ function getPlainTextFromContent(content: string): string {
 
 export function ChatMessage(props: {
 	message: Message
-	isLastMessage: boolean
 	isGroupStart: boolean
 	isGroupEnd: boolean
 }) {
@@ -42,8 +41,6 @@ export function ChatMessage(props: {
 			hour12: false,
 		})
 	})
-
-	const isLastMessage = createMemo(() => props.isLastMessage)
 
 	const attachedCount = createMemo(() => props.message.attachedFiles?.length ?? 0)
 
