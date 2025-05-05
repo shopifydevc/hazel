@@ -171,7 +171,7 @@ const useFileAttachment = () => {
 
 	return {
 		attachments,
-		fileInputRef,
+		setFileInputRef,
 		handleFileChange,
 		openFileSelector,
 		removeAttachment,
@@ -225,7 +225,7 @@ export function FloatingBar(props: { channelId: string }) {
 	const [chatStore, setChatStore] = chatStore$
 	const {
 		attachments,
-		fileInputRef,
+		setFileInputRef,
 		handleFileChange,
 		openFileSelector,
 		removeAttachment,
@@ -315,7 +315,7 @@ export function FloatingBar(props: { channelId: string }) {
 					<input
 						type="file"
 						multiple
-						ref={fileInputRef}
+						ref={setFileInputRef}
 						onChange={handleFileChange}
 						accept="image/*"
 						class="hidden"
