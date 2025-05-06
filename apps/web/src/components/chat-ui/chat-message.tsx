@@ -303,7 +303,7 @@ export function ChatMessage(props: {
 			<div class="flex gap-4">
 				<div
 					class={twMerge(
-						"-top-4 absolute right-4 rounded-md border bg-sidebar shadow-md group-hover:flex",
+						"-top-4 absolute right-4 z-50 rounded-md border bg-sidebar shadow-md group-hover:flex",
 						open() ? "flex" : "hidden",
 					)}
 				>
