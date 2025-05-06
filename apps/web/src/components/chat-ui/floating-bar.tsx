@@ -20,7 +20,6 @@ type Attachment = {
 	error?: string // Error message on failure
 }
 
-// Hook for file attachment logic (multiple files)
 const useFileAttachment = () => {
 	const [attachments, setAttachments] = createSignal<Attachment[]>([])
 	const [fileInputRef, setFileInputRef] = createSignal<HTMLInputElement>()
@@ -294,7 +293,7 @@ export function FloatingBar(props: { channelId: string }) {
 			</Show>
 			<div
 				class={twMerge(
-					"group flex h-12 w-full items-center rounded-sm border border-border bg-sidebar transition duration-300 ease-in hover:border-muted-foreground/70",
+					"group flex w-full items-center rounded-sm border border-border bg-sidebar transition duration-300 ease-in hover:border-muted-foreground/70",
 				)}
 			>
 				<Button size="icon" class="mr-1 ml-2" intent="icon" onClick={openFileSelector} disabled={isUploading()}>
@@ -304,7 +303,7 @@ export function FloatingBar(props: { channelId: string }) {
 				<div class="w-full">
 					<input
 						ref={setEditorRef}
-						class="w-full"
+						class="h-12 w-full"
 						onKeyDown={(e) => {
 							if (e.key === "Enter") {
 								handleSubmit(e.currentTarget.value)

@@ -16,6 +16,7 @@ import { Tooltip } from "~/components/ui/tooltip"
 import { For, Index } from "solid-js"
 import { IconChevronUpDown } from "~/components/icons/chevron-up-down"
 import { Combobox } from "~/components/ui/combo-box"
+import { toaster } from "~/components/ui/toaster"
 
 export const Route = createFileRoute("/internal")({
 	component: RouteComponent,
@@ -254,6 +255,11 @@ function RouteComponent() {
 						</Combobox.ItemGroup>
 					</Combobox.Content>
 				</Combobox>
+			</div>
+			<div class="flex flex-col gap-2">
+				<Button onClick={() => toaster.create({ title: "Title", description: "Description", type: "success" })}>
+					Create Toast
+				</Button>
 			</div>
 		</div>
 	)

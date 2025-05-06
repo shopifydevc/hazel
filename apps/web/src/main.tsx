@@ -5,6 +5,8 @@ import { routeTree } from "./routeTree.gen"
 import "./styles.css"
 
 import "./styles/code.css"
+import "./styles/toast.css"
+import { Toaster } from "./components/ui/toaster"
 
 const router = createRouter({
 	routeTree,
@@ -22,6 +24,7 @@ declare module "@tanstack/solid-router" {
 function App() {
 	return (
 		<>
+			<Toaster />
 			<RouterProvider router={router} />
 		</>
 	)
