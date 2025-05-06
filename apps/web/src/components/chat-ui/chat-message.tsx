@@ -20,6 +20,7 @@ import { Popover } from "../ui/popover"
 import { Tooltip } from "../ui/tooltip"
 
 import { ConfirmDialog } from "./confirm-dialog"
+import { ImageViewerModal } from "./image-viewer-modal"
 import { ReactionTags } from "./reaction-tags"
 import { UserTag } from "./user-tag"
 
@@ -219,7 +220,7 @@ export function ChatMessage(props: {
 		{
 			key: "pin",
 			label: isPinned() ? "Unpin" : "Pin",
-			icon: isPinned() ? <IconPin class="size-4" /> : <IconPin class="size-4" />,
+			icon: <IconPin class="size-4" />,
 			onAction: async () => {
 				if (isPinned()) {
 					await z.mutate.pinnedMessages.delete({
@@ -407,16 +408,18 @@ export function ChatMessage(props: {
 								/>
 							),
 							img: (props) => {
-								const [imgProps, rest] = splitProps(props, ["src", "alt"])
+								const [imgProps, rest] = splitProps(props, ["src", "alt", "onClick"])
 								return (
-									<ChatImage
-										src={imgProps.src!}
-										alt={imgProps.alt!}
-										onClick={() => {
-											setSelectedImage(imgProps.src!)
-										}}
-										{...rest}
-									/>
+									<div class={"relative aspect-video max-h-[300px] overflow-hidden rounded-md"}>
+										<ChatImage
+											src={imgProps.src!}
+											alt={imgProps.alt!}
+											onClick={() => {
+												setSelectedImage(imgProps.src!)
+											}}
+											{...rest}
+										/>
+									</div>
 								)
 							},
 						}}
@@ -439,7 +442,9 @@ export function ChatMessage(props: {
 											<ChatImage
 												src={`${import.meta.env.VITE_BUCKET_URL}/${file}`}
 												alt={file}
-												onClick={() => setSelectedImage(file)}
+												onClick={() => {
+													setSelectedImage(file)
+												}}
 											/>
 										</div>
 									)}
@@ -462,149 +467,13 @@ export function ChatMessage(props: {
 				}}
 			/>
 
-			<Show when={selectedImage()}>
-				{/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-				<div
-					class="fixed inset-0 z-50 flex h-screen w-screen items-center justify-center bg-black/80"
-					onClick={() => setSelectedImage(null)}
-				>
-					<div class="absolute top-3 left-5 flex items-center gap-2">
-						<Avatar src={props.message.author?.avatarUrl} name={props.message.author?.displayName} />
-						<div class="flex flex-col">
-							<span class="text-sm">{props.message.author?.displayName}</span>
-							<span class="text-muted-foreground text-xs">
-								{getRelativeTime(props.message.createdAt!)}
-							</span>
-						</div>
-					</div>
-					{/* Keep aspect ratio */}
-					<div class="max-h-[90vh] max-w-[90vw]">
-						<img
-							src={
-								selectedImage()?.startsWith("https")
-									? selectedImage()!
-									: `${import.meta.env.VITE_BUCKET_URL}/${selectedImage()}`
-							}
-							alt={selectedImage()!}
-							class="max-h-[90vh] max-w-[90vw]"
-						/>
-					</div>
-
-					<div class="absolute top-3 right-5">
-						<Tooltip openDelay={0} closeDelay={0}>
-							<Tooltip.Trigger>
-								<Button
-									intent="ghost"
-									size="square"
-									onClick={async (e) => {
-										e.stopPropagation()
-
-										const imageUrl = selectedImage()?.startsWith("https")
-											? selectedImage()!
-											: `${import.meta.env.VITE_BUCKET_URL}/${selectedImage()}`
-
-										try {
-											// Download the image
-											const response = await fetch(imageUrl)
-											const blob = await response.blob()
-											const url = URL.createObjectURL(blob)
-											const a = document.createElement("a")
-											a.href = url
-											a.download = selectedImage()!
-											a.click()
-										} catch (error) {
-											console.error("Failed to download image:", error)
-										}
-									}}
-								>
-									<IconDownload />
-								</Button>
-							</Tooltip.Trigger>
-							<Tooltip.Content>Download</Tooltip.Content>
-						</Tooltip>
-						<Tooltip openDelay={0} closeDelay={0}>
-							<Tooltip.Trigger>
-								<Button
-									intent="ghost"
-									size="square"
-									onClick={async (e) => {
-										e.stopPropagation()
-
-										const imageUrl = selectedImage()?.startsWith("https")
-											? selectedImage()!
-											: `${import.meta.env.VITE_BUCKET_URL}/${selectedImage()}`
-
-										// Copy image content
-										try {
-											const response = await fetch(imageUrl)
-											const blob = await response.blob()
-
-											// Use the Clipboard API to copy the image
-											await navigator.clipboard.write([
-												new ClipboardItem({
-													[blob.type]: blob,
-												}),
-											])
-										} catch (error) {
-											console.error("Failed to copy image:", error)
-										}
-									}}
-								>
-									<IconCopy />
-								</Button>
-							</Tooltip.Trigger>
-							<Tooltip.Content>Copy Image</Tooltip.Content>
-						</Tooltip>
-						<Tooltip openDelay={0} closeDelay={0}>
-							<Tooltip.Trigger>
-								<Button
-									intent="ghost"
-									size="square"
-									onClick={(e) => {
-										e.stopPropagation()
-										navigator.clipboard.writeText(
-											`${import.meta.env.VITE_BUCKET_URL}/${selectedImage()}`,
-										)
-									}}
-								>
-									<LinkIcon />
-								</Button>
-							</Tooltip.Trigger>
-							<Tooltip.Content>Copy Image URL</Tooltip.Content>
-						</Tooltip>
-						<Tooltip openDelay={0} closeDelay={0}>
-							<Tooltip.Trigger>
-								<Button
-									intent="ghost"
-									size="square"
-									onClick={(e) => {
-										e.stopPropagation()
-										window.open(`${import.meta.env.VITE_BUCKET_URL}/${selectedImage()}`, "_blank")
-									}}
-								>
-									<SquareArrowOutUpRight />
-								</Button>
-							</Tooltip.Trigger>
-							<Tooltip.Content>Open in Browser</Tooltip.Content>
-						</Tooltip>
-						<Tooltip openDelay={0} closeDelay={0}>
-							<Tooltip.Trigger>
-								<Button
-									intent="ghost"
-									size="square"
-									onClick={(e) => {
-										e.stopPropagation()
-										setSelectedImage(null)
-									}}
-								>
-									<IconCircleXSolid />
-								</Button>
-							</Tooltip.Trigger>
-							<Tooltip.Content>Close</Tooltip.Content>
-						</Tooltip>
-					</div>
-				</div>
-			</Show>
+			<ImageViewerModal
+				selectedImage={selectedImage()}
+				setSelectedImage={setSelectedImage}
+				author={props.message.author}
+				createdAt={props.message.createdAt!}
+				bucketUrl={import.meta.env.VITE_BUCKET_URL}
+			/>
 		</div>
 	)
 }
@@ -651,106 +520,20 @@ function IconBrandLinear(props: { class?: string }) {
 		>
 			<path
 				d="M3.03509 12.9431C3.24245 14.9227 4.10472 16.8468 5.62188 18.364C7.13904 19.8811 9.0631 20.7434 11.0428 20.9508L3.03509 12.9431Z"
-				fill="#000000"
+				fill="currentColor"
 			/>
 			<path
 				d="M3 11.4938L12.4921 20.9858C13.2976 20.9407 14.0981 20.7879 14.8704 20.5273L3.4585 9.11548C3.19793 9.88771 3.0451 10.6883 3 11.4938Z"
-				fill="#000000"
+				fill="currentColor"
 			/>
 			<path
 				d="M3.86722 8.10999L15.8758 20.1186C16.4988 19.8201 17.0946 19.4458 17.6493 18.9956L4.99021 6.33659C4.54006 6.89125 4.16573 7.487 3.86722 8.10999Z"
-				fill="#000000"
+				fill="currentColor"
 			/>
 			<path
 				d="M5.66301 5.59517C9.18091 2.12137 14.8488 2.135 18.3498 5.63604C21.8508 9.13708 21.8645 14.8049 18.3907 18.3228L5.66301 5.59517Z"
-				fill="#000000"
+				fill="currentColor"
 			/>
-		</svg>
-	)
-}
-
-function getRelativeTime(date: number) {
-	const now = new Date()
-	const messageDate = new Date(date)
-	const diffTime = Math.abs(now.getTime() - messageDate.getTime())
-	const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-
-	if (diffDays > 1) {
-		return messageDate.toLocaleDateString("en-US", {
-			month: "short",
-			day: "numeric",
-			year: "numeric",
-			hour: "2-digit",
-			minute: "2-digit",
-			hour12: false,
-		})
-	}
-
-	return messageDate.toLocaleTimeString("en-US", {
-		hour: "2-digit",
-		minute: "2-digit",
-		hour12: false,
-	})
-}
-
-function IconDownload(props: { class?: string }) {
-	return (
-		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			width="24"
-			height="24"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			class={props.class}
-		>
-			<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-			<polyline points="7 10 12 15 17 10" />
-			<line x1="12" x2="12" y1="15" y2="3" />
-		</svg>
-	)
-}
-
-function SquareArrowOutUpRight(props: { class?: string }) {
-	return (
-		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			width="24"
-			height="24"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			class={props.class}
-		>
-			<path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6" />
-			<path d="m21 3-9 9" />
-			<path d="M15 3h6v6" />
-		</svg>
-	)
-}
-
-function LinkIcon(props: { class?: string }) {
-	return (
-		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			width="24"
-			height="24"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			class={props.class}
-		>
-			<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-			<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
 		</svg>
 	)
 }
