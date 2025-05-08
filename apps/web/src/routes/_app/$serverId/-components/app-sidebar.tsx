@@ -14,12 +14,15 @@ import { Sidebar } from "~/components/ui/sidebar"
 import { Tabs } from "~/components/ui/tabs"
 
 import { IconHorizontalDots } from "~/components/icons/horizontal-dots"
+import { IconPaperPlane } from "~/components/icons/paper-plane"
 import { IconPhone } from "~/components/icons/phone"
+import { IconSupport } from "~/components/icons/support"
 import { IconX } from "~/components/icons/x"
 import { Menu } from "~/components/ui/menu"
 import { CreateChannelForm } from "./create-channel-form"
 import { CreateDmDialog } from "./create-dm-dialog"
 import { JoinPublicChannel } from "./join-public-channel"
+import { WorkspaceSwitcher } from "./workspace-switcher"
 
 export interface SidebarProps {
 	class?: string
@@ -56,7 +59,7 @@ export const AppSidebar = (props: SidebarProps) => {
 	return (
 		<Sidebar {...props}>
 			<Sidebar.Header>
-				<Button>Hello</Button>
+				<WorkspaceSwitcher />
 			</Sidebar.Header>
 			<Sidebar.Content>
 				<Sidebar.Group>
@@ -113,7 +116,30 @@ export const AppSidebar = (props: SidebarProps) => {
 						</For>
 					</Sidebar.Menu>
 				</Sidebar.Group>
+				<Sidebar.Group class="mt-auto">
+					<Sidebar.GroupContent>
+						<Sidebar.Menu>
+							<Sidebar.MenuItem>
+								<Sidebar.MenuButton>
+									<IconSupport />
+									Support
+								</Sidebar.MenuButton>
+							</Sidebar.MenuItem>
+						</Sidebar.Menu>
+						<Sidebar.Menu>
+							<Sidebar.MenuItem>
+								<Sidebar.MenuButton>
+									<IconPaperPlane />
+									Feedback
+								</Sidebar.MenuButton>
+							</Sidebar.MenuItem>
+						</Sidebar.Menu>
+					</Sidebar.GroupContent>
+				</Sidebar.Group>
 			</Sidebar.Content>
+			<Sidebar.Footer>
+				<Button>TODO User Button</Button>
+			</Sidebar.Footer>
 		</Sidebar>
 	)
 }

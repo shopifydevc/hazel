@@ -86,7 +86,7 @@ function RootComponent() {
 	return (
 		<ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}>
 			<AuthInner />
-			<TanStackRouterDevtools />
+			<TanStackRouterDevtools position="bottom-right" />
 			<Show when={import.meta.env.DEV}>
 				<FpsCounter />
 			</Show>
