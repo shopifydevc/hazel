@@ -13,6 +13,10 @@ import { Dialog } from "~/components/ui/dialog"
 import { Sidebar } from "~/components/ui/sidebar"
 import { Tabs } from "~/components/ui/tabs"
 
+import { IconHorizontalDots } from "~/components/icons/horizontal-dots"
+import { IconPhone } from "~/components/icons/phone"
+import { IconX } from "~/components/icons/x"
+import { Menu } from "~/components/ui/menu"
 import { CreateChannelForm } from "./create-channel-form"
 import { CreateDmDialog } from "./create-dm-dialog"
 import { JoinPublicChannel } from "./join-public-channel"
@@ -188,6 +192,44 @@ const DmChannelLink = (props: DmChannelLinkProps) => {
 					{props.channel.friends.map((friend) => friend.displayName).join(", ")}
 				</p>
 			</Sidebar.MenuButton>
+
+			<Menu positioning={{ placement: "bottom-start" }}>
+				<Menu.Trigger
+					asChild={(props) => (
+						<Sidebar.MenuAction
+							showOnHover
+							class="rounded-sm text-foreground data-[state=open]:bg-muted"
+							{...props()}
+						>
+							<IconHorizontalDots class="text-foreground" />
+							<span class="sr-only">More</span>
+						</Sidebar.MenuAction>
+					)}
+				/>
+				<Menu.Content>
+					<Menu.Item
+						class="flex items-center gap-2"
+						value="phone"
+						onSelect={() => {
+							console.log("TODO: Implement call")
+						}}
+					>
+						<IconPhone class="size-4" />
+						Call
+					</Menu.Item>
+					<Menu.Separator />
+					<Menu.Item
+						class="flex items-center gap-2 text-destructive"
+						value="close"
+						onSelect={() => {
+							console.log("TODO: Implement close DM")
+						}}
+					>
+						<IconX class="size-4" />
+						Close
+					</Menu.Item>
+				</Menu.Content>
+			</Menu>
 		</Sidebar.MenuItem>
 	)
 }
