@@ -22,6 +22,7 @@ import { Menu } from "~/components/ui/menu"
 import { CreateChannelForm } from "./create-channel-form"
 import { CreateDmDialog } from "./create-dm-dialog"
 import { JoinPublicChannel } from "./join-public-channel"
+import { NavUser } from "./nav-user"
 import { WorkspaceSwitcher } from "./workspace-switcher"
 
 export interface SidebarProps {
@@ -138,7 +139,7 @@ export const AppSidebar = (props: SidebarProps) => {
 				</Sidebar.Group>
 			</Sidebar.Content>
 			<Sidebar.Footer>
-				<Button>TODO User Button</Button>
+				<NavUser serverId={serverId} />
 			</Sidebar.Footer>
 		</Sidebar>
 	)

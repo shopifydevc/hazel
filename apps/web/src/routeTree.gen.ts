@@ -17,6 +17,8 @@ import { Route as OnboardingIndexImport } from './routes/onboarding/index'
 import { Route as AppIndexImport } from './routes/_app/index'
 import { Route as AppServerIdLayoutImport } from './routes/_app/$serverId/layout'
 import { Route as AppServerIdIndexImport } from './routes/_app/$serverId/index'
+import { Route as AppServerIdSettingsImport } from './routes/_app/$serverId/settings'
+import { Route as AppServerIdBillingImport } from './routes/_app/$serverId/billing'
 import { Route as AppServerIdChatIdImport } from './routes/_app/$serverId/chat/$id'
 
 // Create/Update Routes
@@ -53,6 +55,18 @@ const AppServerIdLayoutRoute = AppServerIdLayoutImport.update({
 const AppServerIdIndexRoute = AppServerIdIndexImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppServerIdLayoutRoute,
+} as any)
+
+const AppServerIdSettingsRoute = AppServerIdSettingsImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppServerIdLayoutRoute,
+} as any)
+
+const AppServerIdBillingRoute = AppServerIdBillingImport.update({
+  id: '/billing',
+  path: '/billing',
   getParentRoute: () => AppServerIdLayoutRoute,
 } as any)
 
@@ -101,6 +115,20 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof OnboardingIndexImport
       parentRoute: typeof rootRoute
     }
+    '/_app/$serverId/billing': {
+      id: '/_app/$serverId/billing'
+      path: '/billing'
+      fullPath: '/$serverId/billing'
+      preLoaderRoute: typeof AppServerIdBillingImport
+      parentRoute: typeof AppServerIdLayoutImport
+    }
+    '/_app/$serverId/settings': {
+      id: '/_app/$serverId/settings'
+      path: '/settings'
+      fullPath: '/$serverId/settings'
+      preLoaderRoute: typeof AppServerIdSettingsImport
+      parentRoute: typeof AppServerIdLayoutImport
+    }
     '/_app/$serverId/': {
       id: '/_app/$serverId/'
       path: '/'
@@ -121,11 +149,15 @@ declare module '@tanstack/solid-router' {
 // Create and export the route tree
 
 interface AppServerIdLayoutRouteChildren {
+  AppServerIdBillingRoute: typeof AppServerIdBillingRoute
+  AppServerIdSettingsRoute: typeof AppServerIdSettingsRoute
   AppServerIdIndexRoute: typeof AppServerIdIndexRoute
   AppServerIdChatIdRoute: typeof AppServerIdChatIdRoute
 }
 
 const AppServerIdLayoutRouteChildren: AppServerIdLayoutRouteChildren = {
+  AppServerIdBillingRoute: AppServerIdBillingRoute,
+  AppServerIdSettingsRoute: AppServerIdSettingsRoute,
   AppServerIdIndexRoute: AppServerIdIndexRoute,
   AppServerIdChatIdRoute: AppServerIdChatIdRoute,
 }
@@ -153,6 +185,8 @@ export interface FileRoutesByFullPath {
   '/$serverId': typeof AppServerIdLayoutRouteWithChildren
   '/': typeof AppIndexRoute
   '/onboarding': typeof OnboardingIndexRoute
+  '/$serverId/billing': typeof AppServerIdBillingRoute
+  '/$serverId/settings': typeof AppServerIdSettingsRoute
   '/$serverId/': typeof AppServerIdIndexRoute
   '/$serverId/chat/$id': typeof AppServerIdChatIdRoute
 }
@@ -161,6 +195,8 @@ export interface FileRoutesByTo {
   '/internal': typeof InternalRoute
   '/': typeof AppIndexRoute
   '/onboarding': typeof OnboardingIndexRoute
+  '/$serverId/billing': typeof AppServerIdBillingRoute
+  '/$serverId/settings': typeof AppServerIdSettingsRoute
   '/$serverId': typeof AppServerIdIndexRoute
   '/$serverId/chat/$id': typeof AppServerIdChatIdRoute
 }
@@ -172,6 +208,8 @@ export interface FileRoutesById {
   '/_app/$serverId': typeof AppServerIdLayoutRouteWithChildren
   '/_app/': typeof AppIndexRoute
   '/onboarding/': typeof OnboardingIndexRoute
+  '/_app/$serverId/billing': typeof AppServerIdBillingRoute
+  '/_app/$serverId/settings': typeof AppServerIdSettingsRoute
   '/_app/$serverId/': typeof AppServerIdIndexRoute
   '/_app/$serverId/chat/$id': typeof AppServerIdChatIdRoute
 }
@@ -184,10 +222,19 @@ export interface FileRouteTypes {
     | '/$serverId'
     | '/'
     | '/onboarding'
+    | '/$serverId/billing'
+    | '/$serverId/settings'
     | '/$serverId/'
     | '/$serverId/chat/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/internal' | '/' | '/onboarding' | '/$serverId' | '/$serverId/chat/$id'
+  to:
+    | '/internal'
+    | '/'
+    | '/onboarding'
+    | '/$serverId/billing'
+    | '/$serverId/settings'
+    | '/$serverId'
+    | '/$serverId/chat/$id'
   id:
     | '__root__'
     | '/_app'
@@ -195,6 +242,8 @@ export interface FileRouteTypes {
     | '/_app/$serverId'
     | '/_app/'
     | '/onboarding/'
+    | '/_app/$serverId/billing'
+    | '/_app/$serverId/settings'
     | '/_app/$serverId/'
     | '/_app/$serverId/chat/$id'
   fileRoutesById: FileRoutesById
@@ -241,6 +290,8 @@ export const routeTree = rootRoute
       "filePath": "_app/$serverId/layout.tsx",
       "parent": "/_app",
       "children": [
+        "/_app/$serverId/billing",
+        "/_app/$serverId/settings",
         "/_app/$serverId/",
         "/_app/$serverId/chat/$id"
       ]
@@ -251,6 +302,14 @@ export const routeTree = rootRoute
     },
     "/onboarding/": {
       "filePath": "onboarding/index.tsx"
+    },
+    "/_app/$serverId/billing": {
+      "filePath": "_app/$serverId/billing.tsx",
+      "parent": "/_app/$serverId"
+    },
+    "/_app/$serverId/settings": {
+      "filePath": "_app/$serverId/settings.tsx",
+      "parent": "/_app/$serverId"
     },
     "/_app/$serverId/": {
       "filePath": "_app/$serverId/index.tsx",
