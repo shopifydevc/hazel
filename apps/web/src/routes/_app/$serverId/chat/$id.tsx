@@ -1,5 +1,5 @@
 import { createFileRoute, useParams } from "@tanstack/solid-router"
-import { type Accessor, For, Show, createEffect, createMemo, createSignal } from "solid-js"
+import { type Accessor, For, Index, Show, createEffect, createMemo, createSignal } from "solid-js"
 import { ChatMessage } from "~/components/chat-ui/chat-message"
 import { ChatTopbar } from "~/components/chat-ui/chat-topbar"
 import { FloatingBar } from "~/components/chat-ui/floating-bar"
@@ -123,27 +123,27 @@ function RouteComponent() {
 						</div>
 					}
 				>
-					<For each={processedMessages().processedGroupedMessages}>
-						{([date, messages]) => (
+					<Index each={processedMessages().processedGroupedMessages}>
+						{(group) => (
 							<div class="flex flex-col">
 								<div class="py-2 text-center text-muted-foreground text-sm">
-									<span>{date}</span>
+									<span>{group()[0]}</span>
 								</div>
 
-								<For each={messages()}>
-									{({ message, isGroupStart, isGroupEnd }) => {
+								<Index each={group()[1]()}>
+									{(message) => {
 										return (
 											<ChatMessage
-												message={message}
-												isGroupStart={isGroupStart}
-												isGroupEnd={isGroupEnd}
+												message={message().message}
+												isGroupStart={message().isGroupStart}
+												isGroupEnd={message().isGroupEnd}
 											/>
 										)
 									}}
-								</For>
+								</Index>
 							</div>
 						)}
-					</For>
+					</Index>
 				</Show>
 			</div>
 			<div class="mx-2 mb-6">
