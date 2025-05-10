@@ -334,11 +334,11 @@ const MuteMenuItem = ({ channelId, isMuted }: { channelId: string; isMuted: Acce
 				await z.mutate.channelMembers.update({
 					channelId: channelId,
 					userId: userId()!,
-					isMuted: true,
+					isMuted: !isMuted(),
 				})
 			}}
 		>
-			{isMuted() ? <IconAudio /> : <IconMutedAudio class="size-4" />}
+			{isMuted() ? <IconAudio class="size-4" /> : <IconMutedAudio class="size-4" />}
 			{isMuted() ? "Unmute" : "Mute"}
 		</Menu.Item>
 	)
