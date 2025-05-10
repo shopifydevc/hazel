@@ -15,10 +15,7 @@ export const usePublicServers = (serverId: Accessor<string>) => {
 
 	const computedChannels = createMemo(() => {
 		return serverChannels().filter((channel) => {
-			const alreadyInChannel = serverChannels().find((c) => c.id === channel.id)
-			if (alreadyInChannel) return false
-
-			return true
+			return !channel.users.some((user) => user.id === z.userID)
 		})
 	})
 

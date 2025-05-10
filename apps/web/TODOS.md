@@ -39,3 +39,5 @@ create an avatar
 # Investigations
 - Look into [campsite](https://github.com/campsite/campsite) for product inspiration
  - Run it locally
+
+ - Look into [huly](https://huly.app/workbench/hazel/chunter/threads) for product inspiration

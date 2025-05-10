@@ -19,6 +19,9 @@ import { IconPhone } from "~/components/icons/phone"
 import { IconSupport } from "~/components/icons/support"
 import { IconX } from "~/components/icons/x"
 import { Menu } from "~/components/ui/menu"
+import { IconSignOut } from "~/components/ui/signout"
+import { toaster } from "~/components/ui/toaster"
+import { useZero } from "~/lib/zero/zero-context"
 import { CreateChannelForm } from "./create-channel-form"
 import { CreateDmDialog } from "./create-dm-dialog"
 import { JoinPublicChannel } from "./join-public-channel"
@@ -151,10 +154,19 @@ export interface ChannelItemProps {
 }
 
 export const ChannelItem = (props: ChannelItemProps) => {
+	const z = useZero()
 	const params = createMemo(() => ({
 		serverId: props.serverId(),
 		id: props.channel.id,
 	}))
+
+	const leaveChannel = async (channelId: string) => {
+		await z.mutate.channelMembers.delete({
+			userId: z.userID,
+			channelId: channelId,
+		})
+	}
+
 	return (
 		<Sidebar.MenuItem>
 			<Sidebar.MenuButton
@@ -169,6 +181,32 @@ export const ChannelItem = (props: ChannelItemProps) => {
 					{props.channel.name}
 				</p>
 			</Sidebar.MenuButton>
+			<Menu positioning={{ placement: "bottom" }}>
+				<Menu.Trigger
+					asChild={(props) => (
+						<Sidebar.MenuAction
+							showOnHover
+							class="rounded-sm text-foreground data-[state=open]:bg-muted"
+							{...props()}
+						>
+							<IconHorizontalDots class="text-foreground" />
+							<span class="sr-only">More</span>
+						</Sidebar.MenuAction>
+					)}
+				/>
+				<Menu.Content>
+					<Menu.Item
+						class="flex items-center gap-2 text-destructive"
+						value="close"
+						onSelect={() => {
+							leaveChannel(props.channel.id)
+						}}
+					>
+						<IconSignOut class="size-4" />
+						Leave Channel
+					</Menu.Item>
+				</Menu.Content>
+			</Menu>
 		</Sidebar.MenuItem>
 	)
 }
@@ -191,6 +229,8 @@ interface DmChannelLinkProps {
 }
 
 const DmChannelLink = (props: DmChannelLinkProps) => {
+	const z = useZero()
+
 	const params = createMemo(() => ({
 		serverId: props.serverId(),
 		id: props.channel.id,
@@ -249,6 +289,7 @@ const DmChannelLink = (props: DmChannelLinkProps) => {
 						class="flex items-center gap-2 text-destructive"
 						value="close"
 						onSelect={() => {
+							z.mutate.channelMembers.delete
 							console.log("TODO: Implement close DM")
 						}}
 					>

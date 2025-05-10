@@ -23,7 +23,7 @@ export const permissions = definePermissions<AuthData, Schema>(schema, () => {
 		cmp("id", "=", authData.sub ?? "")
 
 	const allowIfRowOwner = (authData: AuthData, { cmpLit }: ExpressionBuilder<Schema, TableName>) =>
-		cmpLit("userId", "=", authData.sub ?? "")
+		cmpLit("userId", "=", authData.sub)
 
 	const isChannelParti = (authData: AuthData, eb: ExpressionBuilder<Schema, "serverChannels">) =>
 		eb.or(eb.exists("users", (iq) => iq.where("id", "=", authData.sub ?? "")))
@@ -114,7 +114,7 @@ export const permissions = definePermissions<AuthData, Schema>(schema, () => {
 			row: {
 				select: ANYONE_CAN,
 				insert: ANYONE_CAN,
-				delete: [allowIfRowOwner],
+				delete: ANYONE_CAN,
 			},
 		},
 		reactions: {

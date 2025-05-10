@@ -24,7 +24,9 @@ export const JoinPublicChannel = (props: JoinPublicChannelProps) => {
 		>
 			<For each={unjoinedChannel()}>
 				{(channel) => (
-					<Sidebar.Item
+					<button
+						class="items-2 flex w-full gap-2 rounded-md px-2 py-1 hover:bg-muted"
+						type="button"
 						onClick={async () => {
 							await z.mutate.channelMembers.upsert({
 								userId: z.userID,
@@ -40,7 +42,7 @@ export const JoinPublicChannel = (props: JoinPublicChannelProps) => {
 					>
 						<IconHashtag class="size-5 text-muted-foreground" />
 						<p class="text-muted-foreground group-hover/sidebar-item:text-foreground">{channel.name}</p>
-					</Sidebar.Item>
+					</button>
 				)}
 			</For>
 		</Show>
