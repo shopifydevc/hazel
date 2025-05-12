@@ -10,7 +10,7 @@
 	},
 	"dependencies": {
 		"@rocicorp/zero": "^0.19.2025050203",
-		"drizzle-zero": "^0.9.3"
+		"drizzle-zero": "^0.10.1"
 	},
 	"devDependencies": {
 		"@total-typescript/tsconfig": "^1.0.4",
