@@ -1,7 +1,8 @@
 # TODOs
 
-## Zero
-- Fix Zero Permissions
+
+
+# Web
 
 ## Chat UI
 - Change Input to TextArea
@@ -33,6 +34,11 @@
 ## Server Page
 - Kick User
 - Manage Roles
+
+
+# Server
+
+- Don't send notification for sender of message
 
 # Investigations
 - Look into [campsite](https://github.com/campsite/campsite) for product inspiration

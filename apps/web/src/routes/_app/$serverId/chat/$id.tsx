@@ -27,7 +27,7 @@ function RouteComponent() {
 	const channelId = createMemo(() => params().id)
 	const serverId = createMemo(() => params().serverId)
 
-	const { messages, channel, isChannelLoading } = useChat(channelId, limit)
+	const { messages, channel, isChannelLoading, channelMember } = useChat(channelId, limit)
 
 	// Redirect when channel is not found
 	createEffect(() => {
@@ -42,7 +42,7 @@ function RouteComponent() {
 	const processedMessages = createMemo(() => {
 		const timeThreshold = 5 * 60 * 1000
 
-		const allMessages = messages()
+		const allMessages = [...messages()]
 			.reverse()
 			.slice()
 			.sort((a, b) => new Date(a.createdAt!).getTime() - new Date(b.createdAt!).getTime())
@@ -104,7 +104,7 @@ function RouteComponent() {
 			<ChatTopbar />
 			<VList
 				class="flex-1"
-				overscan={5}
+				overscan={3}
 				shift
 				data={processedMessages()}
 				ref={setVlistRef}
@@ -127,7 +127,7 @@ function RouteComponent() {
 						message={message.message}
 						isGroupStart={message.isGroupStart}
 						isGroupEnd={message.isGroupEnd}
-						isFirstNewMessage={false}
+						isFirstNewMessage={() => message.message.id === channelMember()?.lastSeenMessageId}
 						serverId={serverId}
 					/>
 				)}

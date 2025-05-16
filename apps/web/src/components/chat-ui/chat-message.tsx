@@ -1,5 +1,15 @@
 import { useParams } from "@tanstack/solid-router"
-import { type Accessor, For, type JSX, Show, createMemo, createSignal, splitProps } from "solid-js"
+import {
+	type Accessor,
+	For,
+	type JSX,
+	Show,
+	createEffect,
+	createMemo,
+	createSignal,
+	onMount,
+	splitProps,
+} from "solid-js"
 import { twJoin, twMerge } from "tailwind-merge"
 import { tv } from "tailwind-variants"
 
@@ -68,7 +78,7 @@ interface ChatMessageProps extends JSX.HTMLAttributes<HTMLDivElement> {
 	message: Message
 	isGroupStart: boolean
 	isGroupEnd: boolean
-	isFirstNewMessage?: boolean
+	isFirstNewMessage: Accessor<boolean>
 }
 
 export function ChatMessage(props: ChatMessageProps) {
@@ -276,6 +286,19 @@ export function ChatMessage(props: ChatMessageProps) {
 
 	const [open, setOpen] = createSignal(false)
 
+	createEffect(() => {
+		if (props.isFirstNewMessage()) {
+			setTimeout(async () => {
+				await z.mutate.channelMembers.update({
+					channelId: props.message.channelId!,
+					userId: z.userID,
+					lastSeenMessageId: null,
+					notificationCount: 0,
+				})
+			})
+		}
+	})
+
 	return (
 		<div
 			id={`message-${props.message.id}`}
@@ -283,14 +306,14 @@ export function ChatMessage(props: ChatMessageProps) {
 				isGettingRepliedTo: false,
 				isGroupStart: props.isGroupStart,
 				isGroupEnd: props.isGroupEnd,
-				isFirstNewMessage: props.isFirstNewMessage,
+				isFirstNewMessage: props.isFirstNewMessage(),
 				isPinned: isPinned(),
 				class: "rounded-l-none",
 			})}
 			data-id={props.message.id}
 			ref={props.ref}
 		>
-			<Show when={props.isFirstNewMessage}>
+			<Show when={props.isFirstNewMessage()}>
 				<div class="absolute top-1 right-1 z-10">
 					<Badge class="text-[10px]">New Message</Badge>
 				</div>
