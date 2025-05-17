@@ -1,5 +1,5 @@
 import { createFileRoute, useParams } from "@tanstack/solid-router"
-import { createEffect, createMemo, createSignal } from "solid-js"
+import { For, createEffect, createMemo, createSignal } from "solid-js"
 import { ChatMessage } from "~/components/chat-ui/chat-message"
 import { ChatTopbar } from "~/components/chat-ui/chat-topbar"
 import { FloatingBar } from "~/components/chat-ui/floating-bar"
@@ -124,9 +124,9 @@ function RouteComponent() {
 			>
 				{(message) => (
 					<ChatMessage
-						message={message.message}
-						isGroupStart={message.isGroupStart}
-						isGroupEnd={message.isGroupEnd}
+						message={() => message.message}
+						isGroupStart={() => message.isGroupStart}
+						isGroupEnd={() => message.isGroupEnd}
 						isFirstNewMessage={() => message.message.id === channelMember()?.lastSeenMessageId}
 						serverId={serverId}
 					/>

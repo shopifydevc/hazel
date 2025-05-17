@@ -52,6 +52,10 @@ export const serverMutators = (clientMutators: CustomMutatorDefs<typeof schema>,
 						.filter((member) => !member.isMuted)
 						.map((member) => `notifications:${member.userId}`)
 
+					if (channels.length === 0) {
+						return
+					}
+
 					await ably.batchPublish({
 						channels: channels,
 						messages: [

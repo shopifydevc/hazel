@@ -75,31 +75,31 @@ type ChatAction = {
 
 interface ChatMessageProps extends JSX.HTMLAttributes<HTMLDivElement> {
 	serverId: Accessor<string>
-	message: Message
-	isGroupStart: boolean
-	isGroupEnd: boolean
+	message: Accessor<Message>
+	isGroupStart: Accessor<boolean>
+	isGroupEnd: Accessor<boolean>
 	isFirstNewMessage: Accessor<boolean>
 }
 
 export function ChatMessage(props: ChatMessageProps) {
 	const z = useZero()
 	const params = useParams({ from: "/_app/$serverId/chat/$id" })()
-	const showAvatar = createMemo(() => props.isGroupStart)
+	const showAvatar = createMemo(() => props.isGroupStart())
 	const [chatStore, setChatStore] = chatStore$
 	const [pendingAction, setPendingAction] = createSignal<ChatAction | null>(null)
-	const isPinned = createMemo(() => props.message.pinnedInChannels?.some((p) => p.channelId === params.id))
+	const isPinned = createMemo(() => props.message().pinnedInChannels?.some((p) => p.channelId === params.id))
 
 	const [selectedImage, setSelectedImage] = createSignal<string | null>(null)
 
 	const messageTime = createMemo(() => {
-		return new Date(props.message.createdAt!).toLocaleTimeString("en-US", {
+		return new Date(props.message().createdAt!).toLocaleTimeString("en-US", {
 			hour: "2-digit",
 			minute: "2-digit",
 			hour12: false,
 		})
 	})
 
-	const attachedCount = createMemo(() => props.message.attachedFiles?.length ?? 0)
+	const attachedCount = createMemo(() => props.message().attachedFiles?.length ?? 0)
 
 	const itemClass = createMemo(() =>
 		twMerge(
@@ -221,7 +221,7 @@ export function ChatMessage(props: ChatMessageProps) {
 			label: "Reply",
 			icon: <IconReply class="size-4" />,
 			onAction: () => {
-				setChatStore((prev) => ({ ...prev, replyToMessageId: props.message.id }))
+				setChatStore((prev) => ({ ...prev, replyToMessageId: props.message().id }))
 			},
 			hotkey: "shift+r",
 			showButton: true,
@@ -241,14 +241,14 @@ export function ChatMessage(props: ChatMessageProps) {
 			onAction: async () => {
 				if (isPinned()) {
 					await z.mutate.pinnedMessages.delete({
-						id: props.message.pinnedInChannels?.find((p) => p.channelId === params.id)!.id,
+						id: props.message().pinnedInChannels?.find((p) => p.channelId === params.id)!.id,
 					})
 				} else {
 					const id = newId("pinnedMessages")
 					await z.mutate.pinnedMessages.insert({
 						id,
-						messageId: props.message.id,
-						channelId: props.message.channelId!,
+						messageId: props.message().id,
+						channelId: props.message().channelId!,
 					})
 				}
 			},
@@ -259,7 +259,7 @@ export function ChatMessage(props: ChatMessageProps) {
 			key: "copy-text",
 			label: "Copy Text",
 			icon: <IconCopy class="size-4" />,
-			onAction: () => navigator.clipboard.writeText(props.message.content),
+			onAction: () => navigator.clipboard.writeText(props.message().content),
 			hotkey: "c",
 			showMenu: true,
 		},
@@ -267,7 +267,7 @@ export function ChatMessage(props: ChatMessageProps) {
 			key: "delete",
 			label: "Delete",
 			icon: <IconTrash class="size-4" />,
-			onAction: async () => z.mutate.messages.delete({ id: props.message.id }),
+			onAction: async () => z.mutate.messages.delete({ id: props.message().id }),
 			hotkey: "del",
 			showMenu: true,
 			isDanger: true,
@@ -290,7 +290,7 @@ export function ChatMessage(props: ChatMessageProps) {
 		if (props.isFirstNewMessage()) {
 			setTimeout(async () => {
 				await z.mutate.channelMembers.update({
-					channelId: props.message.channelId!,
+					channelId: props.message().channelId!,
 					userId: z.userID,
 					lastSeenMessageId: null,
 					notificationCount: 0,
@@ -301,16 +301,16 @@ export function ChatMessage(props: ChatMessageProps) {
 
 	return (
 		<div
-			id={`message-${props.message.id}`}
+			id={`message-${props.message().id}`}
 			class={chatMessageStyles({
 				isGettingRepliedTo: false,
-				isGroupStart: props.isGroupStart,
-				isGroupEnd: props.isGroupEnd,
+				isGroupStart: props.isGroupStart(),
+				isGroupEnd: props.isGroupEnd(),
 				isFirstNewMessage: props.isFirstNewMessage(),
 				isPinned: isPinned(),
 				class: "rounded-l-none",
 			})}
-			data-id={props.message.id}
+			data-id={props.message().id}
 			ref={props.ref}
 		>
 			<Show when={props.isFirstNewMessage()}>
@@ -318,22 +318,22 @@ export function ChatMessage(props: ChatMessageProps) {
 					<Badge class="text-[10px]">New Message</Badge>
 				</div>
 			</Show>
-			<Show when={props.message.replyToMessageId}>
+			<Show when={props.message().replyToMessageId}>
 				<Button
 					class="flex w-fit items-center gap-1 pl-12 text-left hover:bg-transparent"
 					intent="ghost"
 					onClick={() => {
-						if (props.message.replyToMessageId) scrollToMessage(props.message.replyToMessageId)
+						if (props.message().replyToMessageId) scrollToMessage(props.message().replyToMessageId!)
 					}}
 				>
 					<Avatar
 						class="size-4"
-						name={props.message.replyToMessage?.author?.displayName!}
-						src={props.message.replyToMessage?.author?.avatarUrl}
+						name={props.message().replyToMessage?.author?.displayName!}
+						src={props.message().replyToMessage?.author?.avatarUrl}
 					/>
-					<UserTag user={props.message.replyToMessage?.author!} />
+					<UserTag user={props.message().replyToMessage?.author!} />
 					<span class="text-ellipsis text-foreground text-xs">
-						{getPlainTextFromContent(props.message.replyToMessage?.content ?? "")}
+						{getPlainTextFromContent(props.message().replyToMessage?.content ?? "")}
 					</span>
 				</Button>
 			</Show>
@@ -403,7 +403,7 @@ export function ChatMessage(props: ChatMessageProps) {
 					</Menu>
 				</div>
 				<Show when={showAvatar()}>
-					<UserAvatar user={props.message.author!} serverId={props.serverId} />
+					<UserAvatar user={props.message().author!} serverId={props.serverId} />
 				</Show>
 				<Show when={!showAvatar()}>
 					<div class="w-10 items-center justify-end pr-1 text-[10px] text-muted-foreground leading-tight opacity-0 group-hover:opacity-100">
@@ -413,12 +413,12 @@ export function ChatMessage(props: ChatMessageProps) {
 				<div class="min-w-0 flex-1">
 					<Show when={showAvatar()}>
 						<div class="flex items-baseline gap-2">
-							<span class="font-semibold">{props.message.author?.displayName}</span>
+							<span class="font-semibold">{props.message().author?.displayName}</span>
 							<span class="text-muted-foreground text-xs">{messageTime()}</span>
 						</div>
 					</Show>
 					<Markdown
-						children={props.message.content}
+						children={props.message().content}
 						components={{
 							a: (props) => (
 								<a
@@ -475,7 +475,7 @@ export function ChatMessage(props: ChatMessageProps) {
 									"gap-1",
 								)}
 							>
-								<For each={props.message.attachedFiles?.slice(0, 4)}>
+								<For each={props.message().attachedFiles?.slice(0, 4)}>
 									{(file) => (
 										<div class={itemClass()}>
 											<ChatImage
@@ -490,7 +490,7 @@ export function ChatMessage(props: ChatMessageProps) {
 								</For>
 							</div>
 						</Show>
-						<ReactionTags message={props.message} />
+						<ReactionTags message={props.message()} />
 					</div>
 				</div>
 			</div>
@@ -510,8 +510,8 @@ export function ChatMessage(props: ChatMessageProps) {
 			<ImageViewerModal
 				selectedImage={selectedImage}
 				setSelectedImage={setSelectedImage}
-				author={props.message.author}
-				createdAt={props.message.createdAt!}
+				author={props.message().author}
+				createdAt={props.message().createdAt!}
 				bucketUrl={import.meta.env.VITE_BUCKET_URL}
 			/>
 		</div>
