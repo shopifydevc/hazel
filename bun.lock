@@ -107,6 +107,7 @@
       "name": "@maki-chat/zero",
       "version": "0.0.0",
       "dependencies": {
+        "@maki-chat/api-schema": "workspace:*",
         "@rocicorp/zero": "^0.19.2025050203",
         "drizzle-zero": "^0.10.1",
       },

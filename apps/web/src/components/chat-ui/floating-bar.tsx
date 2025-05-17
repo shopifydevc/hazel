@@ -264,8 +264,6 @@ export function FloatingBar(props: { channelId: string }) {
 				authorId: auth.userId()!,
 				createdAt: new Date().getTime(),
 				replyToMessageId: chatStore().replyToMessageId,
-				parentMessageId: null,
-				// parentMessageId: chatStore().parentMessageId,
 				attachedFiles: successfulKeys(),
 			})
 			.then(() => {
