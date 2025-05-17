@@ -274,7 +274,10 @@ export function FloatingBar(props: { channelId: string }) {
 					replyToMessageId: null,
 					// parentMessageId: null,
 				}))
+
+				// Reset editor height
 				editorRef()!.value = ""
+				editorRef()!.style.height = "auto"
 				clearAttachments()
 			})
 	}
@@ -293,24 +296,34 @@ export function FloatingBar(props: { channelId: string }) {
 			</Show>
 			<div
 				class={twMerge(
-					"group flex w-full items-center rounded-sm border border-border bg-sidebar transition duration-300 ease-in hover:border-muted-foreground/70",
+					"group flex w-full items-start rounded-sm border border-border bg-sidebar transition duration-300 ease-in hover:border-muted-foreground/70",
 				)}
 			>
-				<Button size="icon" class="mr-1 ml-2" intent="icon" onClick={openFileSelector} disabled={isUploading()}>
-					<IconCirclePlusSolid class="size-6!" />
+				<Button
+					size="icon"
+					class="my-3 mr-3 ml-2"
+					intent="icon"
+					onClick={openFileSelector}
+					disabled={isUploading()}
+				>
+					<IconCirclePlusSolid class="size-5!" />
 				</Button>
 
-				<div class="w-full">
-					<input
-						ref={setEditorRef}
-						class="h-12 w-full"
-						onKeyDown={(e) => {
-							if (e.key === "Enter") {
-								handleSubmit(e.currentTarget.value)
-							}
-						}}
-					/>
-				</div>
+				<textarea
+					ref={setEditorRef}
+					class="w-full resize-none bg-transparent py-3 outline-none"
+					rows={1}
+					onInput={(e) => {
+						e.currentTarget.style.height = "auto"
+						e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`
+					}}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" && !e.shiftKey) {
+							e.preventDefault()
+							handleSubmit(e.currentTarget.value)
+						}
+					}}
+				/>
 
 				<div class="ml-auto flex flex-shrink-0 items-center gap-3 px-3">
 					<input
