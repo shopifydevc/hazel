@@ -38,6 +38,8 @@ function RouteComponent() {
 }
 
 function ThreadChannel(props: { channelId: string; serverId: string }) {
+	const [chatStore, setChatStore] = chatStore$
+
 	const channelId = createMemo(() => props.channelId)
 	const serverId = createMemo(() => props.serverId)
 
@@ -45,7 +47,11 @@ function ThreadChannel(props: { channelId: string; serverId: string }) {
 		<div class="flex flex-1 flex-col border-l">
 			<div class="flex items-center justify-between border-b bg-sidebar p-4">
 				<p>Thread</p>
-				<Button intent="ghost" size="icon-small">
+				<Button
+					intent="ghost"
+					size="icon-small"
+					onClick={() => setChatStore((prev) => ({ ...prev, openThreadId: null }))}
+				>
 					<IconX class="size-4" />
 				</Button>
 			</div>

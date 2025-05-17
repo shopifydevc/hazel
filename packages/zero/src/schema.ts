@@ -71,10 +71,15 @@ export const permissions = definePermissions<AuthData, Schema>(schema, () => {
 			// Message is in a public channel of a server the user is a member of
 			eb.exists("channel", (iq) =>
 				iq.where((chq) =>
-					chq.and(
-						chq.cmp("channelType", "=", "public"),
-						chq.exists("server", (siq) =>
-							siq.whereExists("members", (miq) => miq.where("userId", "=", authData.sub ?? "")),
+					chq.or(
+						chq.exists("parentChannel", (pcq) =>
+							pcq.whereExists("users", (uq) => uq.where("id", "=", authData.sub ?? "")),
+						),
+						chq.and(
+							chq.cmp("channelType", "=", "public"),
+							chq.exists("server", (siq) =>
+								siq.whereExists("members", (miq) => miq.where("userId", "=", authData.sub ?? "")),
+							),
 						),
 					),
 				),
