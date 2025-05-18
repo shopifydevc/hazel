@@ -228,15 +228,10 @@ const useGlobalEditorFocus = (editorRef: () => HTMLTextAreaElement | undefined) 
 export function FloatingBar(props: { channelId: string }) {
 	const auth = useAuth()
 	const [chatStore, setChatStore] = chatStore$
-	const {
-		attachments,
-		setFileInputRef,
-		handleFileChange,
-		openFileSelector,
-		removeAttachment,
-		clearAttachments, // Use this for a potential 'clear all' button if needed
-	} = useFileAttachment()
+	const { attachments, setFileInputRef, handleFileChange, openFileSelector, removeAttachment, clearAttachments } =
+		useFileAttachment()
 
+	const [input, setInput] = createSignal("")
 	const [editorRef, setEditorRef] = createSignal<HTMLTextAreaElement>()
 	useGlobalEditorFocus(editorRef)
 
@@ -280,17 +275,13 @@ export function FloatingBar(props: { channelId: string }) {
 					// parentMessageId: null,
 				}))
 
-				// Reset editor height
-				editorRef()!.value = ""
-				editorRef()!.style.height = "auto"
+				setInput("")
 				clearAttachments()
 			})
 	}
 
 	return (
 		<div>
-			<ChatInput />
-
 			<Show when={showAttachmentArea()}>
 				<div class="flex flex-col gap-0 rounded-sm rounded-b-none border border-border/90 border-b-0 bg-secondary/90 px-2 py-1 transition hover:border-border/90">
 					<For each={attachments()}>
@@ -316,22 +307,14 @@ export function FloatingBar(props: { channelId: string }) {
 					<IconCirclePlusSolid class="size-5!" />
 				</Button>
 
-				<textarea
+				<ChatInput
 					ref={setEditorRef}
-					class="w-full resize-none bg-transparent py-3 outline-none"
-					rows={1}
-					onInput={(e) => {
-						if (e.currentTarget.scrollHeight >= 240) {
-							return
-						}
-
-						e.currentTarget.style.height = "auto"
-						e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`
-					}}
+					value={input}
+					onValueChange={setInput}
 					onKeyDown={(e) => {
 						if (e.key === "Enter" && !e.shiftKey) {
 							e.preventDefault()
-							handleSubmit(e.currentTarget.value)
+							handleSubmit(input())
 						}
 					}}
 				/>
