@@ -13,6 +13,7 @@ import remarkGfm from "remark-gfm"
 import "highlight.js/styles/github.css"
 
 import type { Root } from "hast"
+import remarkBreaks from "remark-breaks"
 import rehypeFilter, { type Options as FilterOptions } from "./rehype-filter"
 import { MarkdownRoot } from "./renderer"
 
@@ -65,6 +66,7 @@ export const Markdown: Component<Partial<SolidMarkdownOptions>> = (opts) => {
 		const processor = unified()
 			.use(remarkParse)
 			.use(remarkGfm)
+			.use(remarkBreaks)
 			.use(options.remarkPlugins || [])
 			.use(remarkRehype, { allowDangerousHtml: true })
 			.use(rehypeHighlight)
