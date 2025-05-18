@@ -1,5 +1,5 @@
 import { ContentEditable } from "@bigmistqke/solid-contenteditable"
-import { type Accessor, For, type JSX, createSignal, splitProps } from "solid-js"
+import { type Accessor, For, type JSX, Show, createSignal, splitProps } from "solid-js"
 import { Dynamic } from "solid-js/web"
 import { type BaseTokenType, type Token, type TokenPattern, parseMarkdownTokens } from "./parser"
 
@@ -38,20 +38,29 @@ export function MarkdownInput<CustomTokenType extends string = never>(props: Mar
 			render={(value) => {
 				const blocks = parseMarkdownTokens(value(), baseProps.additionalPatterns || [])
 				return (
-					<For each={blocks}>
-						{(block) => {
-							const comp = baseProps.renderers?.[block.type]
-							if (comp) {
-								return <Dynamic component={comp} {...(block as any)} />
-							}
+					<Show
+						when={blocks.length > 0}
+						fallback={
+							<span class="text-muted-foreground opacity-70">
+								{baseProps.placeholder || "Type here..."}
+							</span>
+						}
+					>
+						<For each={blocks}>
+							{(block) => {
+								const comp = baseProps.renderers?.[block.type]
+								if (comp) {
+									return <Dynamic component={comp} {...(block as any)} />
+								}
 
-							if (baseProps.renderers?.default) {
-								return baseProps.renderers.default(block)
-							}
+								if (baseProps.renderers?.default) {
+									return baseProps.renderers.default(block)
+								}
 
-							return <span>{block.content}</span>
-						}}
-					</For>
+								return <span>{block.content}</span>
+							}}
+						</For>
+					</Show>
 				)
 			}}
 			onTextContent={baseProps.onValueChange}

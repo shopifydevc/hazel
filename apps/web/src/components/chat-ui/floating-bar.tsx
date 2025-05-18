@@ -13,6 +13,7 @@ import { ChatInput } from "../markdown-input/chat-input"
 import { Button } from "../ui/button"
 
 import { createSelection } from "@solid-primitives/selection"
+import { setElementAnchorAndFocus } from "../markdown-input/utils"
 
 // Type for individual attachment state
 type Attachment = {
@@ -217,9 +218,18 @@ const createGlobalEditorFocus = (props: {
 			if (isPrintableKey) {
 				event.preventDefault()
 
-				ref.focus()
 				const content = props.input() + event.key
 				props.setInput(content)
+
+				ref.focus()
+
+				try {
+					setElementAnchorAndFocus(props.editorRef()!, {
+						anchor: props.input().length,
+					})
+				} catch (error) {
+					console.error(error)
+				}
 			}
 		}
 
@@ -237,8 +247,6 @@ export function FloatingBar(props: { channelId: string }) {
 	const [chatStore, setChatStore] = chatStore$
 	const { attachments, setFileInputRef, handleFileChange, openFileSelector, removeAttachment, clearAttachments } =
 		useFileAttachment()
-
-	const [selection, setSelection] = createSelection()
 
 	const [input, setInput] = createSignal("")
 	const [editorRef, setEditorRef] = createSignal<HTMLDivElement>()
