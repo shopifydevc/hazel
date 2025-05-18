@@ -1,11 +1,10 @@
-import { createEffect, createMemo, createSignal, type Accessor } from "solid-js"
+import { type Accessor, createEffect, createMemo, createSignal, on } from "solid-js"
 import { VList, type VListHandle } from "virtua/solid"
-import { chatStore$ } from "../$id"
-import { Route } from "../$id"
+import { ChatMessage } from "~/components/chat-ui/chat-message"
+import { FloatingBar } from "~/components/chat-ui/floating-bar"
 import { useChat } from "~/lib/hooks/data/use-chat"
 import type { Message } from "~/lib/hooks/data/use-chat-messages"
-import { FloatingBar } from "~/components/chat-ui/floating-bar"
-import { ChatMessage } from "~/components/chat-ui/chat-message"
+import { Route } from "../$id"
 
 const PAGE_SIZE = 30
 
@@ -13,8 +12,6 @@ export function Channel(props: { channelId: Accessor<string>; serverId: Accessor
 	const [limit, setLimit] = createSignal(PAGE_SIZE)
 
 	const navigate = Route.useNavigate()
-	let messagesRef: HTMLDivElement | undefined
-	const [chatStore, setChatStore] = chatStore$
 
 	const { messages, channel, isChannelLoading, channelMember } = useChat(props.channelId, limit)
 
@@ -76,16 +73,18 @@ export function Channel(props: { channelId: Accessor<string>; serverId: Accessor
 	const [shouldStickToBottom, setShouldStickToBottom] = createSignal(true)
 	const [vlistRef, setVlistRef] = createSignal<VListHandle | undefined>(undefined)
 
-	createEffect(() => {
-		const ref = vlistRef()
-		if (!ref) return
-		if (!shouldStickToBottom()) return
+	createEffect(
+		on([processedMessages, vlistRef], () => {
+			const ref = vlistRef()
+			if (!ref) return
+			if (!shouldStickToBottom()) return
 
-		ref.scrollToIndex(processedMessages().length - 1, {
-			smooth: true,
-			align: "end",
-		})
-	})
+			ref.scrollToIndex(processedMessages().length - 1, {
+				smooth: false,
+				align: "end",
+			})
+		}),
+	)
 
 	return (
 		<div class="flex flex-1 flex-col">
