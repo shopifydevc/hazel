@@ -273,18 +273,16 @@ export function FloatingBar(props: { channelId: string }) {
 		if (text.trim().length === 0 && successfulKeys().length === 0) return
 		const content = text.trim()
 
-		await z
-			.mutateBatch(async (tx) => {
-				// TODO: If we are not a channel member and the channel is a thread, we need to add the current user as a channel member
+		// TODO: If we are not a channel member and the channel is a thread, we need to add the current user as a channel member
 
-				await tx.messages.insert({
-					channelId: props.channelId,
-					id: newId("messages"),
-					content: content,
-					authorId: auth.userId()!,
-					replyToMessageId: chatStore().replyToMessageId,
-					attachedFiles: successfulKeys(),
-				})
+		await z.mutate.messages
+			.insert({
+				channelId: props.channelId,
+				id: newId("messages"),
+				content: content,
+				authorId: auth.userId()!,
+				replyToMessageId: chatStore().replyToMessageId,
+				attachedFiles: successfulKeys(),
 			})
 			.then(() => {
 				setChatStore((prev) => ({
