@@ -38,26 +38,25 @@ export function MarkdownInput<CustomTokenType extends string = never>(props: Mar
 			render={(value) => {
 				const blocks = parseMarkdownTokens(value(), baseProps.additionalPatterns || [])
 
-				console.log(value() === blocks.reduce((acc, cur) => acc + cur.content, ""))
+				return value()
+				// console.log(value() === blocks.reduce((acc, cur) => acc + cur.content, ""))
 
-				return (
-					<span>
-						<For each={blocks}>
-							{(block) => {
-								const comp = baseProps.renderers?.[block.type]
-								if (comp) {
-									return <Dynamic component={comp} {...(block as any)} />
-								}
+				// return (
+				// 		<For each={blocks}>
+				// 			{(block) => {
+				// 				const comp = baseProps.renderers?.[block.type]
+				// 				if (comp) {
+				// 					return <Dynamic component={comp} {...(block as any)} />
+				// 				}
 
-								if (baseProps.renderers?.default) {
-									return baseProps.renderers.default(block)
-								}
+				// 				if (baseProps.renderers?.default) {
+				// 					return baseProps.renderers.default(block)
+				// 				}
 
-								return <span>{block.content}</span>
-							}}
-						</For>
-					</span>
-				)
+				// 				return <span>{block.content}</span>
+				// 			}}
+				// 		</For>
+				// )
 			}}
 			onTextContent={baseProps.onValueChange}
 			{...divProps}
