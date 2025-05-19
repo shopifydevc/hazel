@@ -140,7 +140,7 @@ export function ImageViewerModal(props: ImageViewerModalProps) {
 							</div>
 						</div>
 						<Show
-							when={props.selectedImage()}
+							when={false}
 							fallback={
 								<img
 									src={
