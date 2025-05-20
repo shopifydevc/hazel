@@ -1,5 +1,5 @@
 // Helper function to add CORS headers
-const addCorsHeaders = (response: Response): Response => {
+export const addCorsHeaders = (response: Response): Response => {
 	response.headers.set("Access-Control-Allow-Origin", "*") // Allow any origin (adjust in production!)
 	response.headers.set("Access-Control-Allow-Methods", "PUT, GET, DELETE, OPTIONS")
 	response.headers.set("Access-Control-Allow-Headers", "Content-Type") // Allow Content-Type header

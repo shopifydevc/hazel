@@ -1,15 +1,12 @@
-import { Carousel as ArkCarousel } from "@ark-ui/solid"
-import type { JSX } from "solid-js"
+import { Carousel as ArkCarousel, type CarouselRootProps } from "@ark-ui/solid"
+import { type JSX, splitProps } from "solid-js"
 import { twMerge } from "tailwind-merge"
 
-export function CarouselRoot(props: {
-	slideCount: number
-	class?: string
-	children: JSX.Element
-}) {
+export function CarouselRoot(props: CarouselRootProps) {
+	const [childProps, restProps] = splitProps(props, ["children", "class"])
 	return (
-		<ArkCarousel.Root slideCount={props.slideCount} class={twMerge("relative mx-auto w-full", props.class)}>
-			{props.children}
+		<ArkCarousel.Root class={twMerge("relative mx-auto w-full", childProps.class)} {...restProps}>
+			{childProps.children}
 		</ArkCarousel.Root>
 	)
 }

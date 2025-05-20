@@ -20,7 +20,8 @@ import { twMerge } from "tailwind-merge"
 import { Carousel } from "../ui/carousel"
 
 interface ImageViewerModalProps {
-	selectedImage: Accessor<string | null>
+	defaultImage: Accessor<string>
+	availableImages: Accessor<string[]>
 	onOpenChange: (open: boolean) => void
 	author: Message["author"]
 	createdAt: number
@@ -28,27 +29,31 @@ interface ImageViewerModalProps {
 }
 
 export function ImageViewerModal(props: ImageViewerModalProps) {
+	const [selectedImage, setSelectedImage] = createSignal<string>(props.defaultImage())
+
 	const imageModalActions = [
 		{
 			label: "Download",
 			icon: <IconDownload />,
 			onClick: async (e: MouseEvent) => {
 				e.stopPropagation()
-				const imageUrl = props.selectedImage()?.startsWith("https")
-					? props.selectedImage()!
-					: `${props.bucketUrl}/${props.selectedImage()}`
+				const imageUrl = selectedImage()?.startsWith("https")
+					? selectedImage()!
+					: `${props.bucketUrl}/${selectedImage()}`
 				try {
 					const response = await fetch(imageUrl)
 					const blob = await response.blob()
 					const url = URL.createObjectURL(blob)
 					const a = document.createElement("a")
 					a.href = url
-					a.download = props.selectedImage()!
+					a.download = selectedImage()!
 					a.click()
 					URL.revokeObjectURL(url)
 				} catch (error) {
 					console.error("Failed to download image:", error)
 				}
+
+				console.log("Image downloaded:", imageUrl)
 
 				toaster.create({
 					title: "Image downloaded",
@@ -62,9 +67,9 @@ export function ImageViewerModal(props: ImageViewerModalProps) {
 			icon: <IconCopy />,
 			onClick: async (e: MouseEvent) => {
 				e.stopPropagation()
-				const imageUrl = props.selectedImage()?.startsWith("https")
-					? props.selectedImage()!
-					: `${props.bucketUrl}/${props.selectedImage()}`
+				const imageUrl = selectedImage()?.startsWith("https")
+					? selectedImage()!
+					: `${props.bucketUrl}/${selectedImage()}`
 				try {
 					const response = await fetch(imageUrl)
 					const blob = await response.blob()
@@ -85,7 +90,7 @@ export function ImageViewerModal(props: ImageViewerModalProps) {
 			icon: <IconLink />,
 			onClick: (e: MouseEvent) => {
 				e.stopPropagation()
-				navigator.clipboard.writeText(`${props.bucketUrl}/${props.selectedImage()}`)
+				navigator.clipboard.writeText(`${props.bucketUrl}/${selectedImage()}`)
 
 				toaster.create({
 					title: "Image URL copied",
@@ -99,7 +104,7 @@ export function ImageViewerModal(props: ImageViewerModalProps) {
 			icon: <IconOpenLink />,
 			onClick: (e: MouseEvent) => {
 				e.stopPropagation()
-				window.open(`${props.bucketUrl}/${props.selectedImage()}`, "_blank")
+				window.open(`${props.bucketUrl}/${selectedImage()}`, "_blank")
 			},
 		},
 		{
@@ -113,7 +118,7 @@ export function ImageViewerModal(props: ImageViewerModalProps) {
 	]
 
 	return (
-		<Dialog open={!!props.selectedImage()} onOpenChange={(details) => props.onOpenChange(details.open)}>
+		<Dialog open={!!selectedImage()} onOpenChange={(details) => props.onOpenChange(details.open)}>
 			<Portal>
 				<DialogBackdrop />
 				<ArkDialog.Positioner>
@@ -137,22 +142,26 @@ export function ImageViewerModal(props: ImageViewerModalProps) {
 							</div>
 						</div>
 						<Show
-							when={false}
+							when={props.availableImages().length > 0}
 							fallback={
 								<img
 									src={
-										props.selectedImage()?.startsWith("https")
-											? props.selectedImage()!
-											: `${props.bucketUrl}/${props.selectedImage()}`
+										selectedImage()?.startsWith("https")
+											? selectedImage()!
+											: `${props.bucketUrl}/${selectedImage()}`
 									}
-									alt={props.selectedImage()!}
+									alt={selectedImage()!}
 									class="max-h-[90vh] max-w-[90vw] rounded-md"
 								/>
 							}
 						>
-							<Carousel class="mx-36" slideCount={3}>
+							<Carousel
+								class="mx-36"
+								slideCount={props.availableImages().length}
+								onPageChange={(details) => setSelectedImage(props.availableImages()[details.page])}
+							>
 								<Carousel.ItemGroup>
-									<Index each={[props.selectedImage(), props.selectedImage(), props.selectedImage()]}>
+									<Index each={props.availableImages()}>
 										{(image, index) => (
 											<Carousel.Item index={index}>
 												<img
@@ -173,7 +182,7 @@ export function ImageViewerModal(props: ImageViewerModalProps) {
 									<Carousel.NextTrigger />
 								</Carousel.Control>
 								<Carousel.IndicatorGroup>
-									<Index each={[props.selectedImage(), props.selectedImage(), props.selectedImage()]}>
+									<Index each={props.availableImages()}>
 										{(_, index) => <Carousel.Indicator index={index} />}
 									</Index>
 								</Carousel.IndicatorGroup>

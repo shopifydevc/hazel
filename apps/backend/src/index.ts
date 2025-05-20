@@ -1,7 +1,7 @@
 import { HttpApiBuilder, HttpApiScalar, HttpMiddleware, HttpServer } from "@effect/platform"
 import { ConfigProvider, Layer } from "effect"
 
-import { oldUploadHandler } from "./http/old-upload"
+import { addCorsHeaders, oldUploadHandler } from "./http/old-upload"
 
 import { AuthorizationLive } from "./authorization.live"
 import { HttpLive } from "./http"
@@ -30,13 +30,17 @@ export default {
 
 		// Assets server for DEV
 		if (url.pathname.startsWith("/assets/")) {
+			if (request.method === "OPTIONS") {
+				return addCorsHeaders(new Response(null, { status: 204 }))
+			}
+
 			const key = url.pathname.replace("/assets/", "")
 			if (!key) {
-				return new Response("Missing file key in URL path", { status: 400 })
+				return addCorsHeaders(new Response("Missing file key in URL path", { status: 400 }))
 			}
 			const object = await env.FILE_BUCKET.get(key)
 			if (object === null) {
-				return new Response("Object Not Found", { status: 404 })
+				return addCorsHeaders(new Response("Object Not Found", { status: 404 }))
 			}
 
 			const headers = new Headers()
@@ -44,9 +48,11 @@ export default {
 			headers.set("etag", object.httpEtag)
 			// Add content disposition if you want downloads to use original filename (requires storing it)
 			// headers.set('Content-Disposition', `inline; filename="${originalFilenameStoredSomewhere}"`);
-			return new Response(object.body, {
-				headers,
-			})
+			return addCorsHeaders(
+				new Response(object.body, {
+					headers,
+				}),
+			)
 		}
 
 		const ConfigLayer = Layer.setConfigProvider(

@@ -50,10 +50,14 @@ function ChatImageViewerModal() {
 
 	const { message } = useChatMessage(messageId)
 
+	const availableImages = createMemo(() => message()?.attachedFiles ?? [])
+	const defaultImage = createMemo(() => state.imageDialog.selectedImage!)
+
 	return (
-		<Show when={message()}>
+		<Show when={message() && defaultImage()}>
 			<ImageViewerModal
-				selectedImage={() => state.imageDialog.selectedImage}
+				availableImages={availableImages}
+				defaultImage={defaultImage}
 				onOpenChange={() =>
 					setState("imageDialog", (prev) => ({
 						...prev,
