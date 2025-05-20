@@ -18,7 +18,6 @@ import { Tooltip } from "~/components/ui/tooltip"
 import type { Message } from "~/lib/hooks/data/use-chat-messages"
 import { newId } from "~/lib/id-helpers"
 import { useZero } from "~/lib/zero/zero-context"
-import { chatStore$ } from "~/routes/_app/$serverId/chat/$id"
 
 import { ConfirmDialog } from "./confirm-dialog"
 import { ImageViewerModal } from "./image-viewer-modal"
@@ -32,6 +31,7 @@ import { ChatImage } from "./chat-image"
 
 import { IconBrandLinear } from "../icons/brand/linear"
 import { IconThread } from "../icons/thread"
+import { useChat } from "./chat-store"
 
 function extractTextFromJsonNodes(nodes: any[]): string {
 	if (!Array.isArray(nodes)) return ""
@@ -79,7 +79,9 @@ export function ChatMessage(props: ChatMessageProps) {
 	const z = useZero()
 	const params = useParams({ from: "/_app/$serverId/chat/$id" })()
 	const showAvatar = createMemo(() => props.isGroupStart())
-	const [chatStore, setChatStore] = chatStore$
+
+	const { set } = useChat()
+
 	const [pendingAction, setPendingAction] = createSignal<ChatAction | null>(null)
 	const isPinned = createMemo(() => props.message().pinnedInChannels?.some((p) => p.channelId === params.id))
 
@@ -236,7 +238,7 @@ export function ChatMessage(props: ChatMessageProps) {
 					})
 				}
 
-				setChatStore((prev) => ({ ...prev, openThreadId: threadChannelId }))
+				set("openThreadId", threadChannelId)
 			},
 			hotkey: "t",
 			showButton: !props.isThread,
@@ -246,7 +248,7 @@ export function ChatMessage(props: ChatMessageProps) {
 			label: "Reply",
 			icon: <IconReply class="size-4" />,
 			onAction: () => {
-				setChatStore((prev) => ({ ...prev, replyToMessageId: props.message().id }))
+				set("replyToMessageId", props.message().id)
 			},
 			hotkey: "shift+r",
 			showButton: true,
@@ -557,13 +559,15 @@ function ThreadButton(props: { message: Message }) {
 		return { authors: authors.slice(0, 4), total: authors.length }
 	})
 
-	const [chatStore, setChatStore] = chatStore$
+	const { set } = useChat()
 
 	return (
 		<Button
 			intent="ghost"
 			class="mt-1 flex w-full justify-start px-1"
-			onClick={() => setChatStore((prev) => ({ ...prev, openThreadId: props.message.threadChannelId }))}
+			onClick={() => {
+				set("openThreadId", props.message.threadChannelId)
+			}}
 		>
 			<For each={topFourAuthors().authors}>
 				{(author) => <Avatar class="size-5" name={author.displayName!} src={author.avatarUrl} />}

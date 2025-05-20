@@ -5,7 +5,6 @@ import { tv } from "tailwind-variants"
 import { useChatMessage } from "~/lib/hooks/data/use-chat-message"
 import { newId } from "~/lib/id-helpers"
 import { useZero } from "~/lib/zero/zero-context"
-import { chatStore$ } from "~/routes/_app/$serverId/chat/$id"
 import { IconLoader } from "../icons/loader"
 import { IconCirclePlusSolid } from "../icons/solid/circle-plus-solid"
 import { IconCircleXSolid } from "../icons/solid/circle-x-solid"
@@ -13,6 +12,7 @@ import { ChatInput } from "../markdown-input/chat-input"
 import { Button } from "../ui/button"
 
 import { setElementAnchorAndFocus } from "../markdown-input/utils"
+import { useChat } from "./chat-store"
 
 // Type for individual attachment state
 type Attachment = {
@@ -243,7 +243,8 @@ const createGlobalEditorFocus = (props: {
 export function FloatingBar(props: { channelId: string }) {
 	const auth = useAuth()
 
-	const [chatStore, setChatStore] = chatStore$
+	const { state, set } = useChat()
+
 	const { attachments, setFileInputRef, handleFileChange, openFileSelector, removeAttachment, clearAttachments } =
 		useFileAttachment()
 
@@ -281,16 +282,12 @@ export function FloatingBar(props: { channelId: string }) {
 				id: newId("messages"),
 				content: content,
 				authorId: auth.userId()!,
-				replyToMessageId: chatStore().replyToMessageId,
+				replyToMessageId: state.replyToMessageId,
 				createdAt: new Date().getTime(),
 				attachedFiles: successfulKeys(),
 			})
 			.then(() => {
-				setChatStore((prev) => ({
-					...prev,
-					replyToMessageId: null,
-					// parentMessageId: null,
-				}))
+				set("replyToMessageId", null)
 
 				setInput("")
 				clearAttachments()
@@ -306,8 +303,8 @@ export function FloatingBar(props: { channelId: string }) {
 					</For>
 				</div>
 			</Show>
-			<Show when={chatStore().replyToMessageId}>
-				<ReplyInfo replyToMessageId={chatStore().replyToMessageId} showAttachmentArea={showAttachmentArea()} />
+			<Show when={state.replyToMessageId}>
+				<ReplyInfo replyToMessageId={state.replyToMessageId} showAttachmentArea={showAttachmentArea()} />
 			</Show>
 			<div
 				class={twMerge(
@@ -389,13 +386,12 @@ function ReplyInfo(props: {
 	replyToMessageId: string | null
 	showAttachmentArea: boolean
 }) {
+	const { set } = useChat()
 	const message = createMemo(() => {
 		return useChatMessage(props.replyToMessageId!)
 	})
 
 	if (!message()?.messages()) return null
-
-	const [_, setChatStore] = chatStore$
 
 	return (
 		<div
@@ -407,11 +403,7 @@ function ReplyInfo(props: {
 			<p>
 				Replying to <span class="font-semibold text-fg">{message()!.messages()!.author?.displayName}</span>
 			</p>
-			<Button
-				size="icon"
-				intent="icon"
-				onClick={() => setChatStore((prev) => ({ ...prev, replyToMessageId: null }))}
-			>
+			<Button size="icon" intent="icon" onClick={() => set("replyToMessageId", null)}>
 				<IconCircleXSolid />
 			</Button>
 		</div>
