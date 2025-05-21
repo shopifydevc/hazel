@@ -79,10 +79,13 @@ export function Channel(props: { channelId: Accessor<string>; serverId: Accessor
 			if (!ref) return
 			if (!shouldStickToBottom()) return
 
-			ref.scrollToIndex(processedMessages().length - 1, {
-				smooth: false,
-				align: "end",
-			})
+			// Wait for next animation frame to ensure the scroll position is updated
+			setTimeout(() => {
+				ref.scrollToIndex(processedMessages().length - 1, {
+					smooth: false,
+					align: "end",
+				})
+			}, 0)
 		}),
 	)
 
