@@ -11,8 +11,9 @@ import { IconCircleXSolid } from "../icons/solid/circle-x-solid"
 import { ChatInput } from "../markdown-input/chat-input"
 import { Button } from "../ui/button"
 
+import { useChat } from "../chat-state/chat-store"
+import { createPresence } from "../chat-state/create-presence"
 import { setElementAnchorAndFocus } from "../markdown-input/utils"
-import { useChat } from "./chat-store"
 
 // Type for individual attachment state
 type Attachment = {
@@ -244,6 +245,7 @@ export function FloatingBar(props: { channelId: string }) {
 	const auth = useAuth()
 
 	const { state, setState } = useChat()
+	const { trackPresence } = createPresence()
 
 	const { attachments, setFileInputRef, handleFileChange, openFileSelector, removeAttachment, clearAttachments } =
 		useFileAttachment()
@@ -327,6 +329,7 @@ export function FloatingBar(props: { channelId: string }) {
 					}}
 					value={input}
 					onValueChange={(value) => {
+						trackPresence({ typing: true })
 						setInput(value)
 					}}
 					onKeyDown={(e) => {

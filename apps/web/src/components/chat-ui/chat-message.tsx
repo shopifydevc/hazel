@@ -31,9 +31,9 @@ import { ChatImage } from "./chat-image"
 
 import { reconcile } from "solid-js/store"
 import { cn } from "~/lib/utils"
+import { useChat } from "../chat-state/chat-store"
 import { IconBrandLinear } from "../icons/brand/linear"
 import { IconThread } from "../icons/thread"
-import { useChat } from "./chat-store"
 
 function extractTextFromJsonNodes(nodes: any[]): string {
 	if (!Array.isArray(nodes)) return ""

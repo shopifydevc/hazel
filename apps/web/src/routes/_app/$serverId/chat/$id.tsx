@@ -2,7 +2,7 @@ import { createFileRoute, useParams } from "@tanstack/solid-router"
 import { Show, createEffect, createMemo } from "solid-js"
 import { ChatTopbar } from "~/components/chat-ui/chat-topbar"
 
-import { ChatProvider, useChat } from "~/components/chat-ui/chat-store"
+import { ChatProvider, useChat } from "~/components/chat-state/chat-store"
 import { ImageViewerModal } from "~/components/chat-ui/image-viewer-modal"
 import { IconX } from "~/components/icons/x"
 import { Button } from "~/components/ui/button"

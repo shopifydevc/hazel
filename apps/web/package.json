@@ -19,6 +19,7 @@
 		"@maki-chat/zero": "workspace:*",
 		"@rocicorp/zero": "^0.20.2025051600",
 		"@solid-primitives/selection": "^0.1.2",
+		"@supabase/supabase-js": "^2.49.8",
 		"@tanstack/router-plugin": "^1.120.5",
 		"@tanstack/solid-form": "^1.11.2",
 		"@tanstack/solid-router": "^1.120.5",
