@@ -1,6 +1,6 @@
 import type { User } from "@maki-chat/zero"
 import { useAuth, useUser } from "clerk-solidjs"
-import { createEffect, createMemo, onCleanup } from "solid-js"
+import { createEffect, createMemo, createSignal, onCleanup } from "solid-js"
 import { supabase } from "~/lib/supabase"
 import { useChat } from "./chat-store"
 
@@ -13,6 +13,10 @@ interface PresenceUser {
 
 export const createPresence = () => {
 	const { userId } = useAuth()
+
+	let typingTimeout: NodeJS.Timeout | undefined
+
+	const [isTyping, setIsTyping] = createSignal(false)
 
 	const { state, setState } = useChat()
 
@@ -29,10 +33,34 @@ export const createPresence = () => {
 	const trackPresence = async (data: Partial<PresenceUser>) => {
 		await channel().track({
 			user_id: userId(),
-			channel_id: state.channelId,
 			online_at: new Date().toISOString(),
 			typing: false,
 			...data,
+		})
+	}
+
+	const trackTyping = async (typing: boolean) => {
+		if (typingTimeout) {
+			clearTimeout(typingTimeout)
+		}
+
+		if (typing) {
+			typingTimeout = setTimeout(() => {
+				setIsTyping(false)
+				trackPresence({ typing: false })
+				typingTimeout = undefined
+			}, 1500)
+		}
+
+		if (isTyping() === typing) return
+
+		setIsTyping(typing)
+		await trackPresence({ typing })
+
+		onCleanup(() => {
+			if (typingTimeout) {
+				clearTimeout(typingTimeout)
+			}
 		})
 	}
 
@@ -72,5 +100,6 @@ export const createPresence = () => {
 
 	return {
 		trackPresence,
+		trackTyping,
 	} as const
 }

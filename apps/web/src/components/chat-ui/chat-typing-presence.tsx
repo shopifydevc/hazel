@@ -1,17 +1,29 @@
+import { For } from "solid-js"
+import { userUsers } from "~/lib/hooks/data/use-users"
 import { useChat } from "../chat-state/chat-store"
 
 export const ChatTypingPresence = () => {
 	const { state } = useChat()
 
+	const { users } = userUsers(() => state.typingUserIds)
+
 	return (
-		<div>
-			{state.typingUserIds.length > 0 && (
-				<div>
-					{state.typingUserIds.map((userId) => (
-						<div>{userId}</div>
-					))}
-				</div>
-			)}
+		<div class="mb-2 h-4">
+			<For each={users()}>
+				{(user) => (
+					<div class="flex items-center gap-2 text-muted-foreground text-xs">
+						<div class="flex gap-1">
+							<div class="size-1.5 animate-bounce rounded-full bg-muted [animation-delay:-0.3s]" />
+							<div class="size-1.5 animate-bounce rounded-full bg-muted [animation-delay:-0.15s]" />
+							<div class="size-1.5 animate-bounce rounded-full bg-muted" />
+						</div>
+						<div class="flex items-center gap-1">
+							<span class="font-medium">{user.displayName}</span>
+							<span>is typing</span>
+						</div>
+					</div>
+				)}
+			</For>
 		</div>
 	)
 }

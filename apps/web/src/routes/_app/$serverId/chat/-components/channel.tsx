@@ -123,7 +123,7 @@ export function Channel(props: { channelId: Accessor<string>; serverId: Accessor
 					/>
 				)}
 			</VList>
-			<div class="mx-2 mb-6">
+			<div class="mx-2 flex flex-col gap-1.5">
 				<FloatingBar channelId={props.channelId()} />
 				<ChatTypingPresence />
 			</div>

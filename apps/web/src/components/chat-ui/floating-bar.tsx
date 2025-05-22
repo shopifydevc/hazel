@@ -245,7 +245,7 @@ export function FloatingBar(props: { channelId: string }) {
 	const auth = useAuth()
 
 	const { state, setState } = useChat()
-	const { trackPresence } = createPresence()
+	const { trackTyping } = createPresence()
 
 	const { attachments, setFileInputRef, handleFileChange, openFileSelector, removeAttachment, clearAttachments } =
 		useFileAttachment()
@@ -329,7 +329,7 @@ export function FloatingBar(props: { channelId: string }) {
 					}}
 					value={input}
 					onValueChange={(value) => {
-						trackPresence({ typing: true })
+						trackTyping(true)
 						setInput(value)
 					}}
 					onKeyDown={(e) => {
