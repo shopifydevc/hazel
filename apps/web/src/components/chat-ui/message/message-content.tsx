@@ -32,7 +32,7 @@ export function MessageContent(props: MessageContentProps) {
 
 	return (
 		<div class="min-w-0 flex-1">
-			<Show when={props.showAvatar}>
+			<Show when={props.showAvatar()}>
 				<div class="flex items-baseline gap-2">
 					<span class="font-semibold">{props.message().author?.displayName}</span>
 					<span class="text-muted-foreground text-xs">{messageTime()}</span>

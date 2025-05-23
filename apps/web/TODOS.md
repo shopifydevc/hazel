@@ -14,7 +14,6 @@
     - Maybe show metadata like filename, filesize and resolution somewhere
 
 -- Later TODOS
-- Delete Message
 - Edit Message
 
 ## Notifications
