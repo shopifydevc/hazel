@@ -177,7 +177,7 @@ export function ImageViewerModal(props: ImageViewerModalProps) {
 															: `${props.bucketUrl}/${image()}`
 													}
 													alt={`Slide ${index}`}
-													class="max-h-[90vh] max-w-[90vw] rounded-md"
+													class="max-h-[70vh] max-w-[90vw] rounded-md"
 													onClick={(e) => e.stopPropagation()}
 												/>
 											</Carousel.Item>
@@ -196,7 +196,7 @@ export function ImageViewerModal(props: ImageViewerModalProps) {
 							</Carousel>
 						</Show>
 
-						<div class="absolute top-3 right-5">
+						<div class="absolute top-3 right-5 rounded-md border bg-sidebar">
 							<For each={imageModalActions}>
 								{(action) => (
 									<Tooltip openDelay={0} closeDelay={0}>
