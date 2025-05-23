@@ -10,7 +10,7 @@ export const ChatTypingPresence = () => {
 	return (
 		<div class="mb-2 h-3">
 			<Show
-				when={users().length > 3}
+				when={users().length < 3}
 				fallback={
 					<div class="flex items-center gap-2 text-muted-foreground text-xs">
 						<div class="flex gap-1">
