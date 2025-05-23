@@ -96,13 +96,6 @@ export function ChatMessage(props: ChatMessageProps) {
 
 	const attachedCount = createMemo(() => props.message().attachedFiles?.length ?? 0)
 
-	const itemClass = createMemo(() =>
-		twMerge(
-			"relative overflow-hidden rounded-md",
-			attachedCount() === 1 ? "max-h-[300px]" : attachedCount() === 2 ? "aspect-video" : "aspect-square",
-		),
-	)
-
 	const scrollToMessage = (id: string) => {
 		const el = document.getElementById(`message-${id}`)
 		if (el) {
@@ -498,25 +491,19 @@ export function ChatMessage(props: ChatMessageProps) {
 					<div class="flex flex-col gap-2">
 						<Show when={attachedCount() > 0}>
 							<div
-								class={cn([
-									"mt-2",
-									"gap-1",
-									{
-										flex: attachedCount() === 1,
-										"grid max-w-lg grid-cols-2 gap-1": attachedCount() >= 2,
-									},
-								])}
+								class={cn("mt-2 grid max-w-lg grid-cols-2 gap-1", {
+									"grid-cols-3": attachedCount() === 3,
+								})}
 							>
 								<For each={props.message().attachedFiles?.slice(0, 4)}>
 									{(file, index) => (
 										<div
 											class={cn([
-												"relative cursor-pointer overflow-hidden rounded",
+												"relative aspect-square cursor-pointer overflow-hidden rounded",
 												"transition-opacity hover:opacity-90",
 												{
-													"max-w-[400px]": attachedCount() === 1,
-													"aspect-square": attachedCount() > 1,
-													"col-span-1 row-span-2": attachedCount() === 3 && index() === 0,
+													"col-span-2 aspect-auto max-w-[400px]": attachedCount() === 1,
+													"col-span-2 row-span-2": attachedCount() === 3 && index() === 0,
 												},
 											])}
 										>
@@ -524,10 +511,9 @@ export function ChatMessage(props: ChatMessageProps) {
 												src={`${import.meta.env.VITE_BUCKET_URL}/${file}`}
 												alt={file}
 												class={cn([
-													"object-cover",
+													"h-full w-full object-cover",
 													{
-														"h-auto max-h-[300px] w-auto max-w-full": attachedCount() === 1,
-														"h-full w-full": attachedCount() > 1,
+														"h-auto max-h-[300px] w-auto": attachedCount() === 1,
 													},
 												])}
 												onClick={() => {
