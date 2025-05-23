@@ -1,27 +1,12 @@
-import { IconHorizontalDots } from "~/components/icons/horizontal-dots"
+import { Markdown } from "@maki-chat/markdown"
+import { twJoin } from "tailwind-merge"
+import { IconCode } from "~/components/icons/code"
+import { IconImage } from "~/components/icons/image"
+import { IconQuote } from "~/components/icons/quote"
 import { Avatar } from "~/components/ui/avatar"
 import { Button } from "~/components/ui/button"
 import type { Message } from "~/lib/hooks/data/use-chat-messages"
 import { UserTag } from "../user-tag"
-
-function getPlainTextFromContent(content: string): string {
-	try {
-		const parsed = JSON.parse(content)
-		return extractTextFromJsonNodes(parsed.content || [])
-	} catch {
-		return content.replace(/<[^>]*>/g, "")
-	}
-}
-
-function extractTextFromJsonNodes(nodes: any[]): string {
-	if (!Array.isArray(nodes)) return ""
-	return nodes
-		.map(
-			(node) =>
-				(node.type === "text" && node.text) || (node.content && extractTextFromJsonNodes(node.content)) || "",
-		)
-		.join(" ")
-}
 
 interface MessageReplyProps {
 	message: Message
@@ -29,6 +14,7 @@ interface MessageReplyProps {
 }
 
 export function MessageReply(props: MessageReplyProps) {
+	console.log(props.message.replyToMessage?.content)
 	return (
 		<div>
 			<svg
@@ -64,7 +50,31 @@ export function MessageReply(props: MessageReplyProps) {
 				/>
 				<UserTag user={props.message.replyToMessage?.author!} />
 				<span class="text-ellipsis text-foreground text-xs">
-					{getPlainTextFromContent(props.message.replyToMessage?.content ?? "")}
+					<Markdown
+						children={props.message.replyToMessage?.content.split("\n")[0]}
+						components={{
+							a: (props) => (
+								<a
+									class={twJoin([
+										"outline-0 outline-offset-2 transition-[color,_opacity] focus-visible:outline-2 focus-visible:outline-ring forced-colors:outline-[Highlight]",
+										"disabled:cursor-default disabled:opacity-60 forced-colors:disabled:text-[GrayText]",
+										"text-primary hover:underline",
+									])}
+									{...props}
+									target="_blank"
+									rel="noopener noreferrer"
+								/>
+							),
+							p: (props) => <span class="">{props.children}</span>,
+							h1: (props) => <span class="font-bold">{props.children}</span>,
+							blockquote: (props) => <IconQuote class="inline-flex text-muted-foreground" />,
+							pre: (props) => <IconCode class="inline-flex text-muted-foreground" />,
+							img: (parentProps) => {
+								return <IconImage class="inline-flex text-muted-foreground" />
+							},
+						}}
+						renderingStrategy="memo"
+					/>
 				</span>
 			</Button>
 		</div>
