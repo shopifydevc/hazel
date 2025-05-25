@@ -24,9 +24,8 @@ const simpleTest = Effect.gen(function* () {
 	const authorId = UserId.make(`usr_${nanoid(10)}`)
 
 	yield* message
-		.create({
+		.create(channelId, {
 			content: "Hello, world!",
-			channelId: channelId,
 			threadChannelId: Option.none(),
 			authorId: authorId,
 			replyToMessageId: Option.none(),

@@ -36,7 +36,7 @@ export class Message extends Model.Class<Message>("@hazel/Message")({
 		json: MessageId,
 	}),
 	content: Schema.String.pipe(Schema.minLength(1), Schema.maxLength(4000)),
-	channelId: ChannelId,
+	channelId: Model.GeneratedByApp(ChannelId),
 	threadChannelId: Model.FieldOption(ChannelId),
 	authorId: UserId,
 	replyToMessageId: Model.FieldOption(MessageId),

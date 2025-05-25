@@ -8,7 +8,10 @@ export class MessageService extends Effect.Service<MessageService>()("@hazel/Mes
 	effect: Effect.gen(function* () {
 		const repo = yield* MessageRepo
 
-		const create = Effect.fn("Message.create")(function* (message: typeof Message.jsonCreate.Type) {
+		const create = Effect.fn("Message.create")(function* (
+			channelId: ChannelId,
+			message: typeof Message.jsonCreate.Type,
+		) {
 			yield* Effect.annotateCurrentSpan("message", message)
 
 			const messageId = types.TimeUuid.now().toString() as MessageId
@@ -16,6 +19,7 @@ export class MessageService extends Effect.Service<MessageService>()("@hazel/Mes
 			yield* repo.insertVoid(
 				Message.insert.make({
 					id: messageId,
+					channelId: channelId,
 					...message,
 				}),
 			)
@@ -29,11 +33,16 @@ export class MessageService extends Effect.Service<MessageService>()("@hazel/Mes
 		const deleteMessage = (id: MessageId) =>
 			pipe(repo.delete(id), Effect.withSpan("Message.delete", { attributes: { id } }))
 
-		const update = Effect.fn("Message.update")(function* (id: MessageId, message: typeof Message.jsonUpdate.Type) {
+		const update = Effect.fn("Message.update")(function* ({
+			id,
+			channelId,
+			message,
+		}: { id: MessageId; channelId: ChannelId; message: typeof Message.jsonUpdate.Type }) {
 			yield* Effect.annotateCurrentSpan("id", id)
 
 			yield* repo.updateVoid({
 				id,
+				channelId,
 				...message,
 				updatedAt: undefined,
 			})

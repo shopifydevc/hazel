@@ -11,6 +11,9 @@ import { IconCircleXSolid } from "../icons/solid/circle-x-solid"
 import { ChatInput } from "../markdown-input/chat-input"
 import { Button } from "../ui/button"
 
+import type { ChannelId, MessageId } from "@maki-chat/api-schema/schema/message.js"
+import { Option } from "effect"
+import { MessageQueries } from "~/lib/services/data-access/message-queries"
 import { useChat } from "../chat-state/chat-store"
 import { createPresence } from "../chat-state/create-presence"
 import { setElementAnchorAndFocus } from "../markdown-input/utils"
@@ -241,11 +244,13 @@ const createGlobalEditorFocus = (props: {
 	})
 }
 
-export function FloatingBar(props: { channelId: string }) {
+export function FloatingBar(props: { channelId: ChannelId }) {
 	const auth = useAuth()
 
 	const { state, setState } = useChat()
 	const { trackTyping } = createPresence()
+
+	const createMessageMutation = MessageQueries.createMessageMutation(() => state.channelId)
 
 	const { attachments, setFileInputRef, handleFileChange, openFileSelector, removeAttachment, clearAttachments } =
 		useFileAttachment()
@@ -275,6 +280,14 @@ export function FloatingBar(props: { channelId: string }) {
 
 		if (text.trim().length === 0 && successfulKeys().length === 0) return
 		const content = text.trim()
+
+		await createMessageMutation.mutateAsync({
+			content: content,
+			authorId: auth.userId()! as any,
+			replyToMessageId: Option.fromNullable(state.replyToMessageId as MessageId),
+			attachedFiles: successfulKeys(),
+			threadChannelId: Option.none(),
+		})
 
 		// TODO: If we are not a channel member and the channel is a thread, we need to add the current user as a channel member
 

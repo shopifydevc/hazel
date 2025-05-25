@@ -1,19 +1,25 @@
+import type { Message } from "@maki-chat/api-schema/schema/message.js"
 import { Markdown } from "@maki-chat/markdown"
+import { Option } from "effect"
+import type { Accessor } from "solid-js"
 import { twJoin } from "tailwind-merge"
 import { IconCode } from "~/components/icons/code"
 import { IconImage } from "~/components/icons/image"
 import { IconQuote } from "~/components/icons/quote"
 import { Avatar } from "~/components/ui/avatar"
 import { Button } from "~/components/ui/button"
-import type { Message } from "~/lib/hooks/data/use-chat-messages"
 import { UserTag } from "../user-tag"
 
 interface MessageReplyProps {
-	message: Message
+	message: Accessor<Message>
 	onReplyClick: (id: string) => void
 }
 
 export function MessageReply(props: MessageReplyProps) {
+	// TODO: Fetch replytomessage here and author
+
+	const replyToMessage: any | null = null
+	const replyToMessageAuthor: any | null = null
 	return (
 		<div>
 			<svg
@@ -37,20 +43,21 @@ export function MessageReply(props: MessageReplyProps) {
 				class="flex w-fit items-center gap-1 pl-12 text-left hover:bg-transparent"
 				intent="ghost"
 				onClick={() => {
-					if (props.message.replyToMessageId) {
-						props.onReplyClick(props.message.replyToMessageId)
+					const replyToMessageId = props.message().replyToMessageId
+					if (Option.isSome(replyToMessageId)) {
+						props.onReplyClick(replyToMessageId.value)
 					}
 				}}
 			>
 				<Avatar
 					class="size-4"
-					name={props.message.replyToMessage?.author?.displayName!}
-					src={props.message.replyToMessage?.author?.avatarUrl}
+					name={replyToMessageAuthor?.displayName!}
+					src={replyToMessageAuthor?.avatarUrl}
 				/>
-				<UserTag user={props.message.replyToMessage?.author!} />
+				<UserTag user={replyToMessageAuthor} />
 				<span class="text-ellipsis text-foreground text-xs">
 					<Markdown
-						children={props.message.replyToMessage?.content.split("\n")[0]}
+						children={replyToMessage?.content.split("\n")[0]}
 						components={{
 							a: (props) => (
 								<a

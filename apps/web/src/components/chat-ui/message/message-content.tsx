@@ -2,12 +2,13 @@ import { type Accessor, For, Show, createMemo, splitProps } from "solid-js"
 import { reconcile } from "solid-js/store"
 import { twJoin } from "tailwind-merge"
 
-import type { Message } from "~/lib/hooks/data/use-chat-messages"
 import { cn } from "~/lib/utils"
 import { ChatImage } from "./chat-image"
 import { ThreadButton } from "./thread-button"
 
+import type { Message } from "@maki-chat/api-schema/schema/message.js"
 import { Markdown } from "@maki-chat/markdown"
+import { DateTime, Option } from "effect"
 import { useChat } from "~/components/chat-state/chat-store"
 import { ReactionTags } from "./reaction-tags"
 
@@ -22,8 +23,14 @@ export function MessageContent(props: MessageContentProps) {
 
 	const attachedCount = createMemo(() => props.message().attachedFiles?.length ?? 0)
 
+	// TODO: Fetch Author here
+	const author: any | null = null
+
+	// TODO: Fetch connected Thread Channel here
+	const connectedThreadChannel: any | null = null
+
 	const messageTime = createMemo(() => {
-		return new Date(props.message().createdAt!).toLocaleTimeString("en-US", {
+		return new Date(DateTime.toDate(props.message().createdAt)).toLocaleTimeString("en-US", {
 			hour: "2-digit",
 			minute: "2-digit",
 			hour12: false,
@@ -34,7 +41,7 @@ export function MessageContent(props: MessageContentProps) {
 		<div class="min-w-0 flex-1">
 			<Show when={props.showAvatar()}>
 				<div class="flex items-baseline gap-2">
-					<span class="font-semibold">{props.message().author?.displayName}</span>
+					<span class="font-semibold">{author?.displayName}</span>
 					<span class="text-muted-foreground text-xs">{messageTime()}</span>
 				</div>
 			</Show>
@@ -143,8 +150,8 @@ export function MessageContent(props: MessageContentProps) {
 				<ReactionTags message={props.message} />
 			</div>
 
-			<Show when={props.message().threadChannel?.messages.length}>
-				<ThreadButton message={props.message} />
+			<Show when={connectedThreadChannel}>
+				<ThreadButton threadChannelId={Option.getOrNull(props.message().threadChannelId)!} />
 			</Show>
 		</div>
 	)

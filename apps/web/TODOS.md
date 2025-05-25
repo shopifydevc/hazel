@@ -54,6 +54,8 @@
  # ScyllaDB Rework Todos
 
  - Integrate into the chatUI
- - Add Authentication to endpoints
 
+ - Add Optimistic Updates to TSQ 
  - Add Websocket and connect
+
+ - Add Authentication to endpoints
