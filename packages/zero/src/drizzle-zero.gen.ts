@@ -197,15 +197,6 @@ export const schema = {
     pinnedMessages: {
       name: "pinnedMessages",
       columns: {
-        id: {
-          type: "string",
-          optional: false,
-          customType: null as unknown as ZeroCustomType<
-            typeof zeroSchema,
-            "pinnedMessages",
-            "id"
-          >,
-        },
         messageId: {
           type: "string",
           optional: false,
@@ -227,7 +218,7 @@ export const schema = {
           serverName: "channel_id",
         },
       },
-      primaryKey: ["id"],
+      primaryKey: ["messageId"],
       serverName: "pinned_messages",
     },
     reactions: {

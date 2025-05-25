@@ -98,19 +98,16 @@ export function createMessageActions(props: CreateMessageActionsProps) {
 			icon: <IconPin class="size-4" />,
 			onAction: async () => {
 				if (props.isPinned()) {
-					// TODO: Change it so that messageId is the primaryKey of pinnedMessages so we can just
-					// delete it
-					// await z.mutate.pinnedMessages.delete({
-					// 	id: props.message().pinnedInChannels?.find((p) => p.channelId === params.id)!.id,
-					// })
-				} else {
-					const id = newId("pinnedMessages")
-					await z.mutate.pinnedMessages.insert({
-						id,
+					await z.mutate.pinnedMessages.delete({
 						messageId: props.message().id,
-						channelId: props.message().channelId!,
 					})
+					return
 				}
+
+				await z.mutate.pinnedMessages.insert({
+					messageId: props.message().id,
+					channelId: props.message().channelId!,
+				})
 			},
 			hotkey: "p",
 			showMenu: true,

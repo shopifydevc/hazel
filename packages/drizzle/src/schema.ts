@@ -159,10 +159,7 @@ export const messages = pgTable(
 export const pinnedMessages = pgTable(
 	"pinned_messages",
 	{
-		id: text("id").primaryKey(),
-		messageId: text("message_id")
-			.notNull()
-			.references(() => messages.id, { onDelete: "cascade" }),
+		messageId: text("message_id").notNull().primaryKey(),
 		channelId: text("channel_id")
 			.notNull()
 			.references(() => serverChannels.id, { onDelete: "cascade" }),

@@ -61,7 +61,6 @@ export default drizzleZeroConfig(schema, {
 			updatedAt: true,
 		},
 		pinnedMessages: {
-			id: true,
 			messageId: true,
 			channelId: true,
 		},
