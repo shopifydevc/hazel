@@ -5,6 +5,8 @@ import { Badge } from "~/components/ui/badge"
 import { useZero } from "~/lib/zero/zero-context"
 
 import type { Message } from "@maki-chat/api-schema/schema/message.js"
+import { useChat } from "~/components/chat-state/chat-store"
+import { useIsPinned } from "~/lib/hooks/data/use-is-pinned"
 import { MessageActions } from "./message-actions"
 import { MessageContent } from "./message-content"
 import { MessageHeader } from "./message-header"
@@ -27,8 +29,12 @@ export function ChatMessage(props: ChatMessageProps) {
 	const isRepliedTo = createMemo(() => !!props.message().replyToMessageId)
 	const showAvatar = createMemo(() => props.isGroupStart() || isRepliedTo())
 
-	// TODO: Add logic to check if the message is pinned in the current channel
-	const isPinned = createMemo(() => false)
+	const { state } = useChat()
+
+	const channelId = createMemo(() => state.channelId)
+	const messageId = createMemo(() => props.message().id)
+
+	const { isPinned } = useIsPinned(channelId, messageId)
 
 	const scrollToMessage = (id: string) => {
 		const el = document.getElementById(`message-${id}`)
@@ -74,14 +80,14 @@ export function ChatMessage(props: ChatMessageProps) {
 			</Show>
 
 			<div class="flex gap-4">
-				{/* <MessageActions
+				<MessageActions
 					message={props.message}
 					serverId={props.serverId}
 					isPinned={isPinned}
 					isThread={props.isThread}
 				/>
 
-				<MessageHeader message={props.message} showAvatar={showAvatar} serverId={props.serverId} /> */}
+				<MessageHeader message={props.message} showAvatar={showAvatar} serverId={props.serverId} />
 
 				<MessageContent message={props.message} serverId={props.serverId} showAvatar={showAvatar} />
 			</div>

@@ -1,6 +1,7 @@
 import type { Message } from "@maki-chat/api-schema/schema/message.js"
 import { useAuth } from "clerk-solidjs"
 import { type Accessor, For, createMemo } from "solid-js"
+import { useMessageReactions } from "~/lib/hooks/data/use-message-reactions"
 import { newId } from "~/lib/id-helpers"
 import { useZero } from "~/lib/zero/zero-context"
 
@@ -19,8 +20,7 @@ export function ReactionTags(props: ReactionTagsProps) {
 
 	const { userId } = useAuth()
 
-	// TODO: Fetch reactions here
-	const reactions: Accessor<MessageReaction[]> = () => []
+	const { reactions } = useMessageReactions(() => props.message().id)
 
 	const reactionGroups = createMemo(() => {
 		const groups: Record<string, { emoji: string; reactions: MessageReaction[] }> = {}

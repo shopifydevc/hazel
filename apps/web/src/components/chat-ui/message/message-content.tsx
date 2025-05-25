@@ -10,6 +10,7 @@ import type { Message } from "@maki-chat/api-schema/schema/message.js"
 import { Markdown } from "@maki-chat/markdown"
 import { DateTime, Option } from "effect"
 import { useChat } from "~/components/chat-state/chat-store"
+import { useUser } from "~/lib/hooks/data/use-user"
 import { ReactionTags } from "./reaction-tags"
 
 interface MessageContentProps {
@@ -23,11 +24,7 @@ export function MessageContent(props: MessageContentProps) {
 
 	const attachedCount = createMemo(() => props.message().attachedFiles?.length ?? 0)
 
-	// TODO: Fetch Author here
-	const author: any | null = null
-
-	// TODO: Fetch connected Thread Channel here
-	const connectedThreadChannel: any | null = null
+	const { user: author } = useUser(() => props.message().authorId)
 
 	const messageTime = createMemo(() => {
 		return new Date(DateTime.toDate(props.message().createdAt)).toLocaleTimeString("en-US", {
@@ -41,7 +38,7 @@ export function MessageContent(props: MessageContentProps) {
 		<div class="min-w-0 flex-1">
 			<Show when={props.showAvatar()}>
 				<div class="flex items-baseline gap-2">
-					<span class="font-semibold">{author?.displayName}</span>
+					<span class="font-semibold">{author()?.displayName}</span>
 					<span class="text-muted-foreground text-xs">{messageTime()}</span>
 				</div>
 			</Show>
@@ -150,7 +147,7 @@ export function MessageContent(props: MessageContentProps) {
 				<ReactionTags message={props.message} />
 			</div>
 
-			<Show when={connectedThreadChannel}>
+			<Show when={Option.isSome(props.message().threadChannelId)}>
 				<ThreadButton threadChannelId={Option.getOrNull(props.message().threadChannelId)!} />
 			</Show>
 		</div>
