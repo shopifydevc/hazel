@@ -22,6 +22,7 @@ import { Menu } from "~/components/ui/menu"
 import { IconSignOut } from "~/components/ui/signout"
 
 import { api } from "convex-hazel/_generated/api"
+import type { Id } from "convex-hazel/_generated/dataModel"
 import { createQuery } from "~/lib/convex"
 import { cn } from "~/lib/utils"
 import { CreateChannelForm } from "./create-channel-form"
@@ -38,8 +39,9 @@ export const AppSidebar = (props: SidebarProps) => {
 	const params = useParams({ from: "/_protected/_app/$serverId" })
 	const serverId = createMemo(() => params().serverId)
 
-	const channels = createQuery(api.serverChannels.getServerChannels, {})
-	const { channels: serverChannels } = useServerChannels(serverId)
+	const channels = createQuery(api.channels.getChannels, {
+		serverId: serverId() as Id<"servers">,
+	})
 
 	const { userId } = useAuth()
 
@@ -50,13 +52,13 @@ export const AppSidebar = (props: SidebarProps) => {
 		if (!unwrappedChannels) return []
 		return unwrappedChannels
 			.map((channel) => {
-				const friends = channel.users.filter((user) => user.id !== userId())
+				const friends: string[] = []
 				const isSingleDm = friends.length === 1
 
 				if (friends.length === 0) return null
 
-				const isMuted = channel.members.some((member) => member.isMuted && member.userId === userId())
-				const isHidden = channel.members.some((member) => member.isHidden && member.userId === userId())
+				const isMuted = true
+				const isHidden = true
 
 				if (isHidden) return null
 
@@ -69,6 +71,14 @@ export const AppSidebar = (props: SidebarProps) => {
 			})
 			.filter((channel) => channel !== null)
 	})
+
+	const serverChannels = createMemo(() =>
+		computedChannels().filter((channel) => channel.type === "private" || channel.type === "public"),
+	)
+
+	const dmChannels = createMemo(() =>
+		computedChannels().filter((channel) => channel.type === "direct" || channel.type === "single"),
+	)
 
 	return (
 		<Sidebar {...props}>
@@ -126,7 +136,7 @@ export const AppSidebar = (props: SidebarProps) => {
 					</Sidebar.GroupAction>
 					<Sidebar.Menu>
 						<Index each={computedChannels()}>
-							{(channel) => <DmChannelLink channel={channel} serverId={serverId} />}
+							{(channel) => <DmChannelLink channel={dmChannels} serverId={serverId} />}
 						</Index>
 					</Sidebar.Menu>
 				</Sidebar.Group>

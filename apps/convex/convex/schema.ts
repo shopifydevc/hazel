@@ -29,7 +29,7 @@ export default defineSchema({
 
 		updatedAt: v.number(),
 		deletedAt: v.optional(v.number()),
-	}),
+	}).index("by_serverId", ["serverId"]),
 	users: defineTable({
 		displayName: v.string(),
 		tag: v.string(),
