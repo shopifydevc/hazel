@@ -27,14 +27,16 @@ export const createUser = mutation({
 			throw new Error("Called storeUser without authentication present")
 		}
 
+		const displayName = args.displayName || identity.name || "Unknown"
+
 		const user = await ctx.db
 			.query("users")
 			.withIndex("bg_tokenIdentifier", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
 			.unique()
 
 		if (user !== null) {
-			if (user.displayName !== identity.name) {
-				await ctx.db.patch(user._id, { displayName: identity.name })
+			if (user.displayName !== displayName) {
+				await ctx.db.patch(user._id, { displayName })
 			}
 			return user._id
 		}
@@ -42,7 +44,7 @@ export const createUser = mutation({
 		return await ctx.db.insert("users", {
 			externalId: identity.subject,
 			avatarUrl: identity.pictureUrl || `https://avatar.vercel.sh/${identity.subject}.svg`,
-			displayName: args.displayName || identity.name || "Unknown",
+			displayName,
 			tag: args.tag?.toLowerCase() || identity.nickname?.toLowerCase() || identity.subject.toLowerCase(),
 			lastSeen: Date.now(),
 			tokenIdentifier: identity.tokenIdentifier,
