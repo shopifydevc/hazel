@@ -1,17 +1,24 @@
 import { paginationOptsValidator } from "convex/server"
 import { v } from "convex/values"
 import { mutation, query } from "./_generated/server"
+import { withUser } from "./middleware/authenticated"
 
 export const getMessages = query({
 	args: {
 		channelId: v.id("serverChannels"),
 		paginationOpts: paginationOptsValidator,
 	},
-	handler: async (ctx, args) => {
-		const identity = await ctx.auth.getUserIdentity()
-		console.log("identity", identity)
-		if (identity === null) {
-			throw new Error("Not authenticated")
+	handler: withUser(async (ctx, args) => {
+		const channel = await ctx.db.get(args.channelId)
+		if (!channel) throw new Error("Channel not found")
+
+		const channelMembers = await ctx.db
+			.query("channelMembers")
+			.filter((q) => q.eq(q.field("channelId"), args.channelId))
+			.collect()
+
+		if (!channelMembers.some((member) => member.userId === ctx.user._id)) {
+			throw new Error("You are not a member of this channel")
 		}
 
 		// TODO: Set limits on pagination numbers
@@ -22,7 +29,7 @@ export const getMessages = query({
 			.paginate(args.paginationOpts)
 
 		return messages
-	},
+	}),
 })
 
 export const createMessage = mutation({
@@ -33,7 +40,6 @@ export const createMessage = mutation({
 		authorId: v.id("users"),
 		replyToMessageId: v.optional(v.id("messages")),
 		attachedFiles: v.array(v.string()),
-		updatedAt: v.number(),
 	},
 	handler: async (ctx, args) => {
 		const messageId = await ctx.db.insert("messages", {
@@ -43,7 +49,7 @@ export const createMessage = mutation({
 			authorId: args.authorId,
 			replyToMessageId: args.replyToMessageId,
 			attachedFiles: args.attachedFiles,
-			updatedAt: args.updatedAt,
+			updatedAt: Date.now(),
 		})
 
 		return messageId

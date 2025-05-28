@@ -22,12 +22,22 @@ export const createServerChannel = mutation({
 		parentChannelId: v.optional(v.id("serverChannels")),
 	},
 	handler: async (ctx, args) => {
-		return await ctx.db.insert("serverChannels", {
+		const channelId = await ctx.db.insert("serverChannels", {
 			name: args.name,
 			serverId: args.serverId,
 			type: args.type,
 			parentChannelId: args.parentChannelId,
 			updatedAt: Date.now(),
 		})
+
+		await ctx.db.insert("channelMembers", {
+			channelId,
+			userId: args.ownerId,
+			joinedAt: Date.now(),
+			isHidden: false,
+			isMuted: false,
+		})
+
+		return channelId
 	},
 })
