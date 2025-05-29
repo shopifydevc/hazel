@@ -1,12 +1,11 @@
 import { type Accessor, Show, createEffect, createMemo } from "solid-js"
 
 import { Badge } from "~/components/ui/badge"
-import { useZero } from "~/lib/zero/zero-context"
 
 import type { Message } from "@maki-chat/api-schema/schema/message.js"
+import type { Id } from "convex-hazel/_generated/dataModel"
 import { Option } from "effect"
 import { useChat } from "~/components/chat-state/chat-store"
-import { useIsPinned } from "~/lib/hooks/data/use-is-pinned"
 import { MessageActions } from "./message-actions"
 import { MessageContent } from "./message-content"
 import { MessageHeader } from "./message-header"
@@ -14,7 +13,7 @@ import { MessageReply } from "./message-reply"
 import { chatMessageStyles } from "./message-styles"
 
 interface ChatMessageProps {
-	serverId: Accessor<string>
+	serverId: Accessor<Id<"servers">>
 	message: Accessor<Message>
 	isGroupStart: Accessor<boolean>
 	isGroupEnd: Accessor<boolean>
@@ -23,8 +22,6 @@ interface ChatMessageProps {
 }
 
 export function ChatMessage(props: ChatMessageProps) {
-	const z = useZero()
-
 	const isRepliedTo = createMemo(() => Option.isSome(props.message().replyToMessageId))
 	const showAvatar = createMemo(() => props.isGroupStart() || isRepliedTo())
 
@@ -33,7 +30,8 @@ export function ChatMessage(props: ChatMessageProps) {
 	const channelId = createMemo(() => state.channelId)
 	const messageId = createMemo(() => props.message().id)
 
-	const { isPinned } = useIsPinned(channelId, messageId)
+	// TODO: Implement
+	const isPinned = () => false
 
 	const scrollToMessage = (id: string) => {
 		const el = document.getElementById(`message-${id}`)
@@ -46,12 +44,13 @@ export function ChatMessage(props: ChatMessageProps) {
 
 	createEffect(async () => {
 		if (props.isFirstNewMessage()) {
-			await z.mutate.channelMembers.update({
-				channelId: props.message().channelId!,
-				userId: z.userID,
-				lastSeenMessageId: null,
-				notificationCount: 0,
-			})
+			console.log("TODO: Implement setting lastSeenMessageId to null")
+			// await z.mutate.channelMembers.update({
+			// 	channelId: props.message().channelId!,
+			// 	userId: z.userID,
+			// 	lastSeenMessageId: null,
+			// 	notificationCount: 0,
+			// })
 		}
 	})
 

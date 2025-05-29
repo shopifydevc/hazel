@@ -58,6 +58,48 @@ export const getChannels = userQuery({
 	},
 })
 
+export const getChannel = userQuery({
+	args: {
+		channelId: v.id("channels"),
+		serverId: v.id("servers"),
+	},
+	handler: async (ctx, args) => {
+		const channel = await ctx.db.get(args.channelId)
+
+		const channelMembers = await ctx.db
+			.query("channelMembers")
+			.withIndex("by_channelIdAndUserId", (q) => q.eq("channelId", args.channelId))
+			.collect()
+
+		const currentUser = channelMembers.find((member) => member.userId === ctx.user.id)
+
+		if (!currentUser) {
+			throw new Error("You are not a member of this channel")
+		}
+
+		const members = await asyncMap(channelMembers, async (member) => {
+			const user = await ctx.db.get(member.userId)
+
+			if (!user) return null
+
+			return {
+				...member,
+				user,
+			}
+		})
+
+		const channelWithMembers = {
+			...channel,
+			members: members.filter((member) => member !== null),
+			isMuted: currentUser?.isMuted || false,
+			isHidden: currentUser?.isHidden || false,
+			currentUser,
+		}
+
+		return channelWithMembers
+	},
+})
+
 export const getPublicChannels = userQuery({
 	args: {
 		serverId: v.id("servers"),
