@@ -7,12 +7,11 @@ import { ChatTypingPresence } from "~/components/chat-ui/chat-typing-presence"
 import { FloatingBar } from "~/components/chat-ui/floating-bar"
 import { ChatMessage } from "~/components/chat-ui/message/chat-message"
 import { createPaginatedQuery, createQuery } from "~/lib/convex"
+import type { Message } from "~/lib/types"
 
 const PAGE_SIZE = 30
 
 export function Channel(props: { channelId: Accessor<Id<"channels">>; serverId: Accessor<Id<"servers">> }) {
-	const navigate = useNavigate()
-
 	const channel = createQuery(api.channels.getChannel, {
 		channelId: props.channelId(),
 		serverId: props.serverId(),
@@ -46,7 +45,7 @@ export function Channel(props: { channelId: Accessor<Id<"channels">>; serverId: 
 		const allMessages = paginatedMessages.results().reverse()
 
 		const result: Array<{
-			message: Doc<"messages">
+			message: Message
 			isGroupStart: boolean
 			isGroupEnd: boolean
 		}> = []
@@ -130,7 +129,7 @@ export function Channel(props: { channelId: Accessor<Id<"channels">>; serverId: 
 						isGroupEnd={() => message.isGroupEnd}
 						isFirstNewMessage={() => message.message._id === channel()?.currentUser?.lastSeenMessageId}
 						serverId={props.serverId}
-						isThread={false}
+						isThread={() => false}
 					/>
 				)}
 			</VList>

@@ -9,10 +9,11 @@ import { ThreadButton } from "./thread-button"
 import { Markdown } from "@maki-chat/markdown"
 import type { Doc } from "convex-hazel/_generated/dataModel"
 import { useChat } from "~/components/chat-state/chat-store"
+import type { Message } from "~/lib/types"
 import { ReactionTags } from "./reaction-tags"
 
 interface MessageContentProps {
-	message: Accessor<Doc<"messages">>
+	message: Accessor<Message>
 	serverId: Accessor<string>
 	showAvatar: Accessor<boolean>
 }
@@ -21,8 +22,6 @@ export function MessageContent(props: MessageContentProps) {
 	const { setState } = useChat()
 
 	const attachedCount = createMemo(() => props.message().attachedFiles?.length ?? 0)
-
-	const { user: author } = useUser(() => props.message().authorId)
 
 	const messageTime = createMemo(() => {
 		return new Date(props.message()._creationTime).toLocaleTimeString("en-US", {
@@ -36,7 +35,7 @@ export function MessageContent(props: MessageContentProps) {
 		<div class="min-w-0 flex-1">
 			<Show when={props.showAvatar()}>
 				<div class="flex items-baseline gap-2">
-					<span class="font-semibold">{author()?.displayName}</span>
+					<span class="font-semibold">{props.message().author?.displayName}</span>
 					<span class="text-muted-foreground text-xs">{messageTime()}</span>
 				</div>
 			</Show>

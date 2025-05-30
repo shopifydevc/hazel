@@ -1,3 +1,4 @@
+import { asyncMap } from "convex-helpers"
 import { paginationOptsValidator } from "convex/server"
 import { v } from "convex/values"
 import { userMutation, userQuery } from "./middleware/withUser"
@@ -37,14 +38,25 @@ export const getMessages = userQuery({
 
 		await ctx.user.validateCanViewChannel({ ctx, channelId: args.channelId })
 
-		// TODO: Set limits on pagination numbers
 		const messages = await ctx.db
 			.query("messages")
 			.filter((q) => q.eq(q.field("channelId"), args.channelId))
 			.order("desc")
 			.paginate(args.paginationOpts)
 
-		return messages
+		const messagesWithAuthor = await asyncMap(messages.page, async (message) => {
+			const messageAuthor = await ctx.db.get(message.authorId)
+
+			// TODO: This should not happen when user is deleted we should give all messages to a default user
+			if (!messageAuthor) throw new Error("Message author not found")
+
+			return {
+				...message,
+				author: messageAuthor,
+			}
+		})
+
+		return { ...messages, page: messagesWithAuthor }
 	},
 })
 

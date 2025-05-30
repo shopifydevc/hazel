@@ -2,9 +2,9 @@ import { type Accessor, Show, createEffect, createMemo } from "solid-js"
 
 import { Badge } from "~/components/ui/badge"
 
-import type { Doc, Id } from "convex-hazel/_generated/dataModel"
-import { Option } from "effect"
+import type { Id } from "convex-hazel/_generated/dataModel"
 import { useChat } from "~/components/chat-state/chat-store"
+import type { Message } from "~/lib/types"
 import { MessageActions } from "./message-actions"
 import { MessageContent } from "./message-content"
 import { MessageHeader } from "./message-header"
@@ -13,11 +13,11 @@ import { chatMessageStyles } from "./message-styles"
 
 interface ChatMessageProps {
 	serverId: Accessor<Id<"servers">>
-	message: Accessor<Doc<"messages">>
+	message: Accessor<Message>
 	isGroupStart: Accessor<boolean>
 	isGroupEnd: Accessor<boolean>
 	isFirstNewMessage: Accessor<boolean>
-	isThread: boolean
+	isThread: Accessor<boolean>
 }
 
 export function ChatMessage(props: ChatMessageProps) {
