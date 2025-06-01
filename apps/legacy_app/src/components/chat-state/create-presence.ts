@@ -1,5 +1,7 @@
-import { useAuth } from "clerk-solidjs"
+import type { User } from "@maki-chat/zero"
+import { useAuth, useUser } from "clerk-solidjs"
 import { createEffect, createMemo, createSignal, onCleanup } from "solid-js"
+import { supabase } from "~/lib/supabase"
 import { useChat } from "./chat-store"
 
 interface PresenceUser {
@@ -8,8 +10,6 @@ interface PresenceUser {
 	online_at: string
 	typing: boolean
 }
-
-// TODO: Reimplement
 
 export const createPresence = () => {
 	const { userId } = useAuth()
@@ -24,24 +24,24 @@ export const createPresence = () => {
 	const channel = createMemo(() => {
 		if (!userId()) throw new Error("UserId is not defined")
 
-		// return supabase.channel(`channel-${state.channelId}`, {
-		// 	config: {
-		// 		presence: {
-		// 			key: userId()!,
-		// 		},
-		// 	},
-		// })
+		return supabase.channel(`channel-${state.channelId}`, {
+			config: {
+				presence: {
+					key: userId()!,
+				},
+			},
+		})
 	})
 
 	const trackPresence = async (data: Partial<PresenceUser>) => {
 		if (!isSubscribed()) return
 
-		// await channel().track({
-		// 	user_id: userId(),
-		// 	online_at: new Date().toISOString(),
-		// 	typing: false,
-		// 	...data,
-		// })
+		await channel().track({
+			user_id: userId(),
+			online_at: new Date().toISOString(),
+			typing: false,
+			...data,
+		})
 	}
 
 	const trackTyping = async (typing: boolean) => {
@@ -64,37 +64,39 @@ export const createPresence = () => {
 	}
 
 	createEffect(() => {
-		// channel().subscribe(async (status) => {
-		// 	if (status === "SUBSCRIBED") {
-		// 		setIsSubscribed(true)
-		// 		await trackPresence({})
-		// 	}
-		// })
+		channel().subscribe(async (status) => {
+			if (status === "SUBSCRIBED") {
+				setIsSubscribed(true)
+				await trackPresence({})
+			}
+		})
 
 		const updateState = () => {
-			// const state = channel().presenceState<PresenceUser>()
-			// const presenceUsers = Object.keys(state)
-			// 	.map((key) => state[key][0])
-			// 	.filter((user) => user.user_id !== userId())
-			// setState(
-			// 	"typingUserIds",
-			// 	presenceUsers.filter((user) => user.typing).map((user) => user.user_id),
-			// )
-			// setState(
-			// 	"onlineUserIds",
-			// 	presenceUsers.map((user) => user.user_id),
-			// )
+			const state = channel().presenceState<PresenceUser>()
+
+			const presenceUsers = Object.keys(state)
+				.map((key) => state[key][0])
+				.filter((user) => user.user_id !== userId())
+
+			setState(
+				"typingUserIds",
+				presenceUsers.filter((user) => user.typing).map((user) => user.user_id),
+			)
+			setState(
+				"onlineUserIds",
+				presenceUsers.map((user) => user.user_id),
+			)
 		}
 
-		// channel().on("presence", { event: "sync" }, updateState)
-		// channel().on("presence", { event: "join" }, updateState)
-		// channel().on("presence", { event: "leave" }, updateState)
+		channel().on("presence", { event: "sync" }, updateState)
+		channel().on("presence", { event: "join" }, updateState)
+		channel().on("presence", { event: "leave" }, updateState)
 	})
 
 	onCleanup(() => {
 		clearTimeout(typingTimeout)
-		// channel().untrack()
-		// supabase.removeChannel(channel())
+		channel().untrack()
+		supabase.removeChannel(channel())
 	})
 
 	return {

@@ -1,25 +1,19 @@
 import { useAuth } from "clerk-solidjs"
-import {
-	type Accessor,
-	For,
-	type JSX,
-	Show,
-	createEffect,
-	createMemo,
-	createSignal,
-	onCleanup,
-} from "solid-js"
+import { type Accessor, For, type JSX, Show, createEffect, createMemo, createSignal, onCleanup } from "solid-js"
 import { twMerge } from "tailwind-merge"
 import { tv } from "tailwind-variants"
+import { newId } from "~/lib/id-helpers"
+import { useZero } from "~/lib/zero/zero-context"
 import { IconLoader } from "../icons/loader"
 import { IconCirclePlusSolid } from "../icons/solid/circle-plus-solid"
 import { IconCircleXSolid } from "../icons/solid/circle-x-solid"
 import { ChatInput } from "../markdown-input/chat-input"
 import { Button } from "../ui/button"
 
-import { api } from "convex-hazel/_generated/api"
-import type { Id } from "convex-hazel/_generated/dataModel"
-import { createMutation, createQuery, insertAtTop } from "~/lib/convex"
+import type { ChannelId, MessageId } from "@maki-chat/api-schema/schema/message.js"
+import { Option } from "effect"
+import { useUser } from "~/lib/hooks/data/use-user"
+import { MessageQueries } from "~/lib/services/data-access/message-queries"
 import { useChat } from "../chat-state/chat-store"
 import { createPresence } from "../chat-state/create-presence"
 import { setElementAnchorAndFocus } from "../markdown-input/utils"
@@ -48,7 +42,7 @@ const useFileAttachment = () => {
 		}
 
 		const newAttachments: Attachment[] = imageFiles.map((file) => ({
-			id: "XD",
+			id: newId("attachment"),
 			file: file,
 			status: "pending",
 		}))
@@ -73,7 +67,9 @@ const useFileAttachment = () => {
 
 		const uploadPromises = pendingAttachments.map(async (attachment) => {
 			try {
-				const uploadUrl = `${import.meta.env.VITE_CONVEX_URL}/store`
+				const uploadUrl = `${import.meta.env.VITE_BACKEND_URL}/upload?filename=${encodeURIComponent(
+					attachment.file.name,
+				)}`
 				const response = await fetch(uploadUrl, {
 					method: "PUT",
 					body: attachment.file,
@@ -192,10 +188,9 @@ const useFileAttachment = () => {
 
 const createGlobalEditorFocus = (props: {
 	editorRef: () => HTMLDivElement | undefined
+	setInput: (value: string) => void
+	input: Accessor<string>
 }) => {
-	const { setState, state } = useChat()
-	const input = createMemo(() => state.inputText)
-
 	createEffect(() => {
 		const ref = props.editorRef()
 		if (!ref) {
@@ -226,15 +221,14 @@ const createGlobalEditorFocus = (props: {
 			if (isPrintableKey) {
 				event.preventDefault()
 
-				const content = input() + event.key
-
-				setState("inputText", content)
+				const content = props.input() + event.key
+				props.setInput(content)
 
 				ref.focus()
 
 				try {
 					setElementAnchorAndFocus(props.editorRef()!, {
-						anchor: input().length,
+						anchor: props.input().length,
 					})
 				} catch (error) {
 					console.error(error)
@@ -250,51 +244,21 @@ const createGlobalEditorFocus = (props: {
 	})
 }
 
-export function FloatingBar() {
+export function FloatingBar(props: { channelId: ChannelId }) {
 	const auth = useAuth()
 
 	const { state, setState } = useChat()
 	const { trackTyping } = createPresence()
 
-	const currentUser = createQuery(api.me.getUser, {
-		serverId: state.serverId,
-	})
+	const createMessageMutation = MessageQueries.createMessageMutation(() => state.channelId)
 
-	const createMessage = createMutation(api.messages.createMessage).withOptimisticUpdate(
-		(localStore, args) => {
-			const author = currentUser()
-			// If Current User is not loaded, dont optimistically update
-			if (!author) return
+	const { attachments, setFileInputRef, handleFileChange, openFileSelector, removeAttachment, clearAttachments } =
+		useFileAttachment()
 
-			return insertAtTop({
-				paginatedQuery: api.messages.getMessages,
-				argsToMatch: { channelId: args.channelId, serverId: args.serverId },
-				localQueryStore: localStore,
-				item: {
-					_id: crypto.randomUUID() as Id<"messages">,
-					...args,
-					author: author,
-					_creationTime: Date.now(),
-					updatedAt: Date.now(),
-					authorId: author._id,
-					reactions: [],
-				},
-			})
-		},
-	)
-
-	const {
-		attachments,
-		setFileInputRef,
-		handleFileChange,
-		openFileSelector,
-		removeAttachment,
-		clearAttachments,
-	} = useFileAttachment()
-
+	const [input, setInput] = createSignal("")
 	const [editorRef, setEditorRef] = createSignal<HTMLDivElement>()
 
-	createGlobalEditorFocus({ editorRef })
+	createGlobalEditorFocus({ editorRef, setInput, input })
 
 	const isUploading = createMemo(() => attachments().some((att) => att.status === "uploading"))
 	const successfulKeys = createMemo(() =>
@@ -305,31 +269,30 @@ export function FloatingBar() {
 	const showAttachmentArea = createMemo(() => successfulKeys().length > 0)
 
 	async function handleSubmit(text: string) {
-		const userId = auth.userId()
-		if (!userId) return
+		if (!auth.userId()) return
 
-		setTimeout(async () => {
-			if (isUploading()) {
-				console.warn("Upload in progress. Please wait.")
-				return
-			}
+		if (isUploading()) {
+			console.warn("Upload in progress. Please wait.")
+			return
+		}
 
-			if (text.trim().length === 0 && successfulKeys().length === 0) return
+		if (text.trim().length === 0 && successfulKeys().length === 0) return
+		const content = text.trim()
 
-			const content = text.trim()
+		// TODO: If we are not a channel member and the channel is a thread, we need to add the current user as a channel member
+		createMessageMutation.mutate({
+			content: content,
+			authorId: auth.userId()! as any,
+			optimisticId: Option.none(),
+			replyToMessageId: Option.fromNullable(state.replyToMessageId as MessageId),
+			attachedFiles: successfulKeys(),
+			threadChannelId: Option.none(),
+		})
 
-			setState("inputText", "")
-			setState("replyToMessageId", null)
-			trackTyping(false)
+		setInput("")
+		setState("replyToMessageId", null)
 
-			await createMessage({
-				content: content,
-				replyToMessageId: state.replyToMessageId || undefined,
-				attachedFiles: successfulKeys(),
-				serverId: state.serverId,
-				channelId: state.channelId,
-			})
-		}, 0)
+		trackTyping(false)
 	}
 
 	return (
@@ -337,9 +300,7 @@ export function FloatingBar() {
 			<Show when={showAttachmentArea()}>
 				<div class="flex flex-col gap-0 rounded-sm rounded-b-none border border-border/90 border-b-0 bg-secondary/90 px-2 py-1 transition hover:border-border/90">
 					<For each={attachments()}>
-						{(attachment) => (
-							<Attachment attachment={attachment} removeAttachment={removeAttachment} />
-						)}
+						{(attachment) => <Attachment attachment={attachment} removeAttachment={removeAttachment} />}
 					</For>
 				</div>
 			</Show>
@@ -365,15 +326,15 @@ export function FloatingBar() {
 					ref={(ref) => {
 						setEditorRef(ref)
 					}}
-					value={() => state.inputText}
+					value={input}
 					onValueChange={(value) => {
 						trackTyping(true)
-						setState("inputText", value)
+						setInput(value)
 					}}
 					onKeyDown={(e) => {
 						if (e.key === "Enter" && !e.shiftKey) {
 							e.preventDefault()
-							queueMicrotask(() => handleSubmit(state.inputText))
+							handleSubmit(input())
 						}
 					}}
 				/>
@@ -430,30 +391,32 @@ function ReplyInfo(props: {
 	const replyToMessageId = createMemo(() => state.replyToMessageId!)
 
 	const channelId = createMemo(() => state.channelId)
-
-	const message = createQuery(api.messages.getMessage, {
-		id: replyToMessageId(),
-		channelId: channelId(),
-		serverId: state.serverId,
+	const query = MessageQueries.createMessageQuery({
+		messageId: replyToMessageId,
+		channelId: channelId,
 	})
 
+	const messageData = createMemo(() => query.data)
+
+	const authorId = createMemo(() => messageData()?.authorId!)
+
+	const { user: author } = useUser(authorId)
+
 	return (
-		<Show when={message()} keyed>
-			{(message) => (
-				<div
-					class={twMerge(
-						"flex items-center justify-between gap-2 rounded-sm rounded-b-none border border-border/90 border-b-0 bg-secondary/90 px-2 py-1 text-muted-fg text-sm transition hover:border-border/90",
-						props.showAttachmentArea && "rounded-t-none",
-					)}
-				>
-					<p>
-						Replying to <span class="font-semibold text-fg">{message.author.displayName}</span>
-					</p>
-					<Button size="icon" intent="icon" onClick={() => setState("replyToMessageId", null)}>
-						<IconCircleXSolid />
-					</Button>
-				</div>
-			)}
+		<Show when={messageData()?.authorId}>
+			<div
+				class={twMerge(
+					"flex items-center justify-between gap-2 rounded-sm rounded-b-none border border-border/90 border-b-0 bg-secondary/90 px-2 py-1 text-muted-fg text-sm transition hover:border-border/90",
+					props.showAttachmentArea && "rounded-t-none",
+				)}
+			>
+				<p>
+					Replying to <span class="font-semibold text-fg">{author()?.displayName}</span>
+				</p>
+				<Button size="icon" intent="icon" onClick={() => setState("replyToMessageId", null)}>
+					<IconCircleXSolid />
+				</Button>
+			</div>
 		</Show>
 	)
 }

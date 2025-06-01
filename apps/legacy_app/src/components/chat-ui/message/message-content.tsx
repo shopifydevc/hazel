@@ -6,10 +6,11 @@ import { cn } from "~/lib/utils"
 import { ChatImage } from "./chat-image"
 import { ThreadButton } from "./thread-button"
 
+import type { Message } from "@maki-chat/api-schema/schema/message.js"
 import { Markdown } from "@maki-chat/markdown"
-import type { Doc } from "convex-hazel/_generated/dataModel"
+import { DateTime, Option } from "effect"
 import { useChat } from "~/components/chat-state/chat-store"
-import type { Message } from "~/lib/types"
+import { useUser } from "~/lib/hooks/data/use-user"
 import { ReactionTags } from "./reaction-tags"
 
 interface MessageContentProps {
@@ -23,8 +24,10 @@ export function MessageContent(props: MessageContentProps) {
 
 	const attachedCount = createMemo(() => props.message().attachedFiles?.length ?? 0)
 
+	const { user: author } = useUser(() => props.message().authorId)
+
 	const messageTime = createMemo(() => {
-		return new Date(props.message()._creationTime).toLocaleTimeString("en-US", {
+		return new Date(DateTime.toDate(props.message().createdAt)).toLocaleTimeString("en-US", {
 			hour: "2-digit",
 			minute: "2-digit",
 			hour12: false,
@@ -35,7 +38,7 @@ export function MessageContent(props: MessageContentProps) {
 		<div class="min-w-0 flex-1">
 			<Show when={props.showAvatar()}>
 				<div class="flex items-baseline gap-2">
-					<span class="font-semibold">{props.message().author?.displayName}</span>
+					<span class="font-semibold">{author()?.displayName}</span>
 					<span class="text-muted-foreground text-xs">{messageTime()}</span>
 				</div>
 			</Show>
@@ -78,7 +81,7 @@ export function MessageContent(props: MessageContentProps) {
 											"imageDialog",
 											reconcile({
 												open: true,
-												messageId: props.message()._id,
+												messageId: props.message().id,
 												selectedImage: imgProps.src!,
 											}),
 										)
@@ -125,7 +128,7 @@ export function MessageContent(props: MessageContentProps) {
 												"imageDialog",
 												reconcile({
 													open: true,
-													messageId: props.message()._id,
+													messageId: props.message().id,
 													selectedImage: file,
 												}),
 											)
@@ -144,10 +147,8 @@ export function MessageContent(props: MessageContentProps) {
 				<ReactionTags message={props.message} />
 			</div>
 
-			<Show when={props.message().threadChannelId}>
-				{(threadChannelId) => {
-					return <ThreadButton threadChannelId={threadChannelId()} />
-				}}
+			<Show when={Option.isSome(props.message().threadChannelId)}>
+				<ThreadButton threadChannelId={Option.getOrNull(props.message().threadChannelId)!} />
 			</Show>
 		</div>
 	)

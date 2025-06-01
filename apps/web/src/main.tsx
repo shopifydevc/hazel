@@ -4,27 +4,26 @@ import { render } from "solid-js/web"
 import "solid-devtools"
 
 import { routeTree } from "./routeTree.gen"
-import "./styles.css"
 
+import "./styles/root.css"
 import "./styles/code.css"
 import "./styles/toast.css"
-import { QueryClientProvider } from "@tanstack/solid-query"
-import { Duration, Layer, LogLevel, Logger, ManagedRuntime } from "effect"
-import { Toaster } from "./components/ui/toaster"
-import { ApiClient } from "./lib/services/common/api-client"
-import { NetworkMonitor } from "./lib/services/common/network-monitor"
-import { QueryClient } from "./lib/services/common/query-client"
-import type { LiveManagedRuntime } from "./lib/services/live-layer"
-import { RuntimeProvider } from "./lib/services/runtime"
 
-import { QueryClient as TanstackQueryClient } from "@tanstack/solid-query"
-import { SolidQueryDevtools } from "@tanstack/solid-query-devtools"
+import { ClerkProvider, useAuth } from "clerk-solidjs"
+import { Toaster } from "./components/ui/toaster"
+import { ConvexSolidClient } from "./lib/convex"
+import { ConvexProviderWithClerk } from "./lib/convex-clerk"
+import { NotificationManager } from "./lib/notification-manager"
 
 const router = createRouter({
 	routeTree,
 	defaultPreload: "intent",
 	scrollRestoration: true,
-	defaultPreloadStaleTime: 0,
+	defaultPreloadStaleTime: 30_000,
+	context: {
+		auth: undefined!,
+		convex: undefined!,
+	},
 })
 
 declare module "@tanstack/solid-router" {
@@ -33,51 +32,30 @@ declare module "@tanstack/solid-router" {
 	}
 }
 
-const queryClient = new TanstackQueryClient({
-	defaultOptions: {
-		queries: {
-			retry: false,
-			retryDelay: 0,
-			staleTime: Duration.toMillis("5 minutes"),
-			gcTime: Duration.toMillis("12 hours"),
-			refetchOnWindowFocus: false,
-			refetchOnReconnect: "always",
-		},
-		mutations: {
-			retry: false,
-			retryDelay: 0,
-		},
-	},
-})
+const convex = new ConvexSolidClient(import.meta.env.VITE_CONVEX_URL)
 
 const InnerProviders = () => {
-	const runtime: LiveManagedRuntime = ManagedRuntime.make(
-		Layer.mergeAll(
-			NetworkMonitor.Default,
-			ApiClient.Default,
-			QueryClient.make(queryClient),
-			Logger.minimumLogLevel(import.meta.env.DEV ? LogLevel.Debug : LogLevel.Info),
-		).pipe(Layer.provide(Logger.pretty)),
-	)
+	const auth = useAuth()
 
 	return (
-		<QueryClientProvider client={queryClient}>
-			<SolidQueryDevtools initialIsOpen={false} />
-			{/* <TanStackRouterDevtools position="bottom-right" /> */}
-
-			<RuntimeProvider runtime={runtime}>
-				<RouterProvider router={router} />
-			</RuntimeProvider>
-		</QueryClientProvider>
+		<RouterProvider
+			router={router}
+			context={{
+				auth: auth,
+				convex: convex,
+			}}
+		/>
 	)
 }
 
 function App() {
 	return (
-		<>
-			<Toaster />
-			<InnerProviders />
-		</>
+		<ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}>
+			<ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+				<Toaster />
+				<InnerProviders />
+			</ConvexProviderWithClerk>
+		</ClerkProvider>
 	)
 }
 

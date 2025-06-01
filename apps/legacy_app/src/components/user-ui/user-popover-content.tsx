@@ -1,8 +1,8 @@
+import type { User } from "@maki-chat/zero"
 import { Link, useNavigate } from "@tanstack/solid-router"
-import { api } from "convex-hazel/_generated/api"
-import type { Doc, Id } from "convex-hazel/_generated/dataModel"
 import { type Accessor, Show } from "solid-js"
-import { createMutation } from "~/lib/convex"
+import { createJoinChannelMutation } from "~/lib/actions/user-actions"
+import { useZero } from "~/lib/zero/zero-context"
 import { IconChat } from "../icons/chat"
 import { IconProfile } from "../icons/profile"
 import { Avatar, type AvatarProps } from "../ui/avatar"
@@ -11,14 +11,14 @@ import { Popover } from "../ui/popover"
 import { Separator } from "../ui/separator"
 
 interface UserPopoverContentProps {
-	serverId: Accessor<Id<"servers">>
-	user: Doc<"users">
+	serverId: Accessor<string>
+	user: User
 }
 
 export const UserPopoverContent = (props: UserPopoverContentProps) => {
 	const navigate = useNavigate()
 
-	const createDmChannelMutation = createMutation(api.channels.creatDmChannel)
+	const z = useZero()
 
 	return (
 		<div>
@@ -34,9 +34,10 @@ export const UserPopoverContent = (props: UserPopoverContentProps) => {
 				<Button
 					intent="secondary"
 					onClick={async () => {
-						const channelId = await createDmChannelMutation({
+						const { channelId } = await createJoinChannelMutation({
 							serverId: props.serverId(),
-							userId: props.user._id,
+							userIds: [props.user.id],
+							z,
 						})
 
 						navigate({
@@ -55,7 +56,7 @@ export const UserPopoverContent = (props: UserPopoverContentProps) => {
 							to="/$serverId/profile/$id"
 							params={{
 								serverId: props.serverId(),
-								id: props.user._id,
+								id: props.user.id,
 							}}
 							{...parentProps()}
 						/>
@@ -70,7 +71,7 @@ export const UserPopoverContent = (props: UserPopoverContentProps) => {
 }
 
 export interface UserAvatarProps extends Omit<UserPopoverContentProps, "user">, Omit<AvatarProps, "name" | "src"> {
-	user?: Doc<"users">
+	user?: User
 }
 
 export const UserAvatar = (props: UserAvatarProps) => {

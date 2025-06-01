@@ -1,10 +1,12 @@
 import { type Accessor, Show, createEffect, createMemo } from "solid-js"
 
 import { Badge } from "~/components/ui/badge"
+import { useZero } from "~/lib/zero/zero-context"
 
-import type { Id } from "convex-hazel/_generated/dataModel"
+import type { Message } from "@maki-chat/api-schema/schema/message.js"
+import { Option } from "effect"
 import { useChat } from "~/components/chat-state/chat-store"
-import type { Message } from "~/lib/types"
+import { useIsPinned } from "~/lib/hooks/data/use-is-pinned"
 import { MessageActions } from "./message-actions"
 import { MessageContent } from "./message-content"
 import { MessageHeader } from "./message-header"
@@ -12,25 +14,26 @@ import { MessageReply } from "./message-reply"
 import { chatMessageStyles } from "./message-styles"
 
 interface ChatMessageProps {
-	serverId: Accessor<Id<"servers">>
+	serverId: Accessor<string>
 	message: Accessor<Message>
 	isGroupStart: Accessor<boolean>
 	isGroupEnd: Accessor<boolean>
 	isFirstNewMessage: Accessor<boolean>
-	isThread: Accessor<boolean>
+	isThread: boolean
 }
 
 export function ChatMessage(props: ChatMessageProps) {
-	const isRepliedTo = createMemo(() => !!props.message().replyToMessageId)
+	const z = useZero()
+
+	const isRepliedTo = createMemo(() => Option.isSome(props.message().replyToMessageId))
 	const showAvatar = createMemo(() => props.isGroupStart() || isRepliedTo())
 
 	const { state } = useChat()
 
 	const channelId = createMemo(() => state.channelId)
-	const messageId = createMemo(() => props.message()._id)
+	const messageId = createMemo(() => props.message().id)
 
-	const isPinned = () =>
-		state.channel?.pinnedMessages.find((m) => m.messageId === messageId()) !== undefined
+	const { isPinned } = useIsPinned(channelId, messageId)
 
 	const scrollToMessage = (id: string) => {
 		const el = document.getElementById(`message-${id}`)
@@ -43,19 +46,18 @@ export function ChatMessage(props: ChatMessageProps) {
 
 	createEffect(async () => {
 		if (props.isFirstNewMessage()) {
-			console.log("TODO: Implement setting lastSeenMessageId to null")
-			// await z.mutate.channelMembers.update({
-			// 	channelId: props.message().channelId!,
-			// 	userId: z.userID,
-			// 	lastSeenMessageId: null,
-			// 	notificationCount: 0,
-			// })
+			await z.mutate.channelMembers.update({
+				channelId: props.message().channelId!,
+				userId: z.userID,
+				lastSeenMessageId: null,
+				notificationCount: 0,
+			})
 		}
 	})
 
 	return (
 		<div
-			id={`message-${props.message()._id}`}
+			id={`message-${props.message().id}`}
 			class={chatMessageStyles({
 				isGettingRepliedTo: false,
 				isGroupStart: props.isGroupStart(),
@@ -64,7 +66,7 @@ export function ChatMessage(props: ChatMessageProps) {
 				isPinned: isPinned(),
 				class: "rounded-l-none",
 			})}
-			data-id={props.message()._id}
+			data-id={props.message().id}
 		>
 			<Show when={props.isFirstNewMessage()}>
 				<div class="absolute top-1 right-1 z-10">

@@ -1,8 +1,9 @@
-import { createQuery } from "@rocicorp/zero/solid"
 import { useParams } from "@tanstack/solid-router"
-import { useAuth } from "clerk-solidjs"
-import { For, Match, Show, Switch, createMemo } from "solid-js"
-import { useZero } from "~/lib/zero/zero-context"
+import { api } from "convex-hazel/_generated/api"
+import type { Id } from "convex-hazel/_generated/dataModel"
+import { For, Match, Show, Switch } from "solid-js"
+import { createQuery } from "~/lib/convex"
+import { useChat } from "../chat-state/chat-store"
 import { IconGroup } from "../icons/group"
 import { IconHashtag } from "../icons/hashtag"
 import { IconPhone } from "../icons/phone"
@@ -14,75 +15,80 @@ import { TextField } from "../ui/text-field"
 import { PinnedModal } from "./pinned-modal"
 
 export function ChatTopbar() {
-	const params = useParams({ from: "/_app/$serverId/chat/$id" })()
-	const z = useZero()
+	const params = useParams({ from: "/_protected/_app/$serverId/chat/$id" })()
 
-	const { userId } = useAuth()
+	const { state } = useChat()
 
-	const [channel] = createQuery(() => z.query.serverChannels.where("id", "=", params.id).related("users").one())
-
-	if (!channel) {
-		return null
-	}
-
-	const friends = createMemo(() => channel()?.users.filter((user) => user.id !== userId()) ?? [])
-	const isSingleDm = createMemo(() => friends().length === 1)
+	const channel = createQuery(api.channels.getChannel, {
+		channelId: state.channelId,
+		serverId: params.serverId as Id<"servers">,
+	})
 
 	return (
 		<div class="flex h-16 items-center justify-between gap-2 border-b bg-sidebar p-3">
-			<div class="flex items-center gap-2">
-				<Switch>
-					<Match when={channel()?.channelType === "single" || channel()?.channelType === "direct"}>
-						<Show when={isSingleDm()}>
-							<Avatar size="sm" src={friends()[0].avatarUrl} name={friends()[0].displayName} />
-						</Show>
-						<Show when={!isSingleDm()}>
-							<div class="-space-x-4 flex items-center justify-center">
-								<For each={friends()}>
-									{(friend) => (
+			<Show when={channel()}>
+				{(channel) => (
+					<>
+						<div class="flex items-center gap-2">
+							<Switch>
+								<Match when={channel().type === "single" || channel().type === "direct"}>
+									<Show when={channel().members.length === 1}>
 										<Avatar
-											class="ring-background"
 											size="sm"
-											src={friend.avatarUrl}
-											name={friend.displayName}
+											src={channel().members[0].user.avatarUrl}
+											name={channel().members[0].user.displayName}
 										/>
-									)}
-								</For>
-							</div>
-						</Show>
-						<p class="max-w-[120px] truncate text-sidebar-fg">
-							{friends()
-								.map((friend) => friend.displayName)
-								.join(", ")}
-						</p>
-					</Match>
-					<Match when={channel()?.channelType === "private" || channel()?.channelType === "public"}>
-						<div class="flex items-center gap-1">
-							<IconHashtag class="size-5" />
-							<p class="max-w-[120px] truncate">{channel()?.name}</p>
+									</Show>
+									<Show when={channel().members.length > 1}>
+										<div class="-space-x-4 flex items-center justify-center">
+											<For each={channel().members}>
+												{(member) => (
+													<Avatar
+														class="ring-background"
+														size="sm"
+														src={member.user.avatarUrl}
+														name={member.user.displayName}
+													/>
+												)}
+											</For>
+										</div>
+									</Show>
+									<p class="max-w-[120px] truncate text-sidebar-fg">
+										{channel()
+											.members.map((member) => member.user.displayName)
+											.join(", ")}
+									</p>
+								</Match>
+								<Match when={channel().type === "private" || channel().type === "public"}>
+									<div class="flex items-center gap-1">
+										<IconHashtag class="size-5" />
+										<p class="max-w-[120px] truncate">{channel()?.name}</p>
+									</div>
+								</Match>
+							</Switch>
 						</div>
-					</Match>
-				</Switch>
-			</div>
-			<div class="flex gap-2">
-				<Button size="square" intent="ghost">
-					<IconPhone />
-				</Button>
-				<PinnedModal />
-				<Button size="square" intent="ghost">
-					<IconUserPlus />
-				</Button>
-				<Button size="square" intent="ghost">
-					<IconGroup />
-				</Button>
-				<div>
-					<TextField
-						aria-label="Search"
-						placeholder="Search"
-						suffix={<IconSearch class="mr-2 size-5 text-muted-foreground" />}
-					/>
-				</div>
-			</div>
+						<div class="flex gap-2">
+							<Button size="square" intent="ghost">
+								<IconPhone />
+							</Button>
+							<PinnedModal />
+							<Button size="square" intent="ghost">
+								<IconUserPlus />
+							</Button>
+							<Button size="square" intent="ghost">
+								<IconGroup />
+							</Button>
+							<div>
+								<TextField
+									aria-label="Search"
+									placeholder="Search"
+									suffix={<IconSearch class="mr-2 size-5 text-muted-foreground" />}
+								/>
+							</div>
+						</div>
+					</>
+				)}
+			</Show>
 		</div>
 	)
 }

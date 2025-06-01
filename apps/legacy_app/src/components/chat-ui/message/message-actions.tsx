@@ -1,4 +1,4 @@
-import { type Accessor, For, Show, createSignal } from "solid-js"
+import { type Accessor, For, Show, createMemo, createSignal } from "solid-js"
 import { twMerge } from "tailwind-merge"
 
 import { IconHorizontalDots } from "~/components/icons/horizontal-dots"
@@ -7,15 +7,15 @@ import { Menu } from "~/components/ui/menu"
 import { Popover } from "~/components/ui/popover"
 import { Tooltip } from "~/components/ui/tooltip"
 
-import type { Doc } from "convex-hazel/_generated/dataModel"
+import type { Message } from "@maki-chat/api-schema/schema/message.js"
 import { ConfirmDialog } from "../confirm-dialog"
 import { createMessageActions } from "./message-actions-config"
 
 interface MessageActionsProps {
-	message: Accessor<Doc<"messages">>
+	message: Accessor<Message>
 	serverId: Accessor<string>
 	isPinned: Accessor<boolean>
-	isThread: Accessor<boolean>
+	isThread: boolean
 }
 
 export function MessageActions(props: MessageActionsProps) {
@@ -24,6 +24,7 @@ export function MessageActions(props: MessageActionsProps) {
 
 	const actions = createMessageActions({
 		message: props.message,
+		serverId: props.serverId,
 		isPinned: props.isPinned,
 		isThread: props.isThread,
 	})

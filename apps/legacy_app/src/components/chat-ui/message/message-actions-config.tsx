@@ -1,6 +1,5 @@
-import { ChannelId } from "@maki-chat/api-schema/schema/message.js"
-import { api } from "convex-hazel/_generated/api"
-import type { Doc } from "convex-hazel/_generated/dataModel"
+import { ChannelId, type Message } from "@maki-chat/api-schema/schema/message.js"
+import { useParams } from "@tanstack/solid-router"
 import { Option } from "effect"
 import { type Accessor, createMemo } from "solid-js"
 import { useChat } from "~/components/chat-state/chat-store"
@@ -13,25 +12,25 @@ import { IconReply } from "~/components/icons/reply"
 import { IconThread } from "~/components/icons/thread"
 import { IconTrash } from "~/components/icons/trash"
 
-import { createMutation } from "~/lib/convex"
+import { newId } from "~/lib/id-helpers"
+import { MessageQueries } from "~/lib/services/data-access/message-queries"
+import { useZero } from "~/lib/zero/zero-context"
 
 interface CreateMessageActionsProps {
-	message: Accessor<Doc<"messages">>
+	message: Accessor<Message>
+	serverId: Accessor<string>
 	isPinned: Accessor<boolean>
-	isThread: Accessor<boolean>
+	isThread: boolean
 }
 
 export function createMessageActions(props: CreateMessageActionsProps) {
+	const z = useZero()
+	const params = useParams({ from: "/_app/$serverId/chat/$id" })()
 	const { setState, state } = useChat()
 
 	const channelId = createMemo(() => state.channelId)
 
-	const deleteMessageMutation = createMutation(api.messages.deleteMessage)
-
-	const pinMessageMutation = createMutation(api.pinnedMessages.createPinnedMessage)
-	const unpinMessageMutation = createMutation(api.pinnedMessages.deletePinnedMessage)
-
-	const createThreadMutation = createMutation(api.channels.createChannel)
+	const deleteMessageMutation = MessageQueries.deleteMutation(channelId)
 
 	return createMemo(() => [
 		{
@@ -48,14 +47,25 @@ export function createMessageActions(props: CreateMessageActionsProps) {
 			label: "Thread",
 			icon: <IconThread class="size-4" />,
 			onAction: async () => {
-				const threadChannelId = props.message().threadChannelId || null
+				const threadChannelId = Option.getOrElse(props.message().threadChannelId, () =>
+					ChannelId.make(newId("serverChannels")),
+				)
 
-				if (!threadChannelId) {
-					await createThreadMutation({
-						serverId: state.serverId,
-						name: "Thread name should be generated with AI",
-						parentChannelId: props.message().channelId,
-						type: "thread",
+				if (!props.message().threadChannelId) {
+					await z.mutateBatch(async (tx) => {
+						await tx.serverChannels.insert({
+							id: threadChannelId,
+							serverId: props.serverId(),
+							name: "Thread name should be generated with AI",
+							channelType: "thread",
+							parentChannelId: props.message().channelId,
+							createdAt: Date.now(),
+						})
+
+						await tx.messages.update({
+							id: props.message().id,
+							threadChannelId,
+						})
 					})
 				}
 
@@ -69,7 +79,7 @@ export function createMessageActions(props: CreateMessageActionsProps) {
 			label: "Reply",
 			icon: <IconReply class="size-4" />,
 			onAction: () => {
-				setState("replyToMessageId", props.message()._id)
+				setState("replyToMessageId", props.message().id)
 			},
 			hotkey: "shift+r",
 			showButton: true,
@@ -88,18 +98,15 @@ export function createMessageActions(props: CreateMessageActionsProps) {
 			icon: <IconPin class="size-4" />,
 			onAction: async () => {
 				if (props.isPinned()) {
-					await unpinMessageMutation({
-						messageId: props.message()._id,
-						channelId: channelId(),
-						serverId: state.serverId,
+					await z.mutate.pinnedMessages.delete({
+						messageId: props.message().id,
 					})
 					return
 				}
 
-				await pinMessageMutation({
-					messageId: props.message()._id,
-					channelId: channelId(),
-					serverId: state.serverId,
+				await z.mutate.pinnedMessages.insert({
+					messageId: props.message().id,
+					channelId: props.message().channelId!,
 				})
 			},
 			hotkey: "p",
@@ -117,11 +124,7 @@ export function createMessageActions(props: CreateMessageActionsProps) {
 			key: "delete",
 			label: "Delete",
 			icon: <IconTrash class="size-4" />,
-			onAction: async () =>
-				deleteMessageMutation({
-					id: props.message()._id,
-					serverId: state.serverId,
-				}),
+			onAction: async () => deleteMessageMutation.mutateAsync(props.message().id),
 			hotkey: "del",
 			showMenu: true,
 			isDanger: true,
