@@ -88,13 +88,9 @@ export const NotificationHandler = ({ userId }: { userId: string }) => {
 	const [expoPushToken, setExpoPushToken] = useState("")
 	const [notification, setNotification] = useState<Notifications.Notification | undefined>(undefined)
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
 	useEffect(() => {
 		registerForPushNotificationsAsync(userId)
-			.then((token) => {
-				if (!token) return
-				registerPushToken({ token })
-			})
+			.then((token) => setExpoPushToken(token ?? ""))
 			.catch((error: any) => setExpoPushToken(`${error}`))
 
 		const notificationListener = Notifications.addNotificationReceivedListener((notification) => {
@@ -118,6 +114,14 @@ export const NotificationHandler = ({ userId }: { userId: string }) => {
 				<Text>Body: {notification?.request.content.body}</Text>
 				<Text>Data: {notification && JSON.stringify(notification.request.content.data)}</Text>
 			</View>
+			<Button
+				title="Register Push Token"
+				onPress={async () => {
+					await registerPushToken({
+						token: expoPushToken,
+					})
+				}}
+			/>
 			<Button
 				title="Press to Send Notification"
 				onPress={async () => {
