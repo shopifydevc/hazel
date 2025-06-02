@@ -1,4 +1,3 @@
-import type { Channel, Member } from "@maki-chat/zero"
 import { Link, useParams } from "@tanstack/solid-router"
 import { useAuth } from "clerk-solidjs"
 import { type Accessor, Index, createMemo, createSignal } from "solid-js"

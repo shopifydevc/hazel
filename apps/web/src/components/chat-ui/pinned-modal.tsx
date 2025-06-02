@@ -22,9 +22,7 @@ export function PinnedModal() {
 
 	const deletePinnedMessageMutation = createMutation(api.pinnedMessages.deletePinnedMessage)
 
-	const sortedPins = createMemo(() =>
-		[...(pinnedMessages() || [])].sort((a, b) => a._creationTime - b._creationTime),
-	)
+	const sortedPins = createMemo(() => [...(pinnedMessages() || [])].sort((a, b) => a.pinnedAt - b.pinnedAt))
 
 	const scrollToMessage = (messageId: string) => {
 		const element = document.getElementById(`message-${messageId}`)
@@ -63,7 +61,8 @@ export function PinnedModal() {
 											onClick={(e) => {
 												e.stopPropagation()
 												deletePinnedMessageMutation({
-													id: pinnedMessage._id,
+													channelId: channelId() as Id<"channels">,
+													messageId: pinnedMessage.messageId,
 													serverId: serverId() as Id<"servers">,
 												})
 											}}

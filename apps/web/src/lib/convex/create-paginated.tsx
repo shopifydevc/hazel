@@ -599,7 +599,7 @@ function insertAtPositionInPages<Query extends PaginatedQueryReference>(options:
 		return
 	}
 
-	const indexWithinPage = pageToUpdate.value.page.findIndex((e) =>
+	const indexWithinPage = pageToUpdate.value.page.findIndex((e: any) =>
 		sortOrder === "asc"
 			? compareValues(sortKeyFromItem(e), insertedKey) >= 0
 			: compareValues(sortKeyFromItem(e), insertedKey) <= 0,
