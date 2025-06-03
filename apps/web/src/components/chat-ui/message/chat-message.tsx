@@ -17,7 +17,6 @@ interface ChatMessageProps {
 	isGroupStart: Accessor<boolean>
 	isGroupEnd: Accessor<boolean>
 	isFirstNewMessage: Accessor<boolean>
-	isThread: Accessor<boolean>
 }
 
 export function ChatMessage(props: ChatMessageProps) {
@@ -76,12 +75,7 @@ export function ChatMessage(props: ChatMessageProps) {
 			</Show>
 
 			<div class="flex gap-4">
-				<MessageActions
-					message={props.message}
-					serverId={props.serverId}
-					isPinned={isPinned}
-					isThread={props.isThread}
-				/>
+				<MessageActions message={props.message} serverId={props.serverId} isPinned={isPinned} />
 
 				<MessageHeader message={props.message} showAvatar={showAvatar} serverId={props.serverId} />
 

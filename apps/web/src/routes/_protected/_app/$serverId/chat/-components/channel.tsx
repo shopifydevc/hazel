@@ -235,7 +235,6 @@ export function Channel(props: { channelId: Accessor<Id<"channels">>; serverId: 
 										channel()?.currentUser?.lastSeenMessageId
 									}
 									serverId={props.serverId}
-									isThread={() => false}
 								/>
 							)
 						})()}

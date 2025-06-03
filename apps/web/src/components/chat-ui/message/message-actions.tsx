@@ -15,7 +15,6 @@ interface MessageActionsProps {
 	message: Accessor<Doc<"messages">>
 	serverId: Accessor<string>
 	isPinned: Accessor<boolean>
-	isThread: Accessor<boolean>
 }
 
 export function MessageActions(props: MessageActionsProps) {
@@ -25,7 +24,6 @@ export function MessageActions(props: MessageActionsProps) {
 	const actions = createMessageActions({
 		message: props.message,
 		isPinned: props.isPinned,
-		isThread: props.isThread,
 	})
 
 	const handleAction = (action: any) => {
