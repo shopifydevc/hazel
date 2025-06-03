@@ -27,7 +27,7 @@ function Root() {
 }
 
 function RouteComponent() {
-	const { state } = useChat()
+	const { state, setState } = useChat()
 
 	const params = Route.useParams()
 	const serverId = createMemo(() => params().serverId as Id<"servers">)
@@ -40,7 +40,11 @@ function RouteComponent() {
 				<Channel channelId={channelId} serverId={serverId} />
 				<Show when={state.openThreadId}>
 					<ChatProvider channelId={state.openThreadId!} serverId={serverId()}>
-						<ThreadChannel channelId={state.openThreadId!} serverId={serverId()} />
+						<ThreadChannel
+							channelId={state.openThreadId!}
+							serverId={serverId()}
+							closeThread={() => setState("openThreadId", null)}
+						/>
 					</ChatProvider>
 				</Show>
 			</div>
@@ -91,6 +95,7 @@ function ChatImageViewerModal() {
 function ThreadChannel(props: {
 	channelId: Id<"channels">
 	serverId: Id<"servers">
+	closeThread: () => void
 }) {
 	const { setState } = useChat()
 
@@ -101,7 +106,7 @@ function ThreadChannel(props: {
 		<div class="flex flex-1 flex-col border-l">
 			<div class="flex items-center justify-between border-b bg-sidebar p-4">
 				<p>Thread</p>
-				<Button intent="ghost" size="icon-small" onClick={() => setState("openThreadId", null)}>
+				<Button intent="ghost" size="icon-small" onClick={props.closeThread}>
 					<IconX class="size-4" />
 				</Button>
 			</div>
