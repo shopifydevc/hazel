@@ -106,8 +106,9 @@ export const NotificationHandler = ({ userId }: { userId: string }) => {
 			responseListener.remove()
 		}
 	}, [userId])
+
 	return (
-		<View style={{ flex: 1, alignItems: "center", justifyContent: "space-around" }}>
+		<>
 			<Text>Your Expo push token: {expoPushToken}</Text>
 			<View style={{ alignItems: "center", justifyContent: "center" }}>
 				<Text>Title: {notification?.request.content.title} </Text>
@@ -128,6 +129,6 @@ export const NotificationHandler = ({ userId }: { userId: string }) => {
 					await sendPushNotification(expoPushToken)
 				}}
 			/>
-		</View>
+		</>
 	)
 }
