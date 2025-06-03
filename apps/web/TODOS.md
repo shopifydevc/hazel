@@ -9,7 +9,7 @@
 - File uploads with convex
 - Readd threads
 
-- Simple Mobile App with Push Notifications
+
 
 # Improvements 
 - Add local caching for messages 
@@ -17,3 +17,5 @@
 - Improve typing presence todo less calls
 
 - Rework presence with convex component https://github.com/get-convex/presence
+
+- Improve mobile app UI and add settings in both web + mobile to mute Notifications
