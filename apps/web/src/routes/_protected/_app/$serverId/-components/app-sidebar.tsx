@@ -1,6 +1,6 @@
 import { Link, useParams } from "@tanstack/solid-router"
 import { useAuth } from "clerk-solidjs"
-import { type Accessor, Index, createMemo, createSignal } from "solid-js"
+import { type Accessor, Index, Match, Switch, createMemo, createSignal } from "solid-js"
 import { IconHashtag } from "~/components/icons/hashtag"
 
 import { IconPlusSmall } from "~/components/icons/plus-small"
@@ -37,10 +37,10 @@ export interface SidebarProps {
 
 export const AppSidebar = (props: SidebarProps) => {
 	const params = useParams({ from: "/_protected/_app/$serverId" })
-	const serverId = createMemo(() => params().serverId)
+	const serverId = createMemo(() => params().serverId as Id<"servers">)
 
 	const channels = createQuery(api.channels.getChannels, {
-		serverId: serverId() as Id<"servers">,
+		serverId: serverId(),
 	})
 
 	const serverChannels = createMemo(() => channels()?.serverChannels || [])
@@ -209,16 +209,24 @@ export const ChannelItem = (props: ChannelItemProps) => {
 
 interface DmChannelLinkProps {
 	channel: Accessor<FunctionReturnType<typeof api.channels.getChannels>["dmChannels"][0]>
-	serverId: Accessor<string>
+	serverId: Accessor<Id<"servers">>
 }
 
 const DmChannelLink = (props: DmChannelLinkProps) => {
+	const me = createQuery(api.me.getUser, {
+		serverId: props.serverId(),
+	})
+
 	const params = createMemo(() => ({
 		serverId: props.serverId(),
 		id: props.channel()._id,
 	}))
 
 	const updateChannelPreferences = createMutation(api.channels.updateChannelPreferences)
+
+	const filteredMembers = createMemo(() =>
+		props.channel().members.filter((member) => member.userId !== me()?._id),
+	)
 
 	return (
 		<Sidebar.MenuItem>
@@ -230,29 +238,53 @@ const DmChannelLink = (props: DmChannelLinkProps) => {
 				)}
 			>
 				<div class="-space-x-4 flex items-center justify-center">
-					<Index each={props.channel().members}>
-						{(member) => (
-							<div class="inline-block">
-								<Avatar
-									class="size-7"
-									src={member().user.avatarUrl}
-									name={member().user.displayName}
-								/>
+					<Switch>
+						<Match when={props.channel().type === "single" && filteredMembers().length === 1}>
+							<div class="flex items-center justify-center gap-3">
+								<div class="inline-block">
+									<Avatar
+										class="size-7"
+										src={filteredMembers()[0].user.avatarUrl}
+										name={filteredMembers()[0].user.displayName}
+									/>
+								</div>
+								<p
+									class={cn(
+										"truncate text-muted-foreground group-hover/sidebar-item:text-foreground",
+										props.channel().isMuted && "opacity-60",
+									)}
+								>
+									{filteredMembers()[0].user.displayName}
+								</p>
 							</div>
-						)}
-					</Index>
+						</Match>
+						<Match when={true}>
+							<div class="-space-x-4 flex items-center justify-center">
+								<Index each={filteredMembers()}>
+									{(member) => (
+										<div class="inline-block">
+											<Avatar
+												class="size-7"
+												src={member().user.avatarUrl}
+												name={member().user.displayName}
+											/>
+										</div>
+									)}
+								</Index>
+								<p
+									class={cn(
+										"truncate text-muted-foreground group-hover/sidebar-item:text-foreground",
+										props.channel().isMuted && "opacity-60",
+									)}
+								>
+									{filteredMembers()
+										.map((member) => member.user.displayName)
+										.join(", ")}
+								</p>
+							</div>
+						</Match>
+					</Switch>
 				</div>
-				<p
-					class={cn(
-						"truncate text-muted-foreground group-hover/sidebar-item:text-foreground",
-						props.channel().isMuted && "opacity-60",
-					)}
-				>
-					{props
-						.channel()
-						.members.map((member) => member.user.displayName)
-						.join(", ")}
-				</p>
 			</Sidebar.MenuButton>
 
 			<Menu positioning={{ placement: "bottom-start" }}>

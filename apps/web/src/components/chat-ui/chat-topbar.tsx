@@ -1,7 +1,7 @@
 import type { Id } from "@hazel/backend"
 import { api } from "@hazel/backend/api"
 import { useParams } from "@tanstack/solid-router"
-import { For, Match, Show, Switch } from "solid-js"
+import { For, Match, Show, Switch, createMemo } from "solid-js"
 import { createQuery } from "~/lib/convex"
 import { useChat } from "../chat-state/chat-store"
 import { IconGroup } from "../icons/group"
@@ -19,10 +19,18 @@ export function ChatTopbar() {
 
 	const { state } = useChat()
 
+	const me = createQuery(api.me.getUser, {
+		serverId: params.serverId as Id<"servers">,
+	})
+
 	const channel = createQuery(api.channels.getChannel, {
 		channelId: state.channelId,
 		serverId: params.serverId as Id<"servers">,
 	})
+
+	const filteredMembers = createMemo(
+		() => channel()?.members.filter((member) => member.userId !== me()?._id) || [],
+	)
 
 	return (
 		<div class="flex h-16 items-center justify-between gap-2 border-b bg-sidebar p-3">
@@ -32,16 +40,16 @@ export function ChatTopbar() {
 						<div class="flex items-center gap-2">
 							<Switch>
 								<Match when={channel().type === "single" || channel().type === "direct"}>
-									<Show when={channel().members.length === 1}>
+									<Show when={filteredMembers().length === 1}>
 										<Avatar
 											size="sm"
-											src={channel().members[0].user.avatarUrl}
-											name={channel().members[0].user.displayName}
+											src={filteredMembers()[0].user.avatarUrl}
+											name={filteredMembers()[0].user.displayName}
 										/>
 									</Show>
-									<Show when={channel().members.length > 1}>
+									<Show when={filteredMembers().length > 1}>
 										<div class="-space-x-4 flex items-center justify-center">
-											<For each={channel().members}>
+											<For each={filteredMembers()}>
 												{(member) => (
 													<Avatar
 														class="ring-background"
@@ -54,8 +62,8 @@ export function ChatTopbar() {
 										</div>
 									</Show>
 									<p class="max-w-[120px] truncate text-sidebar-fg">
-										{channel()
-											.members.map((member) => member.user.displayName)
+										{filteredMembers()
+											.map((member) => member.user.displayName)
 											.join(", ")}
 									</p>
 								</Match>
