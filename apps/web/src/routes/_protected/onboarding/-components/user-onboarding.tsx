@@ -24,8 +24,8 @@ export const Useronboarding = () => {
 		},
 		validators: {
 			onChange: type({
-				displayName: "3 <= string <= 15",
-				tag: "3 <= string <= 15",
+				displayName: "3 <= string <= 18",
+				tag: "3 <= string <= 18",
 			}),
 		},
 		onSubmit: async ({ value }) => {
