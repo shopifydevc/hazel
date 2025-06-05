@@ -470,7 +470,6 @@ function ReplyInfo(props: {
 			serverId: state.serverId,
 		}),
 		enabled: !!replyToMessageId(),
-		staleTime: Number.POSITIVE_INFINITY,
 	}))
 
 	createEffect(() => {

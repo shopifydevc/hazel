@@ -355,7 +355,6 @@ export class ConvexQueryClient {
 				queryArgs,
 			],
 			queryFn: this.queryFn(),
-			staleTime: Number.POSITIVE_INFINITY,
 			// We cannot set hashFn here, see
 			// https://github.com/TanStack/query/issues/4052#issuecomment-1296174282
 			// so the developer must set it globally.

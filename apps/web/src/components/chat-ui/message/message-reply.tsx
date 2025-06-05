@@ -30,7 +30,6 @@ export function MessageReply(props: MessageReplyProps) {
 			serverId: state.serverId,
 		}),
 		enabled: !!replyToMessageId(),
-		staleTime: Number.POSITIVE_INFINITY,
 	}))
 
 	return (
