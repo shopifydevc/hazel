@@ -158,7 +158,7 @@ export function MessageContent(props: MessageContentProps) {
 				<ReactionTags message={props.message} />
 			</div>
 
-			<Show when={props.message().threadChannelId && props.message().threadMessages.length > 0}>
+			<Show when={props.message().threadChannelId && props.message().threadMessages?.length > 0}>
 				<ThreadButton
 					threadChannelId={props.message().threadChannelId!}
 					threadMessages={props.message().threadMessages}

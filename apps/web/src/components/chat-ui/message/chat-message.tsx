@@ -23,7 +23,7 @@ export function ChatMessage(props: ChatMessageProps) {
 	const isRepliedTo = createMemo(() => !!props.message().replyToMessageId)
 	const showAvatar = createMemo(() => props.isGroupStart() || isRepliedTo())
 
-	const hasThreadWithMessages = createMemo(() => props.message().threadMessages.length > 0)
+	const hasThreadWithMessages = createMemo(() => props.message().threadMessages?.length > 0)
 
 	const { state } = useChat()
 
