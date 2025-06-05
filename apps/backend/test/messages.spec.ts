@@ -1,6 +1,6 @@
 import type schema from "@hazel/backend/schema"
 import type { TestConvex } from "convex-test"
-import { describe, expect, test } from "vitest"
+import { describe, expect, test, vi } from "vitest"
 import { api } from "../convex/_generated/api"
 import {
 	convexTest,
@@ -335,8 +335,7 @@ describe("messages", () => {
 			content: "First message",
 		})
 
-		// Small delay to ensure different timestamps
-		await new Promise((resolve) => setTimeout(resolve, 10))
+		vi.advanceTimersByTime(10)
 
 		const message2Id = await createMessage(t, {
 			serverId: server,
@@ -345,7 +344,7 @@ describe("messages", () => {
 			content: "Second message",
 		})
 
-		await new Promise((resolve) => setTimeout(resolve, 10))
+		vi.advanceTimersByTime(10)
 
 		const message3Id = await createMessage(t, {
 			serverId: server,
