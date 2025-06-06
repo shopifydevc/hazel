@@ -1,19 +1,8 @@
 import type { Id } from "@hazel/backend"
 import { api } from "@hazel/backend/api"
 import { useQuery } from "@tanstack/solid-query"
-import {
-	type Accessor,
-	ErrorBoundary,
-	For,
-	Show,
-	createEffect,
-	createMemo,
-	createSignal,
-	mapArray,
-	on,
-} from "solid-js"
+import { type Accessor, ErrorBoundary, Show, createEffect, createMemo, createSignal, on } from "solid-js"
 import { VList, type VListHandle } from "virtua/solid"
-import { TestCallView } from "~/components/TestCallView"
 import { ChatTypingPresence } from "~/components/chat-ui/chat-typing-presence"
 import { FloatingBar } from "~/components/chat-ui/floating-bar"
 import { ChatMessage } from "~/components/chat-ui/message/chat-message"
@@ -147,7 +136,6 @@ export function ChannelNew(props: {
 				throw err
 			}}
 		>
-			<TestCallView isOpen={true} onClose={() => {}} roomId="hazel-call-1" />
 			<div class="flex flex-1 flex-col">
 				<VList
 					class="flex-1"
