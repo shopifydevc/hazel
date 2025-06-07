@@ -46,8 +46,6 @@ const MessageSkeleton = (props: { isGroupStart: boolean }) => (
 	</div>
 )
 
-const MessagePlaceholder = () => <div class="h-[42px]" />
-
 export function ChannelWithoutVirtua(props: {
 	channelId: Accessor<Id<"channels">>
 	serverId: Accessor<Id<"servers">>
@@ -139,13 +137,23 @@ export function ChannelWithoutVirtua(props: {
 		const target = e.currentTarget as HTMLDivElement
 		if (!target || isInitialRender()) return
 
-		setShouldStickToBottom(target.scrollHeight - target.scrollTop - target.clientHeight < 120)
+		const isBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 120
+
+		setShouldStickToBottom(isBottom)
 
 		if (target.scrollTop < 900) {
 			if (messagesQuery.hasNextPage && !messagesQuery.isFetchingNextPage) {
 				messagesQuery.fetchNextPage()
 			}
 		}
+
+		// if (isBottom) {
+		// 	console.log("is bottom", messagesQuery.hasPreviousPage, messagesQuery.isFetchingPreviousPage)
+		// 	if (messagesQuery.hasPreviousPage && !messagesQuery.isFetchingPreviousPage) {
+		// 		console.log("fetching previous page")
+		// 		messagesQuery.fetchPreviousPage()
+		// 	}
+		// }
 	}
 
 	return (

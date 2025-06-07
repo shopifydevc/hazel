@@ -7,7 +7,8 @@ import {
 } from "@tanstack/solid-query"
 import { type FunctionReturnType, getFunctionName } from "convex/server"
 import { convexToJson } from "convex/values"
-import { createEffect, createMemo, on, onCleanup } from "solid-js"
+import { createEffect, createMemo, createSignal, on, onCleanup } from "solid-js"
+import { createStore, produce } from "solid-js/store"
 import { type PaginatedQueryArgs, type PaginatedQueryReference, useConvex } from "../convex"
 
 export interface ConvexPaginatedQueryOptions {
@@ -21,6 +22,8 @@ export const convexInfiniteQuery = <Query extends PaginatedQueryReference>(
 ): SolidInfiniteQueryOptions<InfiniteData<FunctionReturnType<Query>, unknown>, Error> => {
 	const convex = useConvex()
 
+	const [cursorStore, setCursorStore] = createSignal<string[]>([])
+
 	const isDisabled = args === "skip"
 	const queryKey = [getFunctionName(query), isDisabled ? {} : JSON.stringify(convexToJson(args as any))]
 
@@ -30,18 +33,37 @@ export const convexInfiniteQuery = <Query extends PaginatedQueryReference>(
 			if (isDisabled) {
 				return { page: [], isDone: true, continueCursor: null }
 			}
-			return await convex.query(query, {
+
+			if (!cursorStore().find((cursor) => cursor === pageParam)) {
+				setCursorStore((prev) => [...prev, pageParam].filter(Boolean))
+			}
+
+			const data = await convex.query(query, {
 				...(args as object),
 				paginationOpts: {
 					numItems: options.numItems,
 					cursor: pageParam,
 				},
 			})
+
+			return data
 		},
 
 		getNextPageParam: (lastPage) => {
 			return lastPage.isDone ? undefined : lastPage.continueCursor
 		},
+		getPreviousPageParam: (_: any, __: any, pageParam: string) => {
+			// TODO: FIXME
+			const firstPageCursorIndex = cursorStore().findIndex((cursor) => cursor === pageParam)
+
+			const prevCursor = cursorStore()[firstPageCursorIndex - 1]
+
+			console.log(prevCursor)
+
+			return prevCursor
+		},
+
+		// maxPages: 3,
 		initialPageParam: null,
 		enabled: !isDisabled,
 	}
