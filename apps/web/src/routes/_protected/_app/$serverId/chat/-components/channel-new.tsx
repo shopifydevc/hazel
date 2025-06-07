@@ -124,61 +124,46 @@ export function ChannelNew(props: {
 	)
 
 	return (
-		<ErrorBoundary
-			fallback={(err, reset) => {
-				if (err.message?.includes("ResizeObserver")) {
-					// Micro-task retry - let DOM settle
-					Promise.resolve().then(() => {
-						reset()
-					})
-					return null
-				}
-				throw err
-			}}
-		>
-			<div class="flex flex-1 flex-col">
-				<VList
-					class="flex-1"
-					overscan={15}
-					shift
-					data={processedMessages()}
-					ref={setVlistRef}
-					onScroll={async (offset) => {
-						if (!vlistRef()) {
-							return
+		<div class="flex flex-1 flex-col">
+			<VList
+				class="flex-1"
+				overscan={15}
+				shift
+				data={processedMessages()}
+				ref={setVlistRef}
+				onScroll={async (offset) => {
+					if (!vlistRef()) {
+						return
+					}
+
+					setShouldStickToBottom(offset >= vlistRef()!.scrollSize - vlistRef()!.viewportSize - 120)
+
+					if (offset < 900) {
+						// Only try to load if not exhausted
+						if (messagesQuery.hasNextPage && !messagesQuery.isFetching) {
+							messagesQuery.fetchNextPage()
 						}
-
-						setShouldStickToBottom(
-							offset >= vlistRef()!.scrollSize - vlistRef()!.viewportSize - 120,
-						)
-
-						if (offset < 900) {
-							// Only try to load if not exhausted
-							if (messagesQuery.hasNextPage && !messagesQuery.isFetching) {
-								messagesQuery.fetchNextPage()
-							}
+					}
+				}}
+			>
+				{(item) => (
+					<ChatMessage
+						message={() => item.message}
+						isGroupStart={() => item.isGroupStart}
+						isGroupEnd={() => item.isGroupEnd}
+						isFirstNewMessage={() =>
+							item.message._id === channelQuery.data?.currentUser?.lastSeenMessageId
 						}
-					}}
-				>
-					{(item) => (
-						<ChatMessage
-							message={() => item.message}
-							isGroupStart={() => item.isGroupStart}
-							isGroupEnd={() => item.isGroupEnd}
-							isFirstNewMessage={() =>
-								item.message._id === channelQuery.data?.currentUser?.lastSeenMessageId
-							}
-							serverId={props.serverId}
-							isThread={props.isThread}
-						/>
-					)}
-				</VList>
+						serverId={props.serverId}
+						isThread={props.isThread}
+					/>
+				)}
+			</VList>
 
-				<div class="mx-2 flex flex-col gap-1.5">
-					<FloatingBar />
-					<ChatTypingPresence />
-				</div>
+			<div class="mx-2 flex flex-col gap-1.5">
+				<FloatingBar />
+				<ChatTypingPresence />
 			</div>
-		</ErrorBoundary>
+		</div>
 	)
 }
