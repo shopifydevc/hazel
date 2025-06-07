@@ -12,6 +12,7 @@ import { Button } from "~/components/ui/button"
 import { convexQuery } from "~/lib/convex-query"
 import { convexInfiniteQuery } from "~/lib/convex-query/infinite"
 import { ChannelNew } from "./-components/channel-new"
+import { ChannelWithoutVirtua } from "./-components/channel-without-virtua"
 
 export const Route = createFileRoute("/_protected/_app/$serverId/chat/$id")({
 	component: Root,
@@ -51,10 +52,11 @@ function RouteComponent() {
 	return (
 		<div class="flex h-screen flex-col">
 			<ChatTopbar />
-			<div class="flex flex-1">
-				<ChannelNew channelId={channelId} serverId={serverId} isThread={true} />
+			<div class="flex flex-1 overflow-hidden">
+				<div class="flex min-w-0 flex-1 flex-col">
+					<ChannelWithoutVirtua channelId={channelId} serverId={serverId} isThread={false} />
+				</div>
 
-				{/* <Channel channelId={channelId} serverId={serverId} isThread={false} /> */}
 				<Show when={openThreadId()}>
 					<ChatProvider channelId={openThreadId} serverId={serverId}>
 						<ThreadChannel

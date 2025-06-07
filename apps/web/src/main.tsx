@@ -52,6 +52,8 @@ const router = createRouter({
 	// scrollRestoration: true,
 	defaultPreloadStaleTime: 0,
 
+	// defaultViewTransition: true,
+
 	context: {
 		auth: undefined!,
 		convex: convex,

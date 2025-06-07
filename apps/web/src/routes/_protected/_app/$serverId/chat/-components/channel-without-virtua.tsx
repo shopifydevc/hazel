@@ -3,7 +3,6 @@ import { api } from "@hazel/backend/api"
 import { useQuery } from "@tanstack/solid-query"
 import {
 	type Accessor,
-	ErrorBoundary,
 	For,
 	Show,
 	createEffect,
@@ -11,9 +10,9 @@ import {
 	createSignal,
 	mapArray,
 	on,
+	onMount,
 } from "solid-js"
 import { createStore, reconcile } from "solid-js/store"
-import { VList, type VListHandle } from "virtua/solid"
 import { ChatTypingPresence } from "~/components/chat-ui/chat-typing-presence"
 import { FloatingBar } from "~/components/chat-ui/floating-bar"
 import { ChatMessage } from "~/components/chat-ui/message/chat-message"
@@ -21,7 +20,7 @@ import { convexQuery } from "~/lib/convex-query"
 import { useConvexInfiniteQuery } from "~/lib/convex-query/infinite"
 import type { Message } from "~/lib/types"
 
-const PAGE_SIZE = 30
+const PAGE_SIZE = 25
 
 // Skeleton component for loading messages
 const MessageSkeleton = (props: { isGroupStart: boolean }) => (
@@ -44,16 +43,7 @@ const MessageSkeleton = (props: { isGroupStart: boolean }) => (
 	</div>
 )
 
-type ListItem = ListItemMessage | ListItemSkeleton
-
-type ListItemMessage = {
-	type: "message"
-	data: { message: Message; isGroupStart: boolean; isGroupEnd: boolean }
-}
-
-type ListItemSkeleton = { type: "skeleton"; id: string; isGroupStart: boolean }
-
-export function ChannelNew(props: {
+export function ChannelWithoutVirtua(props: {
 	channelId: Accessor<Id<"channels">>
 	serverId: Accessor<Id<"servers">>
 	isThread: boolean
@@ -75,7 +65,7 @@ export function ChannelNew(props: {
 
 	createEffect(() => {
 		setMessages(
-			reconcile(messagesQuery.data?.pages.flatMap((page) => page.page).reverse() ?? [], { key: "id" }),
+			reconcile(messagesQuery.data?.pages.flatMap((page) => page.page).reverse() ?? [], { key: "_id" }),
 		)
 	})
 
@@ -108,56 +98,89 @@ export function ChannelNew(props: {
 		},
 	)
 
+	let bottomRef: HTMLDivElement | undefined
+	let scrollContainerRef: HTMLDivElement | undefined
 	const [shouldStickToBottom, setShouldStickToBottom] = createSignal(true)
-	const [vlistRef, setVlistRef] = createSignal<VListHandle | undefined>(undefined)
 
 	createEffect(
-		on(processedMessages, (items) => {
-			if (shouldStickToBottom() && vlistRef() && items.length > 0) {
-				// Defer scrolling to a microtask to allow virtua to process the new items
+		on(processedMessages, () => {
+			if (!shouldStickToBottom()) return
+
+			if (bottomRef) {
 				queueMicrotask(() => {
-					vlistRef()?.scrollToIndex(items.length - 1, { align: "end" })
+					if (bottomRef) {
+						bottomRef.scrollIntoView({ behavior: "smooth" })
+					}
 				})
 			}
 		}),
 	)
 
+	createEffect(() => {
+		setTimeout(() => {
+			if (bottomRef && scrollContainerRef) {
+				bottomRef.scrollIntoView({ behavior: "auto" })
+				setTimeout(() => {
+					console.log("After scrollIntoView, scrollTop:", scrollContainerRef.scrollTop)
+				}, 0)
+			}
+		}, 0)
+	})
+
+	const handleScroll = (e: Event) => {
+		const target = e.currentTarget as HTMLDivElement
+		if (!target) return
+
+		console.log(target.scrollHeight - target.scrollTop - target.clientHeight < 120)
+
+		setShouldStickToBottom(target.scrollHeight - target.scrollTop - target.clientHeight < 120)
+
+		if (target.scrollTop < 900) {
+			if (messagesQuery.hasNextPage && !messagesQuery.isFetchingNextPage) {
+				messagesQuery.fetchNextPage()
+			}
+		}
+	}
+
 	return (
-		<div class="flex flex-1 flex-col">
-			<VList
-				class="flex-1"
-				overscan={15}
-				shift
-				data={processedMessages()}
-				ref={setVlistRef}
-				onScroll={async (offset) => {
-					if (!vlistRef()) {
-						return
+		<div class="flex flex-1 flex-col overflow-hidden">
+			<div class="flex-1 overflow-y-auto" ref={scrollContainerRef} onScroll={handleScroll}>
+				<Show
+					when={!messagesQuery.isLoading}
+					fallback={
+						<div class="flex flex-col justify-end p-4">
+							{Array.from({ length: 10 }).map((_, i) => (
+								<MessageSkeleton isGroupStart={i % 3 === 0} />
+							))}
+						</div>
 					}
+				>
+					{/* This spacer pushes content to the bottom */}
+					<div class="min-h-0 flex-1" />
 
-					setShouldStickToBottom(offset >= vlistRef()!.scrollSize - vlistRef()!.viewportSize - 120)
+					<Show when={messagesQuery.isFetchingNextPage}>
+						<div class="flex justify-center p-4">
+							<MessageSkeleton isGroupStart />
+						</div>
+					</Show>
 
-					if (offset < 900) {
-						// Only try to load if not exhausted
-						if (messagesQuery.hasNextPage && !messagesQuery.isFetching) {
-							messagesQuery.fetchNextPage()
-						}
-					}
-				}}
-			>
-				{(item) => (
-					<ChatMessage
-						message={() => item.message}
-						isGroupStart={item.isGroupStart}
-						isGroupEnd={item.isGroupEnd}
-						isFirstNewMessage={() =>
-							item.message._id === channelQuery.data?.currentUser?.lastSeenMessageId
-						}
-						serverId={props.serverId}
-						isThread={props.isThread}
-					/>
-				)}
-			</VList>
+					<For each={processedMessages()}>
+						{(item) => (
+							<ChatMessage
+								message={() => item.message}
+								isGroupStart={item.isGroupStart}
+								isGroupEnd={item.isGroupEnd}
+								isFirstNewMessage={() =>
+									item.message._id === channelQuery.data?.currentUser?.lastSeenMessageId
+								}
+								serverId={props.serverId}
+								isThread={props.isThread}
+							/>
+						)}
+					</For>
+				</Show>
+				<div ref={bottomRef} class="flex-1" />
+			</div>
 
 			<div class="mx-2 flex flex-col gap-1.5">
 				<FloatingBar />
