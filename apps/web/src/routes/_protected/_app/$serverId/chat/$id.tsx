@@ -10,8 +10,7 @@ import { ImageViewerModal } from "~/components/chat-ui/image-viewer-modal"
 import { IconX } from "~/components/icons/x"
 import { Button } from "~/components/ui/button"
 import { convexQuery } from "~/lib/convex-query"
-import { convexInfiniteQuery } from "~/lib/convex-query/infinite"
-import { ChannelNew } from "./-components/channel-new"
+import { ChannelVirtua } from "./-components/channel-virtua"
 import { ChannelWithoutVirtua } from "./-components/channel-without-virtua"
 
 export const Route = createFileRoute("/_protected/_app/$serverId/chat/$id")({
@@ -126,7 +125,7 @@ function ThreadChannel(props: {
 					<IconX class="size-4" />
 				</Button>
 			</div>
-			<ChannelNew channelId={channelId} serverId={serverId} isThread={true} />
+			<ChannelWithoutVirtua channelId={channelId} serverId={serverId} isThread={true} />
 		</div>
 	)
 }

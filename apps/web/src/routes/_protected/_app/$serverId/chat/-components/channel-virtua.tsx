@@ -53,7 +53,7 @@ type ListItemMessage = {
 
 type ListItemSkeleton = { type: "skeleton"; id: string; isGroupStart: boolean }
 
-export function ChannelNew(props: {
+export function ChannelVirtua(props: {
 	channelId: Accessor<Id<"channels">>
 	serverId: Accessor<Id<"servers">>
 	isThread: boolean
@@ -75,7 +75,7 @@ export function ChannelNew(props: {
 
 	createEffect(() => {
 		setMessages(
-			reconcile(messagesQuery.data?.pages.flatMap((page) => page.page).reverse() ?? [], { key: "id" }),
+			reconcile(messagesQuery.data?.pages.flatMap((page) => page.page).reverse() ?? [], { key: "_id" }),
 		)
 	})
 
@@ -126,8 +126,9 @@ export function ChannelNew(props: {
 		<div class="flex flex-1 flex-col">
 			<VList
 				class="flex-1"
-				overscan={15}
+				// overscan={15}
 				shift
+				itemSize={50}
 				data={processedMessages()}
 				ref={setVlistRef}
 				onScroll={async (offset) => {
