@@ -73,11 +73,8 @@ export function useConvexInfiniteQuery<Query extends PaginatedQueryReference>(
 
 	const queryResult = internalUseInfiniteQuery(() => queryOptions as never)
 
-	// Create a memo that only changes when the page structure changes.
-	// This is the key to breaking the infinite loop.
 	const pageParamsKey = createMemo(() => JSON.stringify(queryResult.data?.pageParams ?? []))
 
-	// Use `on(pageParamsKey, ...)` to explicitly track only the page structure.
 	createEffect(
 		on(pageParamsKey, () => {
 			if (isDisabled || !queryResult.data) {
@@ -116,18 +113,15 @@ export function useConvexInfiniteQuery<Query extends PaginatedQueryReference>(
 
 								const currentPage = oldData.pages[pageIndex]
 
-								// Compare just the page data (adjust based on your needs)
 								if (
 									currentPage &&
 									currentPage.page?.length === result.page?.length &&
 									JSON.stringify(currentPage.page) === JSON.stringify(result.page) &&
 									currentPage.continueCursor === result.continueCursor
 								) {
-									// No actual change, preserve reference
 									return oldData
 								}
 
-								// Data changed, create new array
 								const newPages = [...oldData.pages]
 								newPages[pageIndex] = result
 

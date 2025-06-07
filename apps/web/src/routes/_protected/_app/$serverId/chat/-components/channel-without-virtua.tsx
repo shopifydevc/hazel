@@ -112,10 +112,17 @@ export function ChannelWithoutVirtua(props: {
 	let bottomRef: HTMLDivElement | undefined
 	let scrollContainerRef: HTMLDivElement | undefined
 	const [shouldStickToBottom, setShouldStickToBottom] = createSignal(true)
+	const [isInitialRender, setIsInitialRender] = createSignal(true)
 
 	createEffect(
 		on(processedMessages, () => {
 			if (!shouldStickToBottom()) return
+
+			if (isInitialRender()) {
+				setIsInitialRender(true)
+
+				return
+			}
 
 			if (bottomRef) {
 				queueMicrotask(() => {
