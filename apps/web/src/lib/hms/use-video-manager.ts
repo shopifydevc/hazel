@@ -6,12 +6,14 @@ import {
 	selectIsLocalScreenShared,
 	selectIsLocalVideoEnabled,
 	selectPeers,
+	selectPeersScreenSharing,
+	selectScreenShareByPeerID,
 } from "@100mslive/hms-video-store"
 import type { Id } from "@hazel/backend"
 import { api } from "@hazel/backend/api"
 import { useQuery } from "@tanstack/solid-query"
 import { createEffect, createSignal, onCleanup } from "solid-js"
-import { createStore } from "solid-js/store"
+import { createStore, reconcile } from "solid-js/store"
 import { toaster } from "~/components/ui/toaster"
 import { convexQuery } from "../convex-query"
 
@@ -26,15 +28,17 @@ export function useCallManager(props: { serverId: Id<"servers"> }) {
 		...convexQuery(api.me.getUser, { serverId: props.serverId }),
 	}))
 
-	const [isConnected, setIsConnected] = createSignal(hmsStore.getState(selectIsConnectedToRoom))
-	const [peers, setPeers] = createStore(hmsStore.getState(selectPeers))
-
-	const [localAudioEnabled, setLocalAudioEnabled] = createSignal(
-		hmsStore.getState(selectIsLocalAudioEnabled),
-	)
-	const [localVideoEnabled, setLocalVideoEnabled] = createSignal(
-		hmsStore.getState(selectIsLocalVideoEnabled),
-	)
+	const [store, setStore] = createStore({
+		peers: hmsStore.getState(selectPeers),
+		isConnected: hmsStore.getState(selectIsConnectedToRoom),
+		local: {
+			audio: hmsStore.getState(selectIsLocalAudioEnabled),
+			video: hmsStore.getState(selectIsLocalVideoEnabled),
+		},
+		screenshares: hmsStore.getState(selectPeersScreenSharing).map((peer) => {
+			return hmsStore.getState(selectScreenShareByPeerID(peer.id))
+		}),
+	})
 
 	const joinCall = async ({ roomCode }: { roomCode: string }) => {
 		try {
@@ -91,12 +95,26 @@ export function useCallManager(props: { serverId: Id<"servers"> }) {
 
 	createEffect(() => {
 		const unsubscribe = hmsStore.subscribe((store) => {
-			setIsConnected(!!selectIsConnectedToRoom(store))
+			const localAudioEnabled = selectIsLocalAudioEnabled(store)
+			const localVideoEnabled = selectIsLocalVideoEnabled(store)
+			setStore(
+				"local",
+				reconcile({
+					audio: localAudioEnabled,
+					video: localVideoEnabled,
+				}),
+			)
 
-			setLocalAudioEnabled(selectIsLocalAudioEnabled(store))
-			setLocalVideoEnabled(selectIsLocalVideoEnabled(store))
+			setStore("isConnected", !!selectIsConnectedToRoom(store))
 
-			setPeers(selectPeers(store))
+			setStore("peers", selectPeers(store))
+
+			const screensharingPeers = selectPeersScreenSharing(store)
+
+			const screenshares = screensharingPeers.map((peer) => {
+				return selectScreenShareByPeerID(peer.id)(store)
+			})
+			setStore("screenshares", screenshares)
 		})
 
 		onCleanup(() => {
@@ -105,17 +123,14 @@ export function useCallManager(props: { serverId: Id<"servers"> }) {
 	})
 
 	return {
-		isConnected,
-		peers,
-		joinCall,
-		leaveCall,
+		store,
+
 		hmsActions,
 
+		joinCall,
+		leaveCall,
 		setLocalAudio,
-		localAudioEnabled,
 		toggleScreenShare,
-
-		localVideoEnabled,
 		setLocalVideo,
 	}
 }
