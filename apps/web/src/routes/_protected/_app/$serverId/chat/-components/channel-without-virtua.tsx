@@ -68,7 +68,6 @@ export function ChannelWithoutVirtua(props: {
 
 	const [messages, setMessages] = createStore<Message[]>([])
 
-	// New state for handling upward infinite scroll
 	const [isFetchingUp, setIsFetchingUp] = createSignal(false)
 	const [scrollSnapshot, setScrollSnapshot] = createSignal({ height: 0 })
 
@@ -77,11 +76,10 @@ export function ChannelWithoutVirtua(props: {
 	const [shouldStickToBottom, setShouldStickToBottom] = createSignal(true)
 
 	onMount(() => {
-		// Initial scroll to bottom
 		setTimeout(() => {
 			bottomRef?.scrollIntoView({ behavior: "auto" })
 			setIsInitialRender(false)
-		}, 500) // Reduced timeout slightly
+		}, 400)
 	})
 
 	createEffect(
@@ -163,7 +161,7 @@ export function ChannelWithoutVirtua(props: {
 		if (!target || isInitialRender()) return
 
 		const isAtBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 120
-		setShouldStickToBottom(isAtBottom)
+		setShouldStickToBottom(isAtBottom && !messagesQuery.hasPreviousPage)
 
 		// Trigger fetching older messages when scrolling to the top
 		const isAtTop = target.scrollTop < 900
@@ -175,9 +173,7 @@ export function ChannelWithoutVirtua(props: {
 		}
 
 		if (isAtBottom) {
-			console.log("is bottom", messagesQuery.hasPreviousPage, messagesQuery.isFetchingPreviousPage)
 			if (messagesQuery.hasPreviousPage && !messagesQuery.isFetchingPreviousPage) {
-				console.log("fetching previous page")
 				messagesQuery.fetchPreviousPage()
 			}
 		}

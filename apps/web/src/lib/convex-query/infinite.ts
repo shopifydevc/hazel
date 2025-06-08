@@ -64,10 +64,10 @@ export const convexInfiniteQuery = <Query extends PaginatedQueryReference>(
 
 			const prevCursor = cursorStore()[firstPageCursorIndex - 1]
 
-			return prevCursor
+			return null
 		},
 
-		maxPages: 3,
+		// maxPages: 3,
 		initialPageParam: "firstItem",
 		enabled: !isDisabled,
 	}
