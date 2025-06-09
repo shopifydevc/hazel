@@ -8,14 +8,15 @@ import { Popover } from "~/components/ui/popover"
 import { Tooltip } from "~/components/ui/tooltip"
 
 import type { Doc } from "@hazel/backend"
+import type { Message } from "~/lib/types"
 import { ConfirmDialog } from "../confirm-dialog"
 import { createMessageActions } from "./message-actions-config"
-import type { Message } from "~/lib/types"
 
 interface MessageActionsProps {
 	message: Accessor<Message>
 	serverId: Accessor<string>
 	isPinned: Accessor<boolean>
+	isGroupStart: Accessor<boolean>
 	isThread: boolean
 }
 
@@ -42,6 +43,7 @@ export function MessageActions(props: MessageActionsProps) {
 			<div
 				class={twMerge(
 					"-top-4 absolute right-4 z-20 rounded-md border bg-sidebar shadow-md group-hover:flex",
+					props.isGroupStart() ? "-top-4" : "-top-6",
 					open() ? "flex" : "hidden",
 				)}
 			>

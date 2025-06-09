@@ -79,6 +79,7 @@ export function ChatMessage(props: ChatMessageProps) {
 				<MessageActions
 					message={props.message}
 					serverId={props.serverId}
+					isGroupStart={props.isGroupStart}
 					isPinned={isPinned}
 					isThread={props.isThread}
 				/>
