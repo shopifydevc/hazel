@@ -90,21 +90,25 @@ export function MessageContent(props: MessageContentProps) {
 								>
 									{preProps.children}
 								</pre>
-								<button
-									type="button"
-									onClick={handleCopy}
-									aria-label="Copy code"
-									class={twJoin(
-										"rounded-md p-1.5",
-										"text-muted-foreground/80",
-										"opacity-0 focus:opacity-100 group-hover:opacity-100",
-										"transition-all duration-200",
-										"hover:bg-muted hover:text-muted-foreground",
-										isCopied() && "!opacity-100 bg-emerald-500/20 text-emerald-500",
-									)}
-								>
-									{isCopied() ? <IconCheck class="size-4" /> : <IconCopy class="size-4" />}
-								</button>
+								<div class="flex self-start">
+									<button
+										type="button"
+										onClick={handleCopy}
+										aria-label="Copy code"
+										class={twJoin(
+											"rounded-md p-1.5",
+											"text-muted-foreground/80",
+											"opacity-0 focus:opacity-100 group-hover:opacity-100",
+											"transition-all duration-200",
+											"hover:bg-muted hover:text-muted-foreground",
+											isCopied() && "!opacity-100 bg-emerald-500/20 text-emerald-500",
+										)}
+									>
+										<Show when={isCopied()} fallback={<IconCopy class="size-4" />}>
+											<IconCheck class="size-4" />
+										</Show>
+									</button>
+								</div>
 							</div>
 						)
 					},
