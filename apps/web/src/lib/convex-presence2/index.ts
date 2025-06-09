@@ -110,14 +110,14 @@ export default function createPresence(
 				intervalId = setInterval(sendHeartbeat, interval)
 			}
 		}
-		document.addEventListener("visibilitychange", handleVisibility)
+		// document.addEventListener("visibilitychange", handleVisibility)
 
 		// onCleanup handles component unmounting.
 		onCleanup(() => {
 			if (intervalId) {
 				clearInterval(intervalId)
 			}
-			document.removeEventListener("visibilitychange", handleVisibility)
+			// document.removeEventListener("visibilitychange", handleVisibility)
 			window.removeEventListener("beforeunload", handleUnload)
 
 			const currentSessionToken = sessionToken()
