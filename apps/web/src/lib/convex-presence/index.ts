@@ -93,25 +93,6 @@ export default function createPresence(
 		}
 		window.addEventListener("beforeunload", handleUnload)
 
-		// Handle visibility changes to pause heartbeats when tab is hidden.
-		const handleVisibility = async () => {
-			if (document.hidden) {
-				if (intervalId) {
-					clearInterval(intervalId)
-					intervalId = null
-				}
-
-				const currentSessionToken = sessionToken()
-				if (currentSessionToken) {
-					await disconnect({ sessionToken: currentSessionToken })
-				}
-			} else {
-				// Tab became visible again, resume heartbeats.
-				void sendHeartbeat()
-				if (intervalId) clearInterval(intervalId)
-				intervalId = setInterval(sendHeartbeat, interval)
-			}
-		}
 		// document.addEventListener("visibilitychange", handleVisibility)
 
 		// onCleanup handles component unmounting.
@@ -126,6 +107,72 @@ export default function createPresence(
 			// Disconnect when the component unmounts.
 			if (currentSessionToken) {
 				void disconnect({ sessionToken: currentSessionToken })
+			}
+		})
+	})
+
+	const presenceListQuery = useQuery(() =>
+		convexQuery(api.presence.list, roomToken() ? { roomToken: roomToken()! } : "skip"),
+	)
+
+	// Memoize the sorted list to prevent re-sorting on every render.
+	// This is also reactive and will update when presenceList or userId changes.
+	const sortedList = createMemo(() => {
+		const list = presenceListQuery.data
+		if (!list) {
+			return []
+		}
+		// Sort to show the current user first.
+		return list.slice().sort((a, b) => {
+			if ((a.userId as Id<"users">) === userId()) return -1
+			if ((b.userId as Id<"users">) === userId()) return 1
+			return 0
+		})
+	})
+
+	return sortedList
+}
+
+export const createPresenceState = (
+	roomId: Accessor<string>,
+	userId: Accessor<Id<"users">>,
+	interval = 10000,
+	convexUrl?: string,
+) => {
+	const convex = useConvex()
+	const baseUrl = convexUrl ?? convex.address
+
+	// Each session (browser tab etc) has a unique ID.
+	const sessionId = crypto.randomUUID()
+	const [sessionToken, setSessionToken] = createSignal<string | null>(null)
+	const [roomToken, setRoomToken] = createSignal<string | null>(null)
+
+	const heartbeatMutation = createMutation(api.presence.heartbeat)
+	const disconnectMutation = createMutation(api.presence.disconnect)
+
+	// Use single-flight wrappers to prevent redundant concurrent calls.
+	const heartbeat = createSingleFlight(heartbeatMutation)
+	const disconnect = createSingleFlight(disconnectMutation)
+
+	createEffect(() => {
+		let intervalId: ReturnType<typeof setInterval> | null = null
+
+		const sendHeartbeat = async () => {
+			// The `heartbeat` function is single-flighted, so we can call it safely.
+			const result = await heartbeat({ roomId: roomId(), userId: userId(), sessionId, interval })
+			if (result) {
+				setRoomToken(result.roomToken)
+				setSessionToken(result.sessionToken)
+			}
+		}
+
+		sendHeartbeat()
+
+		intervalId = setInterval(sendHeartbeat, interval)
+
+		onCleanup(() => {
+			if (intervalId) {
+				clearInterval(intervalId)
 			}
 		})
 	})

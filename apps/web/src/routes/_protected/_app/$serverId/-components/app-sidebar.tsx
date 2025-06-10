@@ -1,6 +1,5 @@
 import { Link, useParams } from "@tanstack/solid-router"
-import { useAuth } from "clerk-solidjs"
-import { type Accessor, Index, Match, Switch, createEffect, createMemo, createSignal } from "solid-js"
+import { type Accessor, Index, Match, Switch, createMemo, createSignal } from "solid-js"
 import { IconHashtag } from "~/components/icons/hashtag"
 
 import { IconPlusSmall } from "~/components/icons/plus-small"

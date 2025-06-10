@@ -1,6 +1,8 @@
 import { type Accessor, type JSX, onMount, splitProps } from "solid-js"
 import { MarkdownInput } from "./markdown-input"
 
+import { highlight } from "sugar-high"
+
 export interface ChatInputProps extends JSX.HTMLAttributes<HTMLDivElement> {
 	value: Accessor<string>
 	onValueChange: (value: string) => void
@@ -24,12 +26,19 @@ export const ChatInput = (props: ChatInputProps) => {
 
 				//
 				codeblock: (token) => {
-					console.log(token)
+					console.log(token.content)
 
-					// return <code innerHTML={codeHTML} />
-					return <div>WOW</div>
+					const html = highlight(token.content)
+
+					return <span innerHTML={html} />
 				},
-				inlinecode: (token) => <span class="rounded-md bg-muted p-0.5">{token.content}</span>,
+				inlinecode: (token) => {
+					console.log(token.content)
+
+					const html = highlight(token.content)
+
+					return <span innerHTML={html} />
+				},
 				default: (token) => <span>{token.content}</span>,
 			}}
 			{...divProps}
