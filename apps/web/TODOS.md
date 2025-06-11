@@ -4,8 +4,7 @@
 
 # Chat 
 - Add inline code highlighting
-# Chat Input 
-- Fix Code block highltighting + inline
+- Replace Reaction Badges with Pills
 
 # Features
 - File uploads with convex
@@ -30,10 +29,4 @@
 - Move all mutations to tanstack query
 
 - Add more presence types (away, busy)
-
-
-
-
-- Rework presence with convex component https://github.com/get-convex/presence, probably need to fork to a typing indicator...
-
 - Improve mobile app UI and add settings in both web + mobile to mute Notifications

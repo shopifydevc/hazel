@@ -166,7 +166,6 @@ export const createReaction = userMutation({
 		serverId: v.id("servers"),
 
 		messageId: v.id("messages"),
-		userId: v.id("users"),
 		emoji: v.string(),
 	},
 	handler: async (ctx, args) => {
@@ -177,14 +176,14 @@ export const createReaction = userMutation({
 
 		if (
 			message.reactions.some(
-				(reaction) => reaction.userId === args.userId && reaction.emoji === args.emoji,
+				(reaction) => reaction.userId === ctx.user.id && reaction.emoji === args.emoji,
 			)
 		) {
 			throw new Error("You have already reacted to this message")
 		}
 
 		return await ctx.db.patch(args.messageId, {
-			reactions: [...message.reactions, { userId: args.userId, emoji: args.emoji }],
+			reactions: [...message.reactions, { userId: ctx.user.id, emoji: args.emoji }],
 		})
 	},
 })

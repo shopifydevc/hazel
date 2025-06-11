@@ -1,4 +1,4 @@
-import { type Accessor, For, createSignal } from "solid-js"
+import { type Accessor, For, Suspense, createSignal } from "solid-js"
 import { twMerge } from "tailwind-merge"
 
 import { IconHorizontalDots } from "~/components/icons/horizontal-dots"
@@ -10,6 +10,7 @@ import { Tooltip } from "~/components/ui/tooltip"
 import { api } from "@hazel/backend/api"
 import { useQuery } from "@tanstack/solid-query"
 import { useChat } from "~/components/chat-state/chat-store"
+import { IconEmojiAdd } from "~/components/icons/emoji-add"
 import { IconPlus } from "~/components/icons/plus"
 import { createMutation } from "~/lib/convex"
 import { convexQuery } from "~/lib/convex-query"
@@ -71,7 +72,6 @@ export function MessageActions(props: MessageActionsProps) {
 				await createReactionMutation({
 					serverId: state.serverId,
 					messageId: props.message()._id,
-					userId: meQuery.data._id,
 					emoji,
 				})
 			}
@@ -82,7 +82,7 @@ export function MessageActions(props: MessageActionsProps) {
 	}
 
 	return (
-		<>
+		<Suspense>
 			<div
 				class={twMerge(
 					"-top-4 absolute right-4 z-20 rounded-md border bg-sidebar shadow-md group-hover:flex",
@@ -93,7 +93,7 @@ export function MessageActions(props: MessageActionsProps) {
 				<Popover open={openPopover()} onOpenChange={(value) => setOpenPopover(value.open)} lazyMount>
 					<Popover.Trigger>
 						<Button intent="ghost" size="square">
-							<IconPlus />
+							<IconEmojiAdd />
 						</Button>
 					</Popover.Trigger>
 
@@ -149,6 +149,6 @@ export function MessageActions(props: MessageActionsProps) {
 					setPendingAction(null)
 				}}
 			/>
-		</>
+		</Suspense>
 	)
 }

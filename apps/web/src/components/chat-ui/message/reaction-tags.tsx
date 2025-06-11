@@ -1,6 +1,15 @@
 import type { Doc } from "@hazel/backend"
+import { api } from "@hazel/backend/api"
+import { useQuery } from "@tanstack/solid-query"
 import { useAuth } from "clerk-solidjs"
-import { type Accessor, For, createMemo } from "solid-js"
+import { type Accessor, For, Show, Suspense, createMemo, createSignal } from "solid-js"
+import { useChat } from "~/components/chat-state/chat-store"
+import { IconEmojiAdd } from "~/components/icons/emoji-add"
+import { Button } from "~/components/ui/button"
+import { Popover } from "~/components/ui/popover"
+import { createMutation } from "~/lib/convex"
+import { convexQuery } from "~/lib/convex-query"
+import { EmojiPicker } from "./emoji-picker"
 
 type MessageReaction = {
 	emoji: string
@@ -12,7 +21,11 @@ type ReactionTagsProps = {
 }
 
 export function ReactionTags(props: ReactionTagsProps) {
-	const { userId } = useAuth()
+	const { state } = useChat()
+
+	const [openPopover, setOpenPopover] = createSignal(false)
+
+	const meQuery = useQuery(() => convexQuery(api.me.getUser, { serverId: state.serverId }))
 
 	const reactionGroups = createMemo(() => {
 		const groups: Record<string, { emoji: string; reactions: MessageReaction[] }> = {}
@@ -26,43 +39,88 @@ export function ReactionTags(props: ReactionTagsProps) {
 	})
 
 	const currentSelectedEmojis = createMemo(() => {
-		return props.message().reactions.filter((reaction) => reaction.userId === userId())
+		return props.message().reactions.filter((reaction) => reaction.userId === meQuery.data?._id)
 	})
 
+	const removeReaction = createMutation(api.messages.deleteReaction)
+	const addReaction = createMutation(api.messages.createReaction)
+
+	async function createReaction(emoji: string) {
+		if (!meQuery.data) return
+
+		setOpenPopover(false)
+		const alreadyReacted = props
+			.message()
+			.reactions.some((r) => r.userId === meQuery.data?._id && r.emoji === emoji)
+
+		try {
+			if (alreadyReacted) {
+				return
+			}
+
+			await addReaction({
+				serverId: state.serverId,
+				messageId: props.message()._id,
+				emoji,
+			})
+		} catch (err) {
+			// eslint-disable-next-line no-console
+			console.error("Failed to toggle reaction", err)
+		}
+	}
+
 	return (
-		<div class="flex gap-2">
-			<For each={reactionGroups()}>
-				{(group) => {
-					return (
-						<button
-							type="button"
-							class="flex cursor-pointer items-center gap-1 rounded-full bg-primary/50 px-2 hover:bg-primary/70"
-							onClick={() => {
-								const currentSelectedEmoji = currentSelectedEmojis().find(
-									(reaction) => reaction.emoji === group.emoji,
-								)
+		<Suspense>
+			<div class="flex items-center gap-2">
+				<For each={reactionGroups()}>
+					{(group) => {
+						return (
+							<button
+								type="button"
+								class="flex h-6 cursor-pointer items-center gap-1 rounded-full bg-primary/50 px-2 hover:bg-primary/70"
+								onClick={() => {
+									const currentSelectedEmoji = currentSelectedEmojis().find(
+										(reaction) => reaction.emoji === group.emoji,
+									)
 
-								// TODO: Reimplement removing reactions
+									if (currentSelectedEmoji) {
+										removeReaction({
+											id: props.message()._id,
+											serverId: state.serverId,
+											emoji: group.emoji,
+										})
+									} else {
+										addReaction({
+											messageId: props.message()._id,
+											serverId: state.serverId,
+											emoji: group.emoji,
+										})
+									}
+								}}
+							>
+								{group.emoji} <span class="ml-1 text-xs">{group.reactions.length}</span>
+							</button>
+						)
+					}}
+				</For>
+				<Show when={currentSelectedEmojis().length > 0}>
+					<Popover
+						open={openPopover()}
+						onOpenChange={(value) => setOpenPopover(value.open)}
+						lazyMount
+					>
+						<Popover.Trigger>
+							<Button class="flex items-center justify-center" intent="ghost" size="icon">
+								<IconEmojiAdd class="size-4!" />
+							</Button>
+						</Popover.Trigger>
 
-								// if (currentSelectedEmoji) {
-								// 	z.mutate.reactions.delete({
-								// 		id: currentSelectedEmoji.id,
-								// 	})
-								// } else {
-								// 	z.mutate.reactions.insert({
-								// 		messageId: props.message().id,
-								// 		userId: userId()!,
-								// 		emoji: group.emoji,
-								// 		id: newId("reactions"),
-								// 	})
-								// }
-							}}
-						>
-							{group.emoji} <span class="ml-1 text-xs">{group.reactions.length}</span>
-						</button>
-					)
-				}}
-			</For>
-		</div>
+						<Popover.UnstyledContent>
+							<EmojiPicker onSelect={createReaction} />
+						</Popover.UnstyledContent>
+					</Popover>
+				</Show>
+			</div>
+		</Suspense>
 	)
 }

@@ -51,7 +51,7 @@ export function createMessageActions(props: CreateMessageActionsProps) {
 				setState("openThreadId", threadChannelId)
 			},
 			hotkey: "t",
-			showButton: !props.isThread && !(props.message().threadMessages?.length > 0),
+			showButton: !props.isThread() && !(props.message().threadMessages?.length > 0),
 		},
 		{
 			key: "reply",
