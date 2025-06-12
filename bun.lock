@@ -14,7 +14,7 @@
       "version": "1.0.0",
       "dependencies": {
         "@convex-dev/expo-push-notifications": "^0.2.4",
-        "@convex-dev/presence": "^0.1.1",
+        "@convex-dev/presence": "^0.1.2",
         "convex": "^1.24.8",
       },
       "devDependencies": {
@@ -374,7 +374,7 @@
 
     "@convex-dev/expo-push-notifications": ["@convex-dev/expo-push-notifications@0.2.4", "", { "dependencies": { "convex-helpers": "^0.1.58" }, "peerDependencies": { "convex": ">=1.23.0 <1.35.0" } }, "sha512-1AhHc6tcNXqBV4xLFD5cbQAI5IE0/SM3sNTAc+Ms26ASwGF4M/1yN0nrLdKbHSv/HsM60ovZiMIS+BQ7DHC+lg=="],
 
-    "@convex-dev/presence": ["@convex-dev/presence@0.1.1", "", { "peerDependencies": { "convex": ">=1.24.8 <1.35.0", "react": "~18.3.1 || ^19.0.0", "react-dom": "~18.3.1 || ^19.0.0" } }, "sha512-MYKrZG96xa40uXE8Grz43lbdk3NDuTycRVZTLymsxW9BpDwXsglw1cy9fgPkCvcFqOVo7Stuxm6pfqg/ApE0dw=="],
+    "@convex-dev/presence": ["@convex-dev/presence@0.1.2", "", { "peerDependencies": { "convex": ">=1.24.8 <1.35.0", "react": "~18.3.1 || ^19.0.0", "react-dom": "~18.3.1 || ^19.0.0" } }, "sha512-eK6D+MlgZswNrsuH6mJbDm7QUwz8n3ptt6FBjEuu6J2WgZYR0VyEvAgGnYtfTVOvxTzj0lShdRwjaJ9AYqeFcQ=="],
 
     "@dabh/diagnostics": ["@dabh/diagnostics@2.0.3", "", { "dependencies": { "colorspace": "1.1.x", "enabled": "2.0.x", "kuler": "^2.0.0" } }, "sha512-hrlQOIi7hAfzsMqlGSFyVucrx38O+j6wiGOf//H2ecvIEqYN4ADBSS2iLMh5UFyDunCNniUIPk/q3riFv45xRA=="],
 

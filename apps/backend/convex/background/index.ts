@@ -90,12 +90,25 @@ export const sendNotification = internalMutation({
 			})
 		})
 
+		const onlineUsers = await ctx.runQuery(internal.presence.listRoom, {
+			roomId: args.channelId,
+			onlineOnly: true,
+		})
+
 		await asyncMap(filteredChannelMembers, async (member) => {
+			if (!onlineUsers.find((user) => user.userId === member.userId)) return
+
 			const user = await ctx.db.get(member.userId)
-			if (!user) return
+
+			if (!user) {
+				return
+			}
+
 			const account = await ctx.db.get(user.accountId)
 
-			if (!account) return
+			if (!account) {
+				return
+			}
 
 			const title =
 				channel.type === "single" || channel.type === "direct"

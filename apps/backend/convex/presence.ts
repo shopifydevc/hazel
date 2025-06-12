@@ -29,6 +29,13 @@ export const get = internalQuery({
 	},
 })
 
+export const listRoom = internalQuery({
+	args: { roomId: v.string(), onlineOnly: v.optional(v.boolean()) },
+	handler: async (ctx, { roomId, onlineOnly }) => {
+		return await presence.listRoom(ctx, roomId, onlineOnly)
+	},
+})
+
 export const disconnect = mutation({
 	args: { sessionToken: v.string() },
 	handler: async (ctx, { sessionToken }) => {
