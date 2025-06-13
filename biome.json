@@ -19,7 +19,9 @@
 				"noBannedTypes": "warn"
 			},
 			"a11y": {
-				"noSvgWithoutTitle": "off"
+				"noSvgWithoutTitle": "off",
+				"useFocusableInteractive": "off",
+				"useSemanticElements": "off"
 			},
 			"correctness": {
 				"useHookAtTopLevel": "off",

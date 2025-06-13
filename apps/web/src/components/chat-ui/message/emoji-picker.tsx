@@ -1,8 +1,10 @@
 import type { JSX, Resource } from "solid-js"
 import { For, Match, Show, Switch, createMemo, createResource, createSignal, onMount } from "solid-js"
-import { IconSearch } from "~/components/icons/search" // Assumed to exist
-import { Popover } from "~/components/ui/popover" // Assumed to exist
-import { TextField } from "~/components/ui/text-field" // Assumed to exist
+import { IconSearch } from "~/components/icons/search"
+import { Popover } from "~/components/ui/popover"
+import { TextField } from "~/components/ui/text-field"
+
+import { createList } from "solid-list"
 
 // -----------------------------------------------------------------------------
 // Data Configuration & Loading
@@ -303,6 +305,12 @@ export function EmojiPicker(props: EmojiPickerProps) {
 		props.onClose?.()
 	}
 
+	const { active, setActive, onKeyDown } = createList({
+		items: () => filteredEmojis().map((e) => e.slug),
+		orientation: "horizontal",
+		handleTab: true,
+	})
+
 	return (
 		<div class="w-72 select-none text-foreground">
 			{/* Header: Search & Skin Tones */}
@@ -312,6 +320,19 @@ export function EmojiPicker(props: EmojiPickerProps) {
 					value={search()}
 					onInput={(e) => setSearch(e.currentTarget.value)}
 					suffix={<IconSearch class="mr-2 size-4 text-muted-foreground" />}
+					onKeyDown={(e) => {
+						if (e.key === "Enter") {
+							const emojiSlug = active()
+							if (emojiSlug === null) return
+
+							const emoji = filteredEmojis().find((e) => e.slug === emojiSlug)
+							handleSelect(emoji!)
+						} else if (e.key === "Escape") {
+							setSearch("")
+						} else {
+							onKeyDown(e)
+						}
+					}}
 					autofocus
 					class="flex-grow"
 				/>
@@ -353,10 +374,16 @@ export function EmojiPicker(props: EmojiPickerProps) {
 						<div class="grid grid-cols-8 gap-1">
 							<For each={filteredEmojis()}>
 								{(item) => (
-									<button
-										type="button"
-										title={item.name}
+									// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+									<div
+										role="option"
+										tabindex="0"
+										aria-selected={active() === item.slug}
+										onMouseMove={() => setActive(item.slug)}
 										class="rounded p-1 text-2xl leading-none hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+										classList={{
+											"bg-accent": active() === item.slug,
+										}}
 										onClick={() => handleSelect(item)}
 									>
 										{getEmojiWithSkinTone(
@@ -364,7 +391,7 @@ export function EmojiPicker(props: EmojiPickerProps) {
 											item,
 											getSkinToneComponent(componentsData()!, skinTone()),
 										)}
-									</button>
+									</div>
 								)}
 							</For>
 						</div>
