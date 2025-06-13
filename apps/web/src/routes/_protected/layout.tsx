@@ -38,7 +38,11 @@ function RouteComponent() {
 
 	return (
 		<Switch>
-			<Match when={isLoading() || accountsQuery.isPending || !accountsQuery.data}>
+			<Match when={!isAuthenticated() && !isLoading()}>
+				<RedirectToSignIn />
+			</Match>
+
+			<Match when={isLoading() || accountsQuery.status === "pending" || !accountsQuery.data}>
 				<div class="flex min-h-screen items-center justify-center">
 					<div class="flex flex-col items-center justify-center gap-3">
 						<Logo class="h-12" />
@@ -46,10 +50,6 @@ function RouteComponent() {
 						<p>Loading your account...</p>
 					</div>
 				</div>
-			</Match>
-
-			<Match when={!isAuthenticated() && !isLoading()}>
-				<RedirectToSignIn />
 			</Match>
 
 			<Match when={isAuthenticated() && !isLoading()}>
