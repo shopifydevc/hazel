@@ -29,6 +29,9 @@ function RouteComponent() {
 				to: "/onboarding",
 				search: {
 					step: "user",
+					redirectTo: window.location.pathname.includes("invite")
+						? window.location.pathname
+						: undefined,
 				},
 				replace: true,
 			})

@@ -1,7 +1,6 @@
-import { Outlet, createFileRoute } from "@tanstack/solid-router"
+import { Navigate, Outlet, createFileRoute, useRouter } from "@tanstack/solid-router"
 import { useConvexAuth } from "~/lib/convex/convex-auth-state"
 
-import { RedirectToSignIn } from "clerk-solidjs"
 import { Match, Switch } from "solid-js"
 
 export const Route = createFileRoute("/_protected")({
@@ -14,7 +13,7 @@ function RouteComponent() {
 	return (
 		<Switch>
 			<Match when={!isAuthenticated() && !isLoading()}>
-				<RedirectToSignIn />
+				<Navigate to="/sign-in" search={{ redirectTo: window.location.pathname }} />
 			</Match>
 
 			<Match when={isAuthenticated() && !isLoading()}>
