@@ -25,20 +25,20 @@ export const ChatInput = (props: ChatInputProps) => {
 				strikethrough: (token) => <span class="line-through">{token.content}</span>,
 
 				//
-				codeblock: (token) => {
-					console.log(token.content)
+				// codeblock: (token) => {
+				// 	console.log(token.content)
 
-					const html = highlight(token.content)
+				// 	const html = highlight(token.content)
 
-					return <span innerHTML={html} />
-				},
-				inlinecode: (token) => {
-					console.log(token.content)
+				// 	return <span innerHTML={html} />
+				// },
+				// inlinecode: (token) => {
+				// 	console.log(token.content)
 
-					const html = highlight(token.content)
+				// 	const html = highlight(token.content)
 
-					return <span innerHTML={html} />
-				},
+				// 	return <span innerHTML={html} />
+				// },
 				default: (token) => <span>{token.content}</span>,
 			}}
 			{...divProps}

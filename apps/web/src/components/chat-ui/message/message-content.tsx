@@ -137,6 +137,9 @@ export function MessageContent(props: MessageContentProps) {
 								/>
 							)
 						},
+						code: (props) => {
+							return <code class="rounded-md border bg-muted/50 p-1 text-sm" {...props} />
+						},
 						img: (parentProps) => {
 							const [imgProps, rest] = splitProps(parentProps, ["src", "alt", "onClick"])
 							return (
