@@ -104,10 +104,16 @@ const DmChannelItem = (props: DmChannelItemProps) => {
 							<Index each={filteredMembers()}>
 								{(member) => (
 									<div class="inline-block">
-										<Avatar
-											class="size-7"
-											src={member().user.avatarUrl}
-											name={member().user.displayName}
+										<UserAvatar
+											avatarUrl={member().user.avatarUrl}
+											displayName={member().user.displayName}
+											status={
+												presenceState
+													.presenceList()
+													.find((p) => p.userId === member().user._id)?.online
+													? "online"
+													: "offline"
+											}
 										/>
 									</div>
 								)}
