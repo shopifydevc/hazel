@@ -53,7 +53,7 @@ export function PinnedModal() {
 			</Popover.Trigger>
 			<Popover.Content>
 				<Popover.Title class="mb-2 flex gap-2">
-					<IconPin /> Pinned Messages
+					<IconPin class="size-4" /> Pinned Messages
 				</Popover.Title>
 				<div class="flex flex-col gap-2">
 					<For each={sortedPins()}>
