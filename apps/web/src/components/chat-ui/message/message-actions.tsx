@@ -7,12 +7,17 @@ import { Menu } from "~/components/ui/menu"
 import { Popover } from "~/components/ui/popover"
 import { Tooltip } from "~/components/ui/tooltip"
 
+import type { Id } from "@hazel/backend"
 import { api } from "@hazel/backend/api"
 import { useQuery } from "@tanstack/solid-query"
 import { useChat } from "~/components/chat-state/chat-store"
 import { IconEmojiAdd } from "~/components/icons/emoji-add"
 import { IconPlus } from "~/components/icons/plus"
-import { createMutation } from "~/lib/convex"
+import {
+       createMutation,
+       optimisticAddReaction,
+       optimisticRemoveReaction,
+} from "~/lib/convex"
 import { convexQuery } from "~/lib/convex-query"
 import type { Message } from "~/lib/types"
 import { ConfirmDialog } from "../confirm-dialog"
@@ -50,8 +55,32 @@ export function MessageActions(props: MessageActionsProps) {
 		}
 	}
 
-	const createReactionMutation = createMutation(api.messages.createReaction)
-	const deleteReactionMutation = createMutation(api.messages.deleteReaction)
+       const createReactionMutation = createMutation(api.messages.createReaction).withOptimisticUpdate(
+               (store, args) => {
+                       const userId = meQuery.data?._id
+                       if (!userId) return
+                       optimisticAddReaction(store, {
+                               serverId: args.serverId as Id<"servers">,
+                               channelId: props.message().channelId as Id<"channels">,
+                               messageId: args.messageId as Id<"messages">,
+                               emoji: args.emoji,
+                               userId,
+                       })
+               },
+       )
+       const deleteReactionMutation = createMutation(api.messages.deleteReaction).withOptimisticUpdate(
+               (store, args) => {
+                       const userId = meQuery.data?._id
+                       if (!userId) return
+                       optimisticRemoveReaction(store, {
+                               serverId: args.serverId as Id<"servers">,
+                               channelId: props.message().channelId as Id<"channels">,
+                               messageId: args.id as Id<"messages">,
+                               emoji: args.emoji,
+                               userId,
+                       })
+               },
+       )
 
 	async function toggleReaction(emoji: string) {
 		if (!meQuery.data) return
