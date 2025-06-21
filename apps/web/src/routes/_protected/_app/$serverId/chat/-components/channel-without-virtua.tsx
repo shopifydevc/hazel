@@ -188,8 +188,8 @@ export function ChannelWithoutVirtua(props: {
 		}
 	}
 
-        return (
-                <div class="relative flex flex-1 flex-col overflow-hidden">
+	return (
+		<div class="relative flex flex-1 flex-col overflow-hidden">
 			<div class="flex-1 overflow-y-auto" ref={scrollContainerRef} onScroll={handleScroll}>
 				<Show
 					when={!messagesQuery.isLoading}
@@ -227,24 +227,24 @@ export function ChannelWithoutVirtua(props: {
 						)}
 					</For>
 				</Show>
-                                <div ref={bottomRef} class="h-[1px] flex-1" />
-                        </div>
+				<div ref={bottomRef} class="h-[1px] flex-1" />
+			</div>
 
-                        <Show when={!shouldStickToBottom()}>
-                                <Button
-                                        intent="secondary"
-                                        size="icon"
-                                        class="absolute bottom-28 right-4 z-10"
-                                        onClick={() => bottomRef?.scrollIntoView({ behavior: 'smooth' })}
-                                >
-                                        <IconChevronDown />
-                                </Button>
-                        </Show>
+			<Show when={!shouldStickToBottom()}>
+				<Button
+					intent="secondary"
+					size="icon"
+					class="absolute right-4 bottom-28 z-10 size-7! border"
+					onClick={() => bottomRef?.scrollIntoView({ behavior: "smooth" })}
+				>
+					<IconChevronDown class="size-4" />
+				</Button>
+			</Show>
 
-                        <div class="mx-2 flex flex-col gap-1.5">
-                                <FloatingBar />
-                                <ChatTypingPresence />
-                        </div>
-                </div>
-        )
+			<div class="mx-2 flex flex-col gap-1.5">
+				<FloatingBar />
+				<ChatTypingPresence />
+			</div>
+		</div>
+	)
 }
