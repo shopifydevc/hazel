@@ -20,6 +20,7 @@ import { Route as ProtectedInviteCodeRouteImport } from './routes/_protected/inv
 import { Route as ProtectedAppServerIdLayoutRouteImport } from './routes/_protected/_app/$serverId/layout'
 import { Route as ProtectedAppServerIdIndexRouteImport } from './routes/_protected/_app/$serverId/index'
 import { Route as ProtectedAppServerIdVideoRouteImport } from './routes/_protected/_app/$serverId/video'
+import { Route as ProtectedAppServerIdTestRouteImport } from './routes/_protected/_app/$serverId/test'
 import { Route as ProtectedAppServerIdSettingsRouteImport } from './routes/_protected/_app/$serverId/settings'
 import { Route as ProtectedAppServerIdBillingRouteImport } from './routes/_protected/_app/$serverId/billing'
 import { Route as ProtectedAppServerIdProfileIdRouteImport } from './routes/_protected/_app/$serverId/profile/$id'
@@ -81,6 +82,12 @@ const ProtectedAppServerIdVideoRoute =
     path: '/video',
     getParentRoute: () => ProtectedAppServerIdLayoutRoute,
   } as any)
+const ProtectedAppServerIdTestRoute =
+  ProtectedAppServerIdTestRouteImport.update({
+    id: '/test',
+    path: '/test',
+    getParentRoute: () => ProtectedAppServerIdLayoutRoute,
+  } as any)
 const ProtectedAppServerIdSettingsRoute =
   ProtectedAppServerIdSettingsRouteImport.update({
     id: '/settings',
@@ -115,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof ProtectedOnboardingIndexRoute
   '/$serverId/billing': typeof ProtectedAppServerIdBillingRoute
   '/$serverId/settings': typeof ProtectedAppServerIdSettingsRoute
+  '/$serverId/test': typeof ProtectedAppServerIdTestRoute
   '/$serverId/video': typeof ProtectedAppServerIdVideoRoute
   '/$serverId/': typeof ProtectedAppServerIdIndexRoute
   '/$serverId/chat/$id': typeof ProtectedAppServerIdChatIdRoute
@@ -128,6 +136,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof ProtectedOnboardingIndexRoute
   '/$serverId/billing': typeof ProtectedAppServerIdBillingRoute
   '/$serverId/settings': typeof ProtectedAppServerIdSettingsRoute
+  '/$serverId/test': typeof ProtectedAppServerIdTestRoute
   '/$serverId/video': typeof ProtectedAppServerIdVideoRoute
   '/$serverId': typeof ProtectedAppServerIdIndexRoute
   '/$serverId/chat/$id': typeof ProtectedAppServerIdChatIdRoute
@@ -146,6 +155,7 @@ export interface FileRoutesById {
   '/_protected/onboarding/': typeof ProtectedOnboardingIndexRoute
   '/_protected/_app/$serverId/billing': typeof ProtectedAppServerIdBillingRoute
   '/_protected/_app/$serverId/settings': typeof ProtectedAppServerIdSettingsRoute
+  '/_protected/_app/$serverId/test': typeof ProtectedAppServerIdTestRoute
   '/_protected/_app/$serverId/video': typeof ProtectedAppServerIdVideoRoute
   '/_protected/_app/$serverId/': typeof ProtectedAppServerIdIndexRoute
   '/_protected/_app/$serverId/chat/$id': typeof ProtectedAppServerIdChatIdRoute
@@ -162,6 +172,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/$serverId/billing'
     | '/$serverId/settings'
+    | '/$serverId/test'
     | '/$serverId/video'
     | '/$serverId/'
     | '/$serverId/chat/$id'
@@ -175,6 +186,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/$serverId/billing'
     | '/$serverId/settings'
+    | '/$serverId/test'
     | '/$serverId/video'
     | '/$serverId'
     | '/$serverId/chat/$id'
@@ -192,6 +204,7 @@ export interface FileRouteTypes {
     | '/_protected/onboarding/'
     | '/_protected/_app/$serverId/billing'
     | '/_protected/_app/$serverId/settings'
+    | '/_protected/_app/$serverId/test'
     | '/_protected/_app/$serverId/video'
     | '/_protected/_app/$serverId/'
     | '/_protected/_app/$serverId/chat/$id'
@@ -282,6 +295,13 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof ProtectedAppServerIdVideoRouteImport
       parentRoute: typeof ProtectedAppServerIdLayoutRoute
     }
+    '/_protected/_app/$serverId/test': {
+      id: '/_protected/_app/$serverId/test'
+      path: '/test'
+      fullPath: '/$serverId/test'
+      preLoaderRoute: typeof ProtectedAppServerIdTestRouteImport
+      parentRoute: typeof ProtectedAppServerIdLayoutRoute
+    }
     '/_protected/_app/$serverId/settings': {
       id: '/_protected/_app/$serverId/settings'
       path: '/settings'
@@ -330,6 +350,7 @@ const AuthLayoutRouteWithChildren = AuthLayoutRoute._addFileChildren(
 interface ProtectedAppServerIdLayoutRouteChildren {
   ProtectedAppServerIdBillingRoute: typeof ProtectedAppServerIdBillingRoute
   ProtectedAppServerIdSettingsRoute: typeof ProtectedAppServerIdSettingsRoute
+  ProtectedAppServerIdTestRoute: typeof ProtectedAppServerIdTestRoute
   ProtectedAppServerIdVideoRoute: typeof ProtectedAppServerIdVideoRoute
   ProtectedAppServerIdIndexRoute: typeof ProtectedAppServerIdIndexRoute
   ProtectedAppServerIdChatIdRoute: typeof ProtectedAppServerIdChatIdRoute
@@ -340,6 +361,7 @@ const ProtectedAppServerIdLayoutRouteChildren: ProtectedAppServerIdLayoutRouteCh
   {
     ProtectedAppServerIdBillingRoute: ProtectedAppServerIdBillingRoute,
     ProtectedAppServerIdSettingsRoute: ProtectedAppServerIdSettingsRoute,
+    ProtectedAppServerIdTestRoute: ProtectedAppServerIdTestRoute,
     ProtectedAppServerIdVideoRoute: ProtectedAppServerIdVideoRoute,
     ProtectedAppServerIdIndexRoute: ProtectedAppServerIdIndexRoute,
     ProtectedAppServerIdChatIdRoute: ProtectedAppServerIdChatIdRoute,

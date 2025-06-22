@@ -21,8 +21,8 @@ import { ThemeProvider, applyInitialTheme } from "./lib/theme"
 
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister"
 
-// import { persistQueryClient } from "@tanstack/query-persist-client-core"
-// import { createEffect, onCleanup } from "solid-js"
+import { persistQueryClient } from "@tanstack/query-persist-client-core"
+import { createEffect, onCleanup } from "solid-js"
 
 import { SolidQueryDevtools } from "@tanstack/solid-query-devtools"
 import { HotkeyProvider } from "./lib/hotkey-manager"
@@ -42,6 +42,8 @@ const queryClient = new QueryClient({
 		queries: {
 			queryKeyHashFn: convexQueryClient.hashFn(),
 			queryFn: convexQueryClient.queryFn(),
+
+			gcTime: 1000 * 60 * 60 * 24,
 		},
 	},
 })
@@ -51,6 +53,7 @@ convexQueryClient.connect(queryClient)
 const router = createRouter({
 	routeTree,
 	defaultPreload: "intent",
+	scrollToTopSelectors: ["#chat-scrollarea"],
 	scrollRestoration: true,
 	defaultPreloadStaleTime: 0,
 
