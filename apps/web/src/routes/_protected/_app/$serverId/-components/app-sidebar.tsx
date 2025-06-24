@@ -1,37 +1,35 @@
+import type { Id } from "@hazel/backend"
+import { api } from "@hazel/backend/api"
+import { useQuery } from "@tanstack/solid-query"
 import { Link, useParams } from "@tanstack/solid-router"
+import type { FunctionReturnType } from "convex/server"
 import {
 	type Accessor,
+	createEffect,
+	createMemo,
+	createSignal,
 	Index,
 	Match,
 	Suspense,
 	Switch,
-	createEffect,
-	createMemo,
-	createSignal,
 } from "solid-js"
-import { IconHashtag } from "~/components/icons/hashtag"
-
-import { IconPlusSmall } from "~/components/icons/plus-small"
-import { Avatar } from "~/components/ui/avatar"
-import { Button } from "~/components/ui/button"
-import { Dialog } from "~/components/ui/dialog"
-import { Sidebar } from "~/components/ui/sidebar"
-import { Tabs } from "~/components/ui/tabs"
-
 import { IconAudio } from "~/components/icons/audio"
 import { IconMutedAudio } from "~/components/icons/audio-muted"
+import { IconHashtag } from "~/components/icons/hashtag"
 import { IconHorizontalDots } from "~/components/icons/horizontal-dots"
 import { IconPaperPlane } from "~/components/icons/paper-plane"
 import { IconPhone } from "~/components/icons/phone"
+import { IconPlusSmall } from "~/components/icons/plus-small"
 import { IconSupport } from "~/components/icons/support"
 import { IconX } from "~/components/icons/x"
+import { Avatar } from "~/components/ui/avatar"
+import { Button } from "~/components/ui/button"
+import { Dialog } from "~/components/ui/dialog"
 import { Menu } from "~/components/ui/menu"
+import { Sidebar } from "~/components/ui/sidebar"
 import { IconSignOut } from "~/components/ui/signout"
-
-import type { Id } from "@hazel/backend"
-import { api } from "@hazel/backend/api"
-import { useQuery } from "@tanstack/solid-query"
-import type { FunctionReturnType } from "convex/server"
+import { Skeleton } from "~/components/ui/skeleton"
+import { Tabs } from "~/components/ui/tabs"
 import { UserAvatar } from "~/components/ui/user-avatar"
 import { createMutation } from "~/lib/convex"
 import { createPresence, usePresenceState } from "~/lib/convex-presence"
@@ -66,7 +64,7 @@ export const AppSidebar = (props: SidebarProps) => {
 	return (
 		<Sidebar {...props}>
 			<Sidebar.Header>
-				<Suspense fallback={<div class="h-12 w-full animate-pulse rounded-md bg-muted" />}>
+				<Suspense fallback={<Skeleton class="h-12 w-full rounded-md bg-muted" />}>
 					<WorkspaceSwitcher />
 				</Suspense>
 			</Sidebar.Header>
@@ -74,10 +72,10 @@ export const AppSidebar = (props: SidebarProps) => {
 				<Suspense
 					fallback={
 						<div class="flex flex-col gap-2 p-3">
-							<div class="h-4 w-full animate-pulse rounded-md bg-muted" />
-							<div class="h-6 w-full animate-pulse rounded-md bg-muted" />
-							<div class="h-6 w-full animate-pulse rounded-md bg-muted" />
-							<div class="h-6 w-full animate-pulse rounded-md bg-muted" />
+							<Sidebar.MenuSkeleton showIcon />
+							<Sidebar.MenuSkeleton showIcon />
+							<Sidebar.MenuSkeleton showIcon />
+							<Sidebar.MenuSkeleton showIcon />
 						</div>
 					}
 				>
@@ -164,7 +162,7 @@ export const AppSidebar = (props: SidebarProps) => {
 				</Suspense>
 			</Sidebar.Content>
 			<Sidebar.Footer>
-				<Suspense fallback={<div class="h-12 w-full animate-pulse rounded-md bg-muted" />}>
+				<Suspense fallback={<Skeleton class="h-12 w-full rounded-md bg-muted" />}>
 					<NavUser serverId={serverId} />
 				</Suspense>
 			</Sidebar.Footer>
@@ -187,13 +185,7 @@ export const ChannelItem = (props: ChannelItemProps) => {
 
 	return (
 		<Sidebar.MenuItem>
-			<Sidebar.MenuButton
-				asChild={(props) => (
-					<Link to="/$serverId/chat/$id" params={params()} {...props()}>
-						{props().children}
-					</Link>
-				)}
-			>
+			<Sidebar.MenuButton as={Link} to="/$serverId/chat/$id" params={params() as any}>
 				<IconHashtag class="size-5 text-muted-foreground" />
 				<p
 					class={cn(
@@ -272,13 +264,7 @@ const DmChannelLink = (props: DmChannelLinkProps) => {
 
 	return (
 		<Sidebar.MenuItem>
-			<Sidebar.MenuButton
-				asChild={(parentProps) => (
-					<Link to="/$serverId/chat/$id" params={params()} {...parentProps()}>
-						{parentProps().children}
-					</Link>
-				)}
-			>
+			<Sidebar.MenuButton as={Link} to="/$serverId/chat/$id" params={params() as any}>
 				<div class="-space-x-4 flex items-center justify-center">
 					<Switch>
 						<Match when={props.channel().type === "single" && filteredMembers().length === 1}>

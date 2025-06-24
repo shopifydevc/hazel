@@ -1,6 +1,7 @@
 import type { Id } from "@hazel/backend"
 import { api } from "@hazel/backend/api"
 import { useQuery } from "@tanstack/solid-query"
+import { useElementScrollRestoration } from "@tanstack/solid-router"
 import {
 	type Accessor,
 	type Component,
@@ -190,7 +191,12 @@ export function ChannelWithoutVirtua(props: {
 
 	return (
 		<div class="relative flex flex-1 flex-col overflow-hidden">
-			<div class="flex-1 overflow-y-auto" ref={scrollContainerRef} onScroll={handleScroll}>
+			<div
+				class="flex-1 overflow-y-auto"
+				id="chat-scrollarea"
+				ref={scrollContainerRef}
+				onScroll={handleScroll}
+			>
 				<Show
 					when={!messagesQuery.isLoading}
 					fallback={

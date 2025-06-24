@@ -1,6 +1,7 @@
 import type { Id } from "@hazel/backend"
 import { api } from "@hazel/backend/api"
 import { useQuery } from "@tanstack/solid-query"
+import { useElementScrollRestoration } from "@tanstack/solid-router"
 import { createVirtualizer } from "@tanstack/solid-virtual"
 import {
 	type Accessor,
@@ -53,8 +54,6 @@ export function ChannelWithVirtual(props: {
 	serverId: Accessor<Id<"servers">>
 	isThread: Accessor<boolean>
 }) {
-	const [isInitialRender, setIsInitialRender] = createSignal(true)
-
 	const channelQuery = useQuery(() =>
 		convexQuery(api.channels.getChannel, {
 			channelId: props.channelId(),
@@ -74,6 +73,12 @@ export function ChannelWithVirtual(props: {
 
 	let scrollContainerRef: HTMLDivElement | undefined
 	const [shouldStickToBottom, setShouldStickToBottom] = createSignal(true)
+
+	const scrollRestorationId = "myVirtualizedContent"
+
+	const scrollEntry = useElementScrollRestoration({
+		id: scrollRestorationId,
+	})
 
 	createEffect(
 		on(
@@ -148,6 +153,7 @@ export function ChannelWithVirtual(props: {
 			return messageData.isGroupStart() ? 44 : 24
 		},
 		overscan: 10,
+		initialOffset: scrollEntry?.scrollY,
 		getItemKey: (index) => processedMessages()[index]?.message._id ?? index,
 	})
 
@@ -227,6 +233,7 @@ export function ChannelWithVirtual(props: {
 					{/* Virtual container */}
 					<div
 						ref={scrollContainerRef}
+						data-scroll-restoration-id={scrollRestorationId}
 						style={{
 							height: "100vh",
 							width: "100%",

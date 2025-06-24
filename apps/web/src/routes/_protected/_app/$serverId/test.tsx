@@ -34,13 +34,10 @@ function RouteComponent() {
 				border: "1px solid red",
 				display: "flex",
 				"flex-direction": "column",
-				height: "400px",
 			}}
 		>
 			<VirtualList
 				style={{
-					flex: 1,
-					height: 0,
 					outline: "1px solid green",
 					padding: "5px",
 				}}
@@ -84,15 +81,13 @@ export function VirtualList<T>(props: VirtualListProps<T>): JSX.Element {
 		id: scrollRestorationId,
 	})
 
-	const getItemKeyCallback = createMemo(() => {
-		return (index: number) => props.getItemKey(props.items()[index]!, index)
-	})
+	const getItemKeyCallback = (index: number) => props.getItemKey(props.items()[index]!, index)
 
 	const virtualizer = createVirtualizer({
 		get count() {
 			return props.items().length
 		},
-		getItemKey: getItemKeyCallback(),
+		getItemKey: getItemKeyCallback,
 		getScrollElement: () => scrollableRef as any,
 		get estimateSize() {
 			return props.estimateSize
@@ -104,23 +99,28 @@ export function VirtualList<T>(props: VirtualListProps<T>): JSX.Element {
 		initialOffset: scrollEntry?.scrollY,
 	})
 
-	createEffect(() => {
-		props.items()
-		virtualizer.scrollToIndex(props.items().length - 1)
-	})
+	// Commented out to isolate layout issues
+	// createEffect(() => {
+	// 	const items = props.items()
+	// 	if (items.length > 0) {
+	// 		setTimeout(() => {
+	// 			virtualizer.scrollToIndex(items.length - 1)
+	// 		}, 0)
+	// 	}
+	// })
 
 	return (
 		<div
 			style={{
 				display: "flex",
-				"flex-direction": "column-reverse",
 				...props.style,
 			}}
-			data-scroll-restoration-id={scrollRestorationId}
 		>
 			<div
 				ref={scrollableRef}
+				data-scroll-restoration-id={scrollRestorationId}
 				style={{
+					height: "400px",
 					overflow: "auto",
 				}}
 			>

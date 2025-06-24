@@ -1,5 +1,5 @@
-import { RouterProvider, createRouter } from "@tanstack/solid-router"
-import { Show, Suspense, render } from "solid-js/web"
+import { createRouter, RouterProvider } from "@tanstack/solid-router"
+import { render, Show, Suspense } from "solid-js/web"
 
 import "solid-devtools"
 
@@ -8,8 +8,12 @@ import { routeTree } from "./routeTree.gen"
 import "./styles/root.css"
 import "./styles/toast.css"
 
+import { persistQueryClient } from "@tanstack/query-persist-client-core"
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister"
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query"
+import { SolidQueryDevtools } from "@tanstack/solid-query-devtools"
 import { ClerkProvider, useAuth } from "clerk-solidjs"
+import { createEffect, onCleanup } from "solid-js"
 import { FpsCounter } from "./components/devtools/fps-counter"
 import { IconLoader } from "./components/icons/loader"
 import { Logo } from "./components/logo"
@@ -17,15 +21,8 @@ import { Toaster } from "./components/ui/toaster"
 import { ConvexSolidClient } from "./lib/convex"
 import { ConvexProviderWithClerk } from "./lib/convex-clerk"
 import { ConvexQueryClient } from "./lib/convex-query"
-import { ThemeProvider, applyInitialTheme } from "./lib/theme"
-
-import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister"
-
-import { persistQueryClient } from "@tanstack/query-persist-client-core"
-import { createEffect, onCleanup } from "solid-js"
-
-import { SolidQueryDevtools } from "@tanstack/solid-query-devtools"
 import { HotkeyProvider } from "./lib/hotkey-manager"
+import { applyInitialTheme, ThemeProvider } from "./lib/theme"
 
 applyInitialTheme()
 
@@ -54,7 +51,7 @@ const router = createRouter({
 	routeTree,
 	defaultPreload: "intent",
 	scrollToTopSelectors: ["#chat-scrollarea"],
-	scrollRestoration: true,
+	scrollRestoration: false,
 	defaultPreloadStaleTime: 0,
 
 	defaultViewTransition: true,

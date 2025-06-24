@@ -1,15 +1,16 @@
-import { createFileRoute } from "@tanstack/solid-router"
-import { Show, Suspense, createMemo } from "solid-js"
-import { ChatTopbar } from "~/components/chat-ui/chat-topbar"
-
 import type { Id } from "@hazel/backend"
 import { api } from "@hazel/backend/api"
 import { useQuery } from "@tanstack/solid-query"
+import { createFileRoute } from "@tanstack/solid-router"
+import { createMemo, Show, Suspense } from "solid-js"
 import { ChatProvider, useChat } from "~/components/chat-state/chat-store"
+import { ChatTopbar } from "~/components/chat-ui/chat-topbar"
 import { ImageViewerModal } from "~/components/chat-ui/image-viewer-modal"
 import { IconX } from "~/components/icons/x"
 import { Button } from "~/components/ui/button"
 import { convexQuery } from "~/lib/convex-query"
+import { ChannelVirtua } from "./-components/channel-virtua"
+import { ChannelWithVirtual } from "./-components/channel-with-virtual"
 import { ChannelWithoutVirtua } from "./-components/channel-without-virtua"
 
 export const Route = createFileRoute("/_protected/_app/$serverId/chat/$id")({
@@ -52,6 +53,7 @@ function RouteComponent() {
 			<ChatTopbar />
 			<div class="flex flex-1 overflow-hidden">
 				<div class="flex min-w-0 flex-1 flex-col">
+					{/* <ChannelVirtua channelId={channelId} serverId={serverId} isThread={() => false} /> */}
 					<ChannelWithoutVirtua channelId={channelId} serverId={serverId} isThread={() => false} />
 					{/* <ChannelWithVirtual channelId={channelId} serverId={serverId} isThread={() => false} /> */}
 				</div>
