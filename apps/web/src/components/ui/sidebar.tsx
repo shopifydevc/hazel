@@ -253,7 +253,7 @@ const SidebarRoot: Component<SidebarProps> = (rawProps) => {
 	)
 }
 
-type SidebarTriggerProps<T extends ValidComponent = "button"> = ButtonProps<T> & {
+type SidebarTriggerProps<T extends ValidComponent = "button"> = ButtonProps & {
 	onClick?: (event: MouseEvent) => void
 }
 
@@ -264,7 +264,7 @@ const SidebarTrigger = <T extends ValidComponent = "button">(props: SidebarTrigg
 	return (
 		<Button
 			data-sidebar="trigger"
-			variant="ghost"
+			intent="ghost"
 			size="icon"
 			class={cn("size-7", local.class)}
 			onClick={(event: MouseEvent) => {

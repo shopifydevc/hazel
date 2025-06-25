@@ -141,6 +141,10 @@ export const AppSidebar = () => {
 						}
 					>
 						<Sidebar.Group>
+							<Sidebar.GroupLabel>Favorites</Sidebar.GroupLabel>
+							<Sidebar.Menu></Sidebar.Menu>
+						</Sidebar.Group>
+						<Sidebar.Group>
 							<Sidebar.GroupLabel>Text Channels</Sidebar.GroupLabel>
 							<Sidebar.GroupAction>
 								<Dialog
@@ -184,7 +188,7 @@ export const AppSidebar = () => {
 							</Sidebar.Menu>
 						</Sidebar.Group>
 						<Sidebar.Group>
-							<Sidebar.GroupLabel>DM's</Sidebar.GroupLabel>
+							<Sidebar.GroupLabel>Direct Messages</Sidebar.GroupLabel>
 							<Sidebar.GroupAction>
 								<CreateDmDialog serverId={serverId} />
 							</Sidebar.GroupAction>

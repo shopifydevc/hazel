@@ -1,23 +1,17 @@
-import { type Accessor, For, Suspense, createSignal } from "solid-js"
+import type { Id } from "@hazel/backend"
+import { api } from "@hazel/backend/api"
+import { useQuery } from "@tanstack/solid-query"
+import { type Accessor, createSignal, For, Suspense } from "solid-js"
 import { twMerge } from "tailwind-merge"
-
+import { useChat } from "~/components/chat-state/chat-store"
+import { IconEmojiAdd } from "~/components/icons/emoji-add"
 import { IconHorizontalDots } from "~/components/icons/horizontal-dots"
+import { IconPlus } from "~/components/icons/plus"
 import { Button, buttonVariants } from "~/components/ui/button"
 import { Menu } from "~/components/ui/menu"
 import { Popover } from "~/components/ui/popover"
 import { Tooltip } from "~/components/ui/tooltip"
-
-import type { Id } from "@hazel/backend"
-import { api } from "@hazel/backend/api"
-import { useQuery } from "@tanstack/solid-query"
-import { useChat } from "~/components/chat-state/chat-store"
-import { IconEmojiAdd } from "~/components/icons/emoji-add"
-import { IconPlus } from "~/components/icons/plus"
-import {
-       createMutation,
-       optimisticAddReaction,
-       optimisticRemoveReaction,
-} from "~/lib/convex"
+import { createMutation, optimisticAddReaction, optimisticRemoveReaction } from "~/lib/convex"
 import { convexQuery } from "~/lib/convex-query"
 import type { Message } from "~/lib/types"
 import { ConfirmDialog } from "../confirm-dialog"
@@ -55,32 +49,32 @@ export function MessageActions(props: MessageActionsProps) {
 		}
 	}
 
-       const createReactionMutation = createMutation(api.messages.createReaction).withOptimisticUpdate(
-               (store, args) => {
-                       const userId = meQuery.data?._id
-                       if (!userId) return
-                       optimisticAddReaction(store, {
-                               serverId: args.serverId as Id<"servers">,
-                               channelId: props.message().channelId as Id<"channels">,
-                               messageId: args.messageId as Id<"messages">,
-                               emoji: args.emoji,
-                               userId,
-                       })
-               },
-       )
-       const deleteReactionMutation = createMutation(api.messages.deleteReaction).withOptimisticUpdate(
-               (store, args) => {
-                       const userId = meQuery.data?._id
-                       if (!userId) return
-                       optimisticRemoveReaction(store, {
-                               serverId: args.serverId as Id<"servers">,
-                               channelId: props.message().channelId as Id<"channels">,
-                               messageId: args.id as Id<"messages">,
-                               emoji: args.emoji,
-                               userId,
-                       })
-               },
-       )
+	const createReactionMutation = createMutation(api.messages.createReaction).withOptimisticUpdate(
+		(store, args) => {
+			const userId = meQuery.data?._id
+			if (!userId) return
+			optimisticAddReaction(store, {
+				serverId: args.serverId as Id<"servers">,
+				channelId: props.message().channelId as Id<"channels">,
+				messageId: args.messageId as Id<"messages">,
+				emoji: args.emoji,
+				userId,
+			})
+		},
+	)
+	const deleteReactionMutation = createMutation(api.messages.deleteReaction).withOptimisticUpdate(
+		(store, args) => {
+			const userId = meQuery.data?._id
+			if (!userId) return
+			optimisticRemoveReaction(store, {
+				serverId: args.serverId as Id<"servers">,
+				channelId: props.message().channelId as Id<"channels">,
+				messageId: args.id as Id<"messages">,
+				emoji: args.emoji,
+				userId,
+			})
+		},
+	)
 
 	async function toggleReaction(emoji: string) {
 		if (!meQuery.data) return
@@ -132,7 +126,7 @@ export function MessageActions(props: MessageActionsProps) {
 				</Popover>
 				<For each={actions().filter((a) => a.showButton)}>
 					{(a) => (
-						<Tooltip lazyMount>
+						<Tooltip>
 							<Tooltip.Trigger>
 								<Button intent="ghost" size="square" onClick={() => handleAction(a)}>
 									{a.icon}
