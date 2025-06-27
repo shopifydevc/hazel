@@ -1,6 +1,6 @@
-import { asyncMap } from "convex-helpers"
 import { paginationOptsValidator } from "convex/server"
 import { v } from "convex/values"
+import { asyncMap } from "convex-helpers"
 import { internal } from "./_generated/api"
 import { userMutation, userQuery } from "./middleware/withUser"
 
@@ -29,7 +29,6 @@ export const getMessage = userQuery({
 export const getMessages = userQuery({
 	args: {
 		serverId: v.id("servers"),
-
 		channelId: v.id("channels"),
 		paginationOpts: paginationOptsValidator,
 	},

@@ -5,16 +5,16 @@ import { useElementScrollRestoration } from "@tanstack/solid-router"
 import {
 	type Accessor,
 	type Component,
-	For,
-	type JSX,
-	Show,
 	createEffect,
 	createMemo,
 	createSignal,
+	For,
+	type JSX,
 	mapArray,
 	on,
 	onCleanup,
 	onMount,
+	Show,
 } from "solid-js"
 import { createStore, reconcile } from "solid-js/store"
 import { ChatTypingPresence } from "~/components/chat-ui/chat-typing-presence"
@@ -24,6 +24,7 @@ import { IconChevronDown } from "~/components/icons/chevron-down"
 import { Button } from "~/components/ui/button"
 import { convexQuery } from "~/lib/convex-query"
 import { useConvexInfiniteQuery } from "~/lib/convex-query/infinite"
+import { createNextPrevPaginatedQuery } from "~/lib/infinite/infinite-convex"
 import type { Message } from "~/lib/types"
 import { MessageOnScreen } from "./messages-onscreen"
 
@@ -191,6 +192,19 @@ export function ChannelWithoutVirtua(props: {
 
 	return (
 		<div class="relative flex flex-1 flex-col overflow-hidden">
+			<Show when={processedMessages().length === 0 && messagesQuery.isSuccess}>
+				<div class="flex size-full flex-col items-center justify-center p-4 sm:p-8">
+					<div class="mask-radial-at-center mask-radial-from-black mask-radial-to-transparent relative aspect-square w-full max-w-sm">
+						{/* Your masked image */}
+						<img
+							src="/images/squirrle_ocean.png"
+							alt="squirrel"
+							class="mask-size-[110%_90%] mask-linear-to-r mask-from-black mask-to-transparent mask-center mask-no-repeat mask-[url(/images/image-mask.png)] h-full w-full rounded-md bg-center bg-cover bg-no-repeat object-cover"
+						/>
+					</div>
+					<p class="font-bold text-xl">Quiet as an ocean gazing squirrel...</p>
+				</div>
+			</Show>
 			<div
 				class="flex-1 overflow-y-auto"
 				id="chat-scrollarea"

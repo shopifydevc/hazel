@@ -146,7 +146,7 @@ export const AppSidebar = () => {
 						</Sidebar.Group>
 						<SidebarFavoriteGroup serverId={() => params().serverId as Id<"servers">} />
 						<Sidebar.Group>
-							<Sidebar.GroupLabel>Text Channels</Sidebar.GroupLabel>
+							<Sidebar.GroupLabel>Channels</Sidebar.GroupLabel>
 							<Sidebar.GroupAction>
 								<Dialog
 									open={createChannelModalOpen()}
