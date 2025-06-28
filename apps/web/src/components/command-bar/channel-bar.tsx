@@ -8,17 +8,53 @@ import { usePresenceState } from "~/lib/convex-presence"
 import { convexQuery } from "~/lib/convex-query"
 import { cn } from "~/lib/utils"
 import { IconHashtag } from "../icons/hashtag"
-import { Avatar } from "../ui/avatar"
 import { Command } from "../ui/command-menu"
 import { UserAvatar } from "../ui/user-avatar"
 import { setCommandBarState } from "./command-bar"
 
 export const ChannelBar = (props: { serverId: Accessor<Id<"servers">> }) => {
 	const navigate = useNavigate()
-	const channelQuery = useQuery(() => convexQuery(api.channels.getChannels, { serverId: props.serverId() }))
+	const channelQuery = useQuery(() =>
+		convexQuery(api.channels.getChannels, {
+			serverId: props.serverId(),
+			favoriteFilter: {
+				favorite: false,
+			},
+		}),
+	)
+	const favoriteChannelsQuery = useQuery(() =>
+		convexQuery(api.channels.getChannels, {
+			serverId: props.serverId(),
+			favoriteFilter: {
+				favorite: true,
+			},
+		}),
+	)
 
 	return (
 		<>
+			<Command.Group heading="Favorites">
+				<For each={favoriteChannelsQuery.data?.serverChannels}>
+					{(channel) => (
+						<Command.Item
+							class="flex items-center gap-2"
+							onSelect={() => {
+								navigate({
+									to: "/$serverId/chat/$id",
+									params: { id: channel._id, serverId: props.serverId() },
+								})
+								setCommandBarState("open", false)
+							}}
+						>
+							<IconHashtag class="size-4" />
+							{channel.name}
+						</Command.Item>
+					)}
+				</For>
+				<For each={favoriteChannelsQuery.data?.dmChannels}>
+					{(channel) => <DmChannelItem channel={() => channel} serverId={props.serverId} />}
+				</For>
+			</Command.Group>
 			<Command.Group heading="Channels">
 				<For each={channelQuery.data?.serverChannels}>
 					{(channel) => (
@@ -89,12 +125,7 @@ const DmChannelItem = (props: DmChannelItemProps) => {
 										: "offline"
 								}
 							/>
-							<p
-								class={cn(
-									"truncate text-muted-foreground group-hover/sidebar-item:text-foreground",
-									props.channel().isMuted && "opacity-60",
-								)}
-							>
+							<p class={cn("truncate", props.channel().isMuted && "opacity-60")}>
 								{filteredMembers()[0].user.displayName}
 							</p>
 						</div>
@@ -118,12 +149,7 @@ const DmChannelItem = (props: DmChannelItemProps) => {
 									</div>
 								)}
 							</Index>
-							<p
-								class={cn(
-									"truncate text-muted-foreground group-hover/sidebar-item:text-foreground",
-									props.channel().isMuted && "opacity-60",
-								)}
-							>
+							<p class={cn("truncate", props.channel().isMuted && "opacity-60")}>
 								{filteredMembers()
 									.map((member) => member.user.displayName)
 									.join(", ")}

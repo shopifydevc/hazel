@@ -9,6 +9,7 @@
 - File uploads with convex
 - Readd last read message/notification count in chat
     - Delete Notification after it was seen (maybe just a simple cron cleanup job)
+- Search Indxing (Upstash Search (?) / Meilisearch)
 - Call Feature
     - Start call in channel
     - Show active call in channel + show call history
