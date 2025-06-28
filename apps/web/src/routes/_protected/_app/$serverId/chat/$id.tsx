@@ -9,8 +9,6 @@ import { ImageViewerModal } from "~/components/chat-ui/image-viewer-modal"
 import { IconXComStroke } from "~/components/iconsv2"
 import { Button } from "~/components/ui/button"
 import { convexQuery } from "~/lib/convex-query"
-import { ChannelVirtua } from "./-components/channel-virtua"
-import { ChannelWithVirtual } from "./-components/channel-with-virtual"
 import { ChannelWithoutVirtua } from "./-components/channel-without-virtua"
 
 export const Route = createFileRoute("/_protected/_app/$serverId/chat/$id")({

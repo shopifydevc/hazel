@@ -26,6 +26,7 @@ import type * as me from "../me.js";
 import type * as messages from "../messages.js";
 import type * as middleware_withAccount from "../middleware/withAccount.js";
 import type * as middleware_withUser from "../middleware/withUser.js";
+import type * as notifications from "../notifications.js";
 import type * as pinnedMessages from "../pinnedMessages.js";
 import type * as presence from "../presence.js";
 import type * as servers from "../servers.js";
@@ -66,6 +67,7 @@ declare const fullApi: ApiFromModules<{
   messages: typeof messages;
   "middleware/withAccount": typeof middleware_withAccount;
   "middleware/withUser": typeof middleware_withUser;
+  notifications: typeof notifications;
   pinnedMessages: typeof pinnedMessages;
   presence: typeof presence;
   servers: typeof servers;

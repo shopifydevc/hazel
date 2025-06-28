@@ -1,11 +1,11 @@
 import { api } from "@hazel/backend/api"
 import { useQuery } from "@tanstack/solid-query"
-import { Outlet, createFileRoute } from "@tanstack/solid-router"
-import { Match, Switch, createEffect } from "solid-js"
+import { createFileRoute, Outlet } from "@tanstack/solid-router"
+import { createEffect, Match, Switch } from "solid-js"
 import { IconSpinnerStroke } from "~/components/iconsv2"
 import { Logo } from "~/components/logo"
-import { convexQuery } from "~/lib/convex-query"
 import { useConvexAuth } from "~/lib/convex/convex-auth-state"
+import { convexQuery } from "~/lib/convex-query"
 import { NotificationManager } from "~/lib/notification-manager"
 
 export const Route = createFileRoute("/_protected/_app")({

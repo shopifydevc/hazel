@@ -1,7 +1,6 @@
-import { Navigate, Outlet, createFileRoute, useRouter } from "@tanstack/solid-router"
-import { useConvexAuth } from "~/lib/convex/convex-auth-state"
-
+import { createFileRoute, Navigate, Outlet } from "@tanstack/solid-router"
 import { Match, Switch } from "solid-js"
+import { useConvexAuth } from "~/lib/convex/convex-auth-state"
 
 export const Route = createFileRoute("/_protected")({
 	component: RouteComponent,
