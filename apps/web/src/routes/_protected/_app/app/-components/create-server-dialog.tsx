@@ -37,7 +37,7 @@ export const CreateServerDialog = (props: CreateServerDialogProps) => {
 								name: serverName.toString(),
 							})
 							props.onOpenChange(false)
-							navigate({ to: "/$serverId", params: { serverId } })
+							navigate({ to: "/app" })
 						} catch (error) {
 							console.error("Failed to create server:", error)
 							toaster.error({

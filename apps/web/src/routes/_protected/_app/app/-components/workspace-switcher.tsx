@@ -1,6 +1,6 @@
 import { api } from "@hazel/backend/api"
 import { useQuery } from "@tanstack/solid-query"
-import { Link, useParams } from "@tanstack/solid-router"
+import { Link } from "@tanstack/solid-router"
 import { createEffect, createMemo, createSignal, For, Show } from "solid-js"
 
 import { IconCopy1, IconPlusStroke, IconSpinnerStroke, IconUserPlus1 } from "~/components/iconsv2"
@@ -15,10 +15,6 @@ import { convexQuery } from "~/lib/convex-query"
 import { CreateServerDialog } from "./create-server-dialog"
 
 export const WorkspaceSwitcher = () => {
-	const params = useParams({
-		from: "/_protected/_app/$serverId",
-	})
-
 	const [createDialogOpen, setCreateDialogOpen] = createSignal(false)
 	const [inviteDialogOpen, setInviteDialogOpen] = createSignal(false)
 	const [inviteCode, setInviteCode] = createSignal<string | null>(null)
@@ -27,10 +23,9 @@ export const WorkspaceSwitcher = () => {
 	const createInvite = createMutation(api.invites.createInvite)
 
 	const serversQuery = useQuery(() => convexQuery(api.servers.getServersForUser, {}))
+	const currentServerQuery = useQuery(() => convexQuery(api.servers.getCurrentServer, {}))
 
-	const activeServer = createMemo(() =>
-		serversQuery.data?.find((server) => server._id === params().serverId),
-	)
+	const activeServer = createMemo(() => currentServerQuery.data)
 
 	return (
 		<>
@@ -59,10 +54,7 @@ export const WorkspaceSwitcher = () => {
 											value={server._id}
 											asChild={(props) => (
 												<Link
-													to="/$serverId"
-													params={{
-														serverId: server._id,
-													}}
+													to="/app"
 													{...props()}
 												/>
 											)}
@@ -131,7 +123,7 @@ export const WorkspaceSwitcher = () => {
 											try {
 												setGenerating(true)
 												const res = await createInvite({
-													serverId: params().serverId as any,
+													serverId: activeServer()?._id!,
 												})
 
 												navigator.clipboard.writeText(

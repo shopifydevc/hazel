@@ -1,8 +1,10 @@
 import type { Doc, Id } from "@hazel/backend"
 import { api } from "@hazel/backend/api"
+import { useQuery } from "@tanstack/solid-query"
 import { Link, useNavigate } from "@tanstack/solid-router"
-import { type Accessor, Show } from "solid-js"
+import { type Accessor, createMemo, Show } from "solid-js"
 import { createMutation } from "~/lib/convex"
+import { convexQuery } from "~/lib/convex-query"
 import { IconChat } from "../icons/chat"
 import { IconProfile } from "../icons/profile"
 import { Avatar, type AvatarProps } from "../ui/avatar"
@@ -11,12 +13,14 @@ import { Popover } from "../ui/popover"
 import { Separator } from "../ui/separator"
 
 interface UserPopoverContentProps {
-	serverId: Accessor<Id<"servers">>
 	user: Doc<"users">
 }
 
 export const UserPopoverContent = (props: UserPopoverContentProps) => {
 	const navigate = useNavigate()
+
+	const serverQuery = useQuery(() => convexQuery(api.servers.getCurrentServer, {}))
+	const serverId = createMemo(() => serverQuery.data?._id as Id<"servers">)
 
 	const createDmChannelMutation = createMutation(api.channels.creatDmChannel)
 
@@ -35,13 +39,13 @@ export const UserPopoverContent = (props: UserPopoverContentProps) => {
 					intent="secondary"
 					onClick={async () => {
 						const channelId = await createDmChannelMutation({
-							serverId: props.serverId(),
+							serverId: serverId(),
 							userId: props.user._id,
 						})
 
 						navigate({
-							to: "/$serverId/chat/$id",
-							params: { id: channelId, serverId: props.serverId() },
+							to: "/app/chat/$id",
+							params: { id: channelId },
 						})
 					}}
 				>
@@ -52,9 +56,8 @@ export const UserPopoverContent = (props: UserPopoverContentProps) => {
 					intent="secondary"
 					asChild={(parentProps) => (
 						<Link
-							to="/$serverId/profile/$id"
+							to="/app/profile/$id"
 							params={{
-								serverId: props.serverId(),
 								id: props.user._id,
 							}}
 							{...parentProps()}
@@ -69,9 +72,7 @@ export const UserPopoverContent = (props: UserPopoverContentProps) => {
 	)
 }
 
-export interface UserAvatarProps
-	extends Omit<UserPopoverContentProps, "user">,
-		Omit<AvatarProps, "name" | "src"> {
+export interface UserAvatarProps extends Omit<AvatarProps, "name" | "src"> {
 	user?: Doc<"users">
 }
 
@@ -99,7 +100,7 @@ export const UserAvatar = (props: UserAvatarProps) => {
 					)}
 				/>
 				<Popover.Content class="p-0">
-					<UserPopoverContent {...props} user={props.user!} />
+					<UserPopoverContent user={props.user!} />
 				</Popover.Content>
 			</Popover>
 		</Show>

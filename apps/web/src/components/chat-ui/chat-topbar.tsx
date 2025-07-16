@@ -1,7 +1,6 @@
 import type { Id } from "@hazel/backend"
 import { api } from "@hazel/backend/api"
 import { useQuery } from "@tanstack/solid-query"
-import { useParams } from "@tanstack/solid-router"
 import { createMemo, For, Index, Match, Show, Suspense, Switch } from "solid-js"
 import { convexQuery } from "~/lib/convex-query"
 import { useChat } from "../chat-state/chat-store"
@@ -14,12 +13,13 @@ import { TextField } from "../ui/text-field"
 import { PinnedModal } from "./pinned-modal"
 
 export function ChatTopbar() {
-	const params = useParams({ from: "/_protected/_app/$serverId/chat/$id" })()
-
 	const { state } = useChat()
 
+	const serverQuery = useQuery(() => convexQuery(api.servers.getCurrentServer, {}))
+	const serverId = createMemo(() => serverQuery.data?._id as Id<"servers">)
+
 	const meQuery = useQuery(() => ({
-		...convexQuery(api.me.getUser, { serverId: params.serverId as Id<"servers"> }),
+		...convexQuery(api.me.getUser, { serverId: serverId() }),
 	}))
 
 	const channelQuery = useQuery(() =>

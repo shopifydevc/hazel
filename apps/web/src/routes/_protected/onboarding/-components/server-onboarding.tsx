@@ -62,8 +62,7 @@ export const Serveronboarding = () => {
 
 								setCreateModalOpen(false)
 								navigate({
-									to: "/$serverId",
-									params: { serverId: serverId },
+									to: "/app",
 								})
 							} catch (error) {
 								console.error("Failed to create server:", error)

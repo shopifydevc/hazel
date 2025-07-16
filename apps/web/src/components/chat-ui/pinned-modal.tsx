@@ -14,14 +14,21 @@ import { chatMessageStyles } from "./message/message-styles"
 
 export function PinnedModal() {
 	const params = useParams({ from: "/_protected/_app/app/chat/$id" })()
-	const channelId = createMemo(() => params.id)
-	const serverId = createMemo(() => params.serverId)
+	const channelId = createMemo(() => params.id as Id<"channels">)
+
+	const serverQuery = useQuery(() => convexQuery(api.servers.getCurrentServer, {}))
+	const serverId = createMemo(() => serverQuery.data?._id)
 
 	const pinnedMessagesQuery = useQuery(() =>
-		convexQuery(api.pinnedMessages.getPinnedMessages, {
-			channelId: channelId() as Id<"channels">,
-			serverId: serverId() as Id<"servers">,
-		}),
+		convexQuery(
+			api.pinnedMessages.getPinnedMessages,
+			serverId()
+				? {
+						channelId: channelId(),
+						serverId: serverId()!,
+					}
+				: "skip",
+		),
 	)
 
 	const deletePinnedMessageMutation = useMutation(() => ({
@@ -58,8 +65,8 @@ export function PinnedModal() {
 				<div class="flex flex-col gap-2">
 					<For each={sortedPins()}>
 						{(pinnedMessage) => (
-							// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-							// biome-ignore lint/a11y/noStaticElementInteractions: <explanation>
+							// biome-ignore lint/a11y/useKeyWithClickEvents: Click handler for pinned message navigation
+							// biome-ignore lint/a11y/noStaticElementInteractions: Interactive message container
 							<div
 								onClick={() => scrollToMessage(pinnedMessage.messageId)}
 								class={chatMessageStyles({ variant: "pinned" })}
@@ -69,11 +76,13 @@ export function PinnedModal() {
 										<Button
 											onClick={(e) => {
 												e.stopPropagation()
-												deletePinnedMessageMutation.mutate({
-													channelId: channelId() as Id<"channels">,
-													messageId: pinnedMessage.messageId,
-													serverId: serverId() as Id<"servers">,
-												})
+												if (serverId()) {
+													deletePinnedMessageMutation.mutate({
+														channelId: channelId(),
+														messageId: pinnedMessage.messageId,
+														serverId: serverId()!,
+													})
+												}
 											}}
 											size="icon-small"
 											intent="icon"

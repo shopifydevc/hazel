@@ -98,7 +98,7 @@ export const AppSidebar = () => {
 				</Sidebar.Content>
 				<Sidebar.Footer>
 					<Suspense fallback={<Skeleton class="h-12 w-full rounded-md bg-muted" />}>
-						<NavUser serverId={serverId} />
+						<NavUser />
 					</Suspense>
 				</Sidebar.Footer>
 			</Sidebar>

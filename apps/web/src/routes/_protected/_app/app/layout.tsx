@@ -3,13 +3,12 @@ import { api } from "@hazel/backend/api"
 
 import { useQuery, useQueryClient } from "@tanstack/solid-query"
 import { createFileRoute, Outlet } from "@tanstack/solid-router"
-import { useAuth } from "authkit-solidjs"
 import { createEffect, Suspense } from "solid-js"
 import { CommandBar } from "~/components/command-bar/command-bar"
 import { Sidebar } from "~/components/ui/sidebar"
 import { PresenceProvider } from "~/lib/convex-presence"
 import { convexQuery } from "~/lib/convex-query"
-import { removeCurrentServerId, setCurrentServerId } from "~/lib/helpers/localstorage"
+import { setCurrentServerId } from "~/lib/helpers/localstorage"
 import { AppSidebar } from "./-components/sidebar/app-sidebar"
 
 export const Route = createFileRoute("/_protected/_app/app")({
@@ -77,7 +76,7 @@ function RouteComponent() {
 				roomId={() => serverQuery.data?._id as Id<"servers">}
 				userId={() => meQuery.data?._id!}
 			>
-				<CommandBar serverId={() => serverQuery.data?._id as Id<"servers">} />
+				<CommandBar />
 				<Sidebar.Provider>
 					<AppSidebar />
 					<Sidebar.Inset>

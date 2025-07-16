@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/solid-router"
 import { useAuth } from "authkit-solidjs"
-import type { Accessor } from "solid-js"
 import {
 	IconAirplaneStroke,
 	IconCreditCardStroke,
@@ -12,11 +11,7 @@ import { Menu } from "~/components/ui/menu"
 import { Sidebar } from "~/components/ui/sidebar"
 import { IconSignOut } from "~/components/ui/signout"
 
-interface NavUserProps {
-	serverId: Accessor<string>
-}
-
-export const NavUser = (props: NavUserProps) => {
+export const NavUser = () => {
 	const { user, signOut } = useAuth()
 
 	return (
@@ -55,10 +50,7 @@ export const NavUser = (props: NavUserProps) => {
 								value="settings"
 								asChild={(parentProps) => (
 									<Link
-										to="/$serverId/settings"
-										params={{
-											serverId: props.serverId(),
-										}}
+										to="/app/settings"
 										{...parentProps()}
 									/>
 								)}
@@ -70,10 +62,7 @@ export const NavUser = (props: NavUserProps) => {
 								value="billing"
 								asChild={(parentProps) => (
 									<Link
-										to="/$serverId/billing"
-										params={{
-											serverId: props.serverId(),
-										}}
+										to="/app/billing"
 										{...parentProps()}
 									/>
 								)}
