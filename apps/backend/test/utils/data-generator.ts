@@ -23,12 +23,22 @@ export async function createAccount(
 	return await t.mutation(api.accounts.createAccount, { displayName })
 }
 
+export async function createOrganization(
+	t: TestConvex<typeof schema> | TestConvexForDataModel<(typeof schema)["schemaValidation"]>,
+	props?: { name?: string; slug?: string },
+) {
+	const name = props?.name || "Test Organization"
+	const slug = props?.slug || "test-org"
+	return await t.mutation(api.organizations.create, { name, slug })
+}
+
 export async function createServer(
 	t: TestConvex<typeof schema> | TestConvexForDataModel<(typeof schema)["schemaValidation"]>,
-	props?: { name?: string },
+	props?: { name?: string; organizationId?: any },
 ) {
 	const name = props?.name || "Test Server"
-	return await t.mutation(api.servers.createServer, { name })
+	const organizationId = props?.organizationId || (await createOrganization(t))
+	return await t.mutation(api.servers.createServer, { name, organizationId })
 }
 
 export async function createServerAndAccount(

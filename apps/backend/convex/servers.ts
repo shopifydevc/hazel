@@ -100,18 +100,25 @@ export const createServer = accountMutation({
 	args: {
 		name: v.string(),
 		imageUrl: v.optional(v.string()),
+		organizationId: v.id("organizations"),
 	},
 	handler: async (ctx, args) => {
-		const organizationId = ctx.identity.organizationId as string | undefined
+		// Verify user is a member of the organization
+		const membership = await ctx.db
+			.query("organizationMembers")
+			.withIndex("by_organizationId_accountId", (q) =>
+				q.eq("organizationId", args.organizationId).eq("accountId", ctx.account.doc._id),
+			)
+			.first()
 
-		if (!organizationId) {
-			throw new Error("You must be part of an organization to create a server")
+		if (!membership) {
+			throw new Error("You must be a member of the organization to create a server")
 		}
 
 		const serverId = await ctx.db.insert("servers", {
 			name: args.name,
 			imageUrl: args.imageUrl,
-			organizationId: organizationId,
+			organizationId: args.organizationId,
 			updatedAt: Date.now(),
 		})
 

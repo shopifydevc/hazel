@@ -30,15 +30,28 @@ export const getCurrentUser = organizationServerQuery({
 export const getOrganization = accountQuery({
 	args: {},
 	handler: async (ctx) => {
-		const organizationId = ctx.identity.organizationId as string | undefined
+		const workosOrganizationId = ctx.identity.organizationId as string | undefined
 
-		if (!organizationId) {
+		if (!workosOrganizationId) {
 			throw new Error("You must be part of an organization to get your organization")
+		}
+
+		// Find the organization by WorkOS ID
+		const organization = await ctx.db
+			.query("organizations")
+			.withIndex("by_workosId", (q) => q.eq("workosId", workosOrganizationId))
+			.first()
+
+		if (!organization) {
+			return {
+				directive: "redirect",
+				to: "/onboarding",
+			} as const
 		}
 
 		const server = await ctx.db
 			.query("servers")
-			.withIndex("by_organizationId", (q) => q.eq("organizationId", organizationId))
+			.withIndex("by_organizationId", (q) => q.eq("organizationId", organization._id))
 			.first()
 
 		if (!server)

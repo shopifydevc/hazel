@@ -1,3 +1,6 @@
+import { convexQuery } from "@convex-dev/react-query"
+import { api } from "@hazel/backend/api"
+import { useQuery } from "@tanstack/react-query"
 import IconChatChatting1 from "./icons/IconChatChatting1"
 import IconChatChattingDuoSolid from "./icons/IconChatChattingDuoSolid"
 import IconGridDashboard01DuoSolid from "./icons/IconGridDashboard01DuoSolid"
@@ -52,7 +55,9 @@ export const AppSidebar = () => {
 			</Sidebar>
 			<Sidebar collapsible="none" className="hidden flex-1 md:flex">
 				<SidebarHeader className="gap-3.5 p-4">
-					<div className="flex w-full items-center justify-between">{/* <ActiveServer /> */}</div>
+					<div className="flex w-full items-center justify-between">
+						<ActiveServer />
+					</div>
 				</SidebarHeader>
 				<SidebarContent>
 					<SidebarGroup>
@@ -129,4 +134,12 @@ export const AppSidebar = () => {
 			</Sidebar>
 		</Sidebar>
 	)
+}
+
+const ActiveServer = () => {
+	const serverQuery = useQuery(convexQuery(api.servers.getCurrentServer, {}))
+
+	console.log(serverQuery.data)
+
+	return <div className="font-semibold text-foreground text-lg">{serverQuery.data?.name}</div>
 }

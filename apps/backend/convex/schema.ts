@@ -2,17 +2,38 @@ import { defineSchema, defineTable, Id } from "@rjdellecese/confect/server"
 import { Schema } from "effect"
 
 export const confectSchema = defineSchema({
-	servers: defineTable(
+	organizations: defineTable(
 		Schema.Struct({
+			workosId: Schema.String,
 			name: Schema.String,
-			imageUrl: Schema.optional(Schema.String),
-
-			organizationId: Schema.String,
-
-			updatedAt: Schema.Number,
+			slug: Schema.String,
+			logoUrl: Schema.optional(Schema.String),
+			settings: Schema.optional(
+				Schema.Struct({
+					allowInvites: Schema.optional(Schema.Boolean),
+					defaultUserRole: Schema.optional(
+						Schema.Union(Schema.Literal("member"), Schema.Literal("admin")),
+					),
+				}),
+			),
 			deletedAt: Schema.optional(Schema.Number),
 		}),
-	).index("by_organizationId", ["organizationId"]),
+	)
+		.index("by_workosId", ["workosId"])
+		.index("by_slug", ["slug"]),
+	organizationMembers: defineTable(
+		Schema.Struct({
+			organizationId: Id.Id("organizations"),
+			userId: Id.Id("users"),
+			role: Schema.String,
+			joinedAt: Schema.Number,
+			invitedBy: Schema.optional(Id.Id("users")),
+			deletedAt: Schema.optional(Schema.Number),
+		}),
+	)
+		.index("by_organizationId", ["organizationId"])
+		.index("by_auserId", ["userId"])
+		.index("by_organizationId_userId", ["organizationId", "userId"]),
 	channels: defineTable(
 		Schema.Struct({
 			name: Schema.String,
@@ -23,7 +44,7 @@ export const confectSchema = defineSchema({
 				Schema.Literal("direct"),
 				Schema.Literal("single"),
 			),
-			serverId: Id.Id("servers"),
+			organizationId: Id.Id("organizations"),
 			parentChannelId: Schema.optional(Id.Id("channels")),
 			pinnedMessages: Schema.Array(
 				Schema.Struct({
@@ -35,24 +56,7 @@ export const confectSchema = defineSchema({
 			updatedAt: Schema.Number,
 			deletedAt: Schema.optional(Schema.Number),
 		}),
-	).index("by_serverId_and_participantHash", ["serverId", "participantHash"]),
-	users: defineTable(
-		Schema.Struct({
-			displayName: Schema.String,
-			tag: Schema.String,
-			avatarUrl: Schema.String,
-			role: Schema.Union(Schema.Literal("member"), Schema.Literal("admin"), Schema.Literal("owner")),
-			status: Schema.Union(Schema.Literal("online"), Schema.Literal("offline"), Schema.Literal("away")),
-			accountId: Id.Id("accounts"),
-			serverId: Id.Id("servers"),
-			joinedAt: Schema.Number,
-			lastSeen: Schema.Number,
-			settings: Schema.optional(Schema.Struct({})),
-			deletedAt: Schema.optional(Schema.Number),
-		}),
-	)
-		.index("by_accountId_serverId", ["accountId", "serverId"])
-		.index("by_server_id", ["serverId"]),
+	).index("by_organizationId_and_participantHash", ["organizationId", "participantHash"]),
 	messages: defineTable(
 		Schema.Struct({
 			attachedFiles: Schema.Array(Schema.String),
@@ -71,17 +75,19 @@ export const confectSchema = defineSchema({
 			deletedAt: Schema.optional(Schema.Number),
 		}),
 	).index("by_channelId", ["channelId"]),
-	accounts: defineTable(
+	users: defineTable(
 		Schema.Struct({
 			externalId: Schema.String,
-			displayName: Schema.String,
+			firstName: Schema.String,
+			lastName: Schema.String,
 			avatarUrl: Schema.String,
-			tokenIdentifier: Schema.String,
+			lastSeen: Schema.Number,
+			settings: Schema.optional(Schema.Struct({})),
+			status: Schema.Union(Schema.Literal("online"), Schema.Literal("offline"), Schema.Literal("away")),
+
 			deletedAt: Schema.optional(Schema.Number),
 		}),
-	)
-		.index("by_externalId", ["externalId"])
-		.index("bg_tokenIdentifier", ["tokenIdentifier"]),
+	).index("by_externalId", ["externalId"]),
 	channelMembers: defineTable(
 		Schema.Struct({
 			userId: Id.Id("users"),
@@ -97,31 +103,21 @@ export const confectSchema = defineSchema({
 	).index("by_channelIdAndUserId", ["channelId", "userId"]),
 	notifications: defineTable(
 		Schema.Struct({
-			accountId: Id.Id("accounts"),
-			targetedResourceId: Schema.optional(Schema.Union(Id.Id("channels"), Id.Id("servers"))),
+			memberId: Id.Id("organizationMembers"),
+			targetedResourceId: Schema.optional(Schema.Union(Id.Id("channels"), Id.Id("organizations"))),
 			resourceId: Schema.optional(Schema.Union(Id.Id("messages"))),
 		}),
-	).index("by_accountId_targetedResourceId", ["accountId", "targetedResourceId"]),
+	).index("by_memberId_targetedResourceId", ["memberId", "targetedResourceId"]),
 	typingIndicators: defineTable(
 		Schema.Struct({
 			channelId: Id.Id("channels"),
-			accountId: Id.Id("accounts"),
+			memberId: Id.Id("organizationMembers"),
 			lastTyped: Schema.Number,
 		}),
 	)
-		.index("by_accountId", ["channelId", "accountId"])
+		.index("by_memberId", ["channelId", "memberId"])
 		.index("by_channel_timestamp", ["channelId", "lastTyped"])
 		.index("by_timestamp", ["lastTyped"]),
-	invites: defineTable(
-		Schema.Struct({
-			serverId: Id.Id("servers"),
-			creatorId: Id.Id("users"),
-			code: Schema.String,
-			expiresAt: Schema.optional(Schema.Number),
-			revokedAt: Schema.optional(Schema.Number),
-			createdAt: Schema.Number,
-		}),
-	).index("by_code", ["code"]),
 })
 
 export default confectSchema.convexSchemaDefinition

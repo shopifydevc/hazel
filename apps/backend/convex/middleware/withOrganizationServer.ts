@@ -14,15 +14,37 @@ export const organizationServerQuery = customQuery(query, {
 
 		const account = await Account.fromIdentity(ctx, identity)
 
-		const organizationId = identity.organizationId as string | undefined
+		const workosOrganizationId = identity.organizationId as string | undefined
 
-		if (!organizationId) {
+		if (!workosOrganizationId) {
 			throw new Error("No organization associated with this account")
+		}
+
+		// Find the organization by WorkOS ID
+		const organization = await ctx.db
+			.query("organizations")
+			.withIndex("by_workosId", (q) => q.eq("workosId", workosOrganizationId))
+			.first()
+
+		if (!organization) {
+			throw new Error("Organization not found")
+		}
+
+		// Check if user is a member of the organization
+		const organizationMembership = await ctx.db
+			.query("organizationMembers")
+			.withIndex("by_organizationId_accountId", (q) =>
+				q.eq("organizationId", organization._id).eq("accountId", account.doc._id),
+			)
+			.first()
+
+		if (!organizationMembership) {
+			throw new Error("You are not a member of this organization")
 		}
 
 		const server = await ctx.db
 			.query("servers")
-			.withIndex("by_organizationId", (q) => q.eq("organizationId", organizationId))
+			.withIndex("by_organizationId", (q) => q.eq("organizationId", organization._id))
 			.first()
 
 		if (!server) {
@@ -47,7 +69,9 @@ export const organizationServerQuery = customQuery(query, {
 				identity,
 				server,
 				serverId: server._id as Id<"servers">,
-				organizationId,
+				organization,
+				organizationId: organization._id as Id<"organizations">,
+				organizationMembership,
 			},
 			args,
 		}
@@ -65,15 +89,37 @@ export const organizationServerMutation = customMutation(mutation, {
 
 		const account = await Account.fromIdentity(ctx, identity)
 
-		const organizationId = identity.organizationId as string | undefined
+		const workosOrganizationId = identity.organizationId as string | undefined
 
-		if (!organizationId) {
+		if (!workosOrganizationId) {
 			throw new Error("No organization associated with this account")
+		}
+
+		// Find the organization by WorkOS ID
+		const organization = await ctx.db
+			.query("organizations")
+			.withIndex("by_workosId", (q) => q.eq("workosId", workosOrganizationId))
+			.first()
+
+		if (!organization) {
+			throw new Error("Organization not found")
+		}
+
+		// Check if user is a member of the organization
+		const organizationMembership = await ctx.db
+			.query("organizationMembers")
+			.withIndex("by_organizationId_accountId", (q) =>
+				q.eq("organizationId", organization._id).eq("accountId", account.doc._id),
+			)
+			.first()
+
+		if (!organizationMembership) {
+			throw new Error("You are not a member of this organization")
 		}
 
 		const server = await ctx.db
 			.query("servers")
-			.withIndex("by_organizationId", (q) => q.eq("organizationId", organizationId))
+			.withIndex("by_organizationId", (q) => q.eq("organizationId", organization._id))
 			.first()
 
 		if (!server) {
@@ -98,7 +144,9 @@ export const organizationServerMutation = customMutation(mutation, {
 				identity,
 				server,
 				serverId: server._id as Id<"servers">,
-				organizationId,
+				organization,
+				organizationId: organization._id as Id<"organizations">,
+				organizationMembership,
 			},
 			args,
 		}
