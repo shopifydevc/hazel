@@ -5,7 +5,10 @@ import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import type { FunctionReturnType } from "convex/server"
 import { useCallback } from "react"
+import { Pressable } from "react-aria"
 import { cn } from "~/lib/utils"
+import { cx } from "~/utils/cx"
+import { Dropdown } from "./base/dropdown/dropdown"
 import IconHashtagStroke from "./icons/IconHashtagStroke"
 import IconMultipleCrossCancelStroke from "./icons/IconMultipleCrossCancelStroke"
 import IconPhone2 from "./icons/IconPhone2"
@@ -14,13 +17,6 @@ import IconThreeDotsMenuHorizontalStroke from "./icons/IconThreeDotsMenuHorizont
 import IconVolumeMute1 from "./icons/IconVolumeMute1"
 import IconVolumeOne1 from "./icons/IconVolumeOne1"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "./ui/dropdown-menu"
 import { SidebarMenuAction, SidebarMenuButton, SidebarMenuItem } from "./ui/sidebar"
 import { UserAvatar } from "./ui/user-avatar"
 
@@ -32,7 +28,9 @@ export interface ChannelItemProps {
 
 export const ChannelItem = ({ channel }: ChannelItemProps) => {
 	const leaveChannelMutation = useConvexMutation(api.channels.leaveChannelForOrganization)
-	const updateChannelPreferencesMutation = useConvexMutation(api.channels.updateChannelPreferencesForOrganization)
+	const updateChannelPreferencesMutation = useConvexMutation(
+		api.channels.updateChannelPreferencesForOrganization,
+	)
 
 	const handleLeaveChannel = useCallback(() => {
 		leaveChannelMutation({
@@ -69,8 +67,8 @@ export const ChannelItem = ({ channel }: ChannelItemProps) => {
 					)}
 				</Link>
 			</SidebarMenuButton>
-			<DropdownMenu>
-				<DropdownMenuTrigger asChild>
+			<Dropdown.Root>
+				<Pressable>
 					<SidebarMenuAction
 						showOnHover
 						className="rounded-sm text-foreground data-[state=open]:bg-muted"
@@ -78,45 +76,55 @@ export const ChannelItem = ({ channel }: ChannelItemProps) => {
 						<IconThreeDotsMenuHorizontalStroke className="text-foreground" />
 						<span className="sr-only">More</span>
 					</SidebarMenuAction>
-				</DropdownMenuTrigger>
-				<DropdownMenuContent>
-					<DropdownMenuItem onClick={handleToggleMute}>
-						{channel.isMuted ? (
-							<IconVolumeOne1 className="size-4" />
-						) : (
-							<IconVolumeMute1 className="size-4" />
-						)}
-						{channel.isMuted ? "Unmute" : "Mute"}
-					</DropdownMenuItem>
-					<DropdownMenuItem onClick={handleToggleFavorite}>
-						{channel.isFavorite ? (
-							<IconStar1 className="size-4 text-amber-500" />
-						) : (
-							<IconStar1 className="size-4" />
-						)}
-						{channel.isFavorite ? "Unfavorite" : "Favorite"}
-					</DropdownMenuItem>
-					<DropdownMenuItem className="text-destructive" onClick={handleLeaveChannel}>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="16"
-							height="16"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="2"
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							className="size-4"
+				</Pressable>
+
+				<Dropdown.Popover placement="left top">
+					<Dropdown.Menu>
+						<Dropdown.Item
+							onAction={handleToggleMute}
+							icon={channel.isMuted ? IconVolumeOne1 : IconVolumeMute1}
 						>
-							<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-							<polyline points="16 17 21 12 16 7" />
-							<line x1="21" x2="9" y1="12" y2="12" />
-						</svg>
-						Leave Channel
-					</DropdownMenuItem>
-				</DropdownMenuContent>
-			</DropdownMenu>
+							{channel.isMuted ? "Unmute" : "Mute"}
+						</Dropdown.Item>
+						<Dropdown.Item
+							onAction={handleToggleFavorite}
+							icon={(props) =>
+								channel.isFavorite ? (
+									<IconStar1 className={cx("text-amber-500", props.className)} />
+								) : (
+									<IconStar1 className={props.className}></IconStar1>
+								)
+							}
+						>
+							{channel.isFavorite ? "Unfavorite" : "Favorite"}
+						</Dropdown.Item>
+						<Dropdown.Item
+							className="text-destructive"
+							icon={(props) => (
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="16"
+									height="16"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									strokeWidth="2"
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									className={props.className}
+								>
+									<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+									<polyline points="16 17 21 12 16 7" />
+									<line x1="21" x2="9" y1="12" y2="12" />
+								</svg>
+							)}
+							onAction={handleLeaveChannel}
+						>
+							Leave Channel
+						</Dropdown.Item>
+					</Dropdown.Menu>
+				</Dropdown.Popover>
+			</Dropdown.Root>
 		</SidebarMenuItem>
 	)
 }
@@ -132,7 +140,9 @@ interface DmChannelLinkProps {
 
 export const DmChannelLink = ({ channel, userPresence }: DmChannelLinkProps) => {
 	const { data: me } = useQuery(convexQuery(api.me.getCurrentUser, {}))
-	const updateChannelPreferencesMutation = useConvexMutation(api.channels.updateChannelPreferencesForOrganization)
+	const updateChannelPreferencesMutation = useConvexMutation(
+		api.channels.updateChannelPreferencesForOrganization,
+	)
 
 	const filteredMembers = channel.members.filter((member) => member.userId !== me?._id)
 
@@ -205,8 +215,8 @@ export const DmChannelLink = ({ channel, userPresence }: DmChannelLinkProps) => 
 				</Link>
 			</SidebarMenuButton>
 
-			<DropdownMenu>
-				<DropdownMenuTrigger asChild>
+			<Dropdown.Root>
+				<Pressable>
 					<SidebarMenuAction
 						showOnHover
 						className="rounded-sm text-foreground data-[state=open]:bg-muted"
@@ -214,39 +224,43 @@ export const DmChannelLink = ({ channel, userPresence }: DmChannelLinkProps) => 
 						<IconThreeDotsMenuHorizontalStroke className="text-foreground" />
 						<span className="sr-only">More</span>
 					</SidebarMenuAction>
-				</DropdownMenuTrigger>
-				<DropdownMenuContent>
-					<DropdownMenuItem
-						onClick={() => {
-							console.log("TODO: Implement call")
-						}}
-					>
-						<IconPhone2 className="size-4" />
-						Call
-					</DropdownMenuItem>
-					<DropdownMenuSeparator />
-					<DropdownMenuItem onClick={handleToggleMute}>
-						{channel.isMuted ? (
-							<IconVolumeOne1 className="size-4" />
-						) : (
-							<IconVolumeMute1 className="size-4" />
-						)}
-						{channel.isMuted ? "Unmute" : "Mute"}
-					</DropdownMenuItem>
-					<DropdownMenuItem onClick={handleToggleFavorite}>
-						{channel.isFavorite ? (
-							<IconStar1 className="size-4 text-amber-500" />
-						) : (
-							<IconStar1 className="size-4" />
-						)}
-						{channel.isFavorite ? "Unfavorite" : "Favorite"}
-					</DropdownMenuItem>
-					<DropdownMenuItem className="text-destructive" onClick={handleClose}>
-						<IconMultipleCrossCancelStroke className="size-4" />
-						Close
-					</DropdownMenuItem>
-				</DropdownMenuContent>
-			</DropdownMenu>
+				</Pressable>
+				<Dropdown.Popover>
+					<Dropdown.Menu>
+						<Dropdown.Section>
+							<Dropdown.Item
+								onAction={() => {
+									console.log("TODO: Implement call")
+								}}
+							>
+								<IconPhone2 className="size-4" />
+								Call
+							</Dropdown.Item>
+							<Dropdown.Separator />
+							<Dropdown.Item onAction={handleToggleMute}>
+								{channel.isMuted ? (
+									<IconVolumeOne1 className="size-4" />
+								) : (
+									<IconVolumeMute1 className="size-4" />
+								)}
+								{channel.isMuted ? "Unmute" : "Mute"}
+							</Dropdown.Item>
+							<Dropdown.Item onAction={handleToggleFavorite}>
+								{channel.isFavorite ? (
+									<IconStar1 className="size-4 text-amber-500" />
+								) : (
+									<IconStar1 className="size-4" />
+								)}
+								{channel.isFavorite ? "Unfavorite" : "Favorite"}
+							</Dropdown.Item>
+							<Dropdown.Item className="text-destructive" onAction={handleClose}>
+								<IconMultipleCrossCancelStroke className="size-4" />
+								Close
+							</Dropdown.Item>
+						</Dropdown.Section>
+					</Dropdown.Menu>
+				</Dropdown.Popover>
+			</Dropdown.Root>
 		</SidebarMenuItem>
 	)
 }
