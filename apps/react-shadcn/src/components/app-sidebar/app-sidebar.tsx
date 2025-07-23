@@ -3,13 +3,10 @@ import { api } from "@hazel/backend/api"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { useEffect, useMemo, useState } from "react"
-import { NewProjectModal } from "./application/modals/new-channel-modal"
-import { ChannelItem, DmChannelLink } from "./channel-item"
-import IconChatChatting1 from "./icons/IconChatChatting1"
-import IconGridDashboard01DuoSolid from "./icons/IconGridDashboard01DuoSolid"
-import IconNotificationBellOn1 from "./icons/IconNotificationBellOn1"
-import { SidebarFavoriteGroup } from "./sidebar-favorite-group"
-
+import { NewProjectModal } from "../application/modals/new-channel-modal"
+import IconChatChatting1 from "../icons/IconChatChatting1"
+import IconGridDashboard01DuoSolid from "../icons/IconGridDashboard01DuoSolid"
+import IconNotificationBellOn1 from "../icons/IconNotificationBellOn1"
 import {
 	Sidebar,
 	SidebarContent,
@@ -23,8 +20,11 @@ import {
 	SidebarMenuBadge,
 	SidebarMenuButton,
 	SidebarMenuItem,
-} from "./ui/sidebar"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
+} from "../ui/sidebar"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs"
+import { ChannelItem, DmChannelLink } from "./channel-item"
+import { NavUser } from "./nav-user"
+import { SidebarFavoriteGroup } from "./sidebar-favorite-group"
 
 export const AppSidebar = () => {
 	const channelsQuery = useQuery(
@@ -81,7 +81,9 @@ export const AppSidebar = () => {
 						</SidebarGroupContent>
 					</SidebarGroup>
 				</SidebarContent>
-				<SidebarFooter>{/* <NavUser /> */}</SidebarFooter>
+				<SidebarFooter>
+					<NavUser />
+				</SidebarFooter>
 			</Sidebar>
 			<Sidebar collapsible="none" className="hidden flex-1 border-primary md:flex">
 				<SidebarHeader className="gap-3.5 p-4">
