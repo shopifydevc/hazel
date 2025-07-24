@@ -4,7 +4,7 @@ import { createFormHook, createFormHookContexts, useForm } from "@tanstack/react
 import { User01 } from "@untitledui/icons"
 import { type } from "arktype"
 import { useState } from "react"
-import { DialogTrigger as AriaDialogTrigger, Heading as AriaHeading } from "react-aria-components"
+import { DialogTrigger as AriaDialogTrigger, Heading as AriaHeading, Pressable } from "react-aria-components"
 import { toast } from "sonner"
 import { Dialog, Modal, ModalOverlay } from "~/components/application/modals/modal"
 import { Button, IconButton } from "~/components/base/buttons/button"
@@ -58,9 +58,11 @@ export const NewProjectModal = () => {
 
 	return (
 		<AriaDialogTrigger isOpen={isOpen} onOpenChange={setIsOpen}>
-			<IconButton className="size-4.5">
-				<IconPlusStroke />
-			</IconButton>
+			<Pressable>
+				<IconButton className="size-4.5" asChild>
+					<IconPlusStroke />
+				</IconButton>
+			</Pressable>
 
 			<ModalOverlay isDismissable>
 				<Modal>

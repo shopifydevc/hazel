@@ -13,9 +13,10 @@ import { Route as AppLayoutRouteImport } from './routes/app/layout'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
-import { Route as AppSettingsRouteImport } from './routes/app/settings'
 import { Route as AppNotificationsRouteImport } from './routes/app/notifications'
 import { Route as AppChatRouteImport } from './routes/app/chat'
+import { Route as AppSettingsLayoutRouteImport } from './routes/app/settings/layout'
+import { Route as AppSettingsIndexRouteImport } from './routes/app/settings/index'
 import { Route as AppChatIdRouteImport } from './routes/app/chat/$id'
 
 const AppLayoutRoute = AppLayoutRouteImport.update({
@@ -38,11 +39,6 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
   path: '/auth/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppSettingsRoute = AppSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AppLayoutRoute,
-} as any)
 const AppNotificationsRoute = AppNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
@@ -53,6 +49,16 @@ const AppChatRoute = AppChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => AppLayoutRoute,
 } as any)
+const AppSettingsLayoutRoute = AppSettingsLayoutRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppLayoutRoute,
+} as any)
+const AppSettingsIndexRoute = AppSettingsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppSettingsLayoutRoute,
+} as any)
 const AppChatIdRoute = AppChatIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -62,63 +68,67 @@ const AppChatIdRoute = AppChatIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppLayoutRouteWithChildren
+  '/app/settings': typeof AppSettingsLayoutRouteWithChildren
   '/app/chat': typeof AppChatRouteWithChildren
   '/app/notifications': typeof AppNotificationsRoute
-  '/app/settings': typeof AppSettingsRoute
   '/auth/login': typeof AuthLoginRoute
   '/app/': typeof AppIndexRoute
   '/app/chat/$id': typeof AppChatIdRoute
+  '/app/settings/': typeof AppSettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app/chat': typeof AppChatRouteWithChildren
   '/app/notifications': typeof AppNotificationsRoute
-  '/app/settings': typeof AppSettingsRoute
   '/auth/login': typeof AuthLoginRoute
   '/app': typeof AppIndexRoute
   '/app/chat/$id': typeof AppChatIdRoute
+  '/app/settings': typeof AppSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppLayoutRouteWithChildren
+  '/app/settings': typeof AppSettingsLayoutRouteWithChildren
   '/app/chat': typeof AppChatRouteWithChildren
   '/app/notifications': typeof AppNotificationsRoute
-  '/app/settings': typeof AppSettingsRoute
   '/auth/login': typeof AuthLoginRoute
   '/app/': typeof AppIndexRoute
   '/app/chat/$id': typeof AppChatIdRoute
+  '/app/settings/': typeof AppSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/app'
+    | '/app/settings'
     | '/app/chat'
     | '/app/notifications'
-    | '/app/settings'
     | '/auth/login'
     | '/app/'
     | '/app/chat/$id'
+    | '/app/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/app/chat'
     | '/app/notifications'
-    | '/app/settings'
     | '/auth/login'
     | '/app'
     | '/app/chat/$id'
+    | '/app/settings'
   id:
     | '__root__'
     | '/'
     | '/app'
+    | '/app/settings'
     | '/app/chat'
     | '/app/notifications'
-    | '/app/settings'
     | '/auth/login'
     | '/app/'
     | '/app/chat/$id'
+    | '/app/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -157,13 +167,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/app/settings': {
-      id: '/app/settings'
-      path: '/settings'
-      fullPath: '/app/settings'
-      preLoaderRoute: typeof AppSettingsRouteImport
-      parentRoute: typeof AppLayoutRoute
-    }
     '/app/notifications': {
       id: '/app/notifications'
       path: '/notifications'
@@ -178,6 +181,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppChatRouteImport
       parentRoute: typeof AppLayoutRoute
     }
+    '/app/settings': {
+      id: '/app/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AppSettingsLayoutRouteImport
+      parentRoute: typeof AppLayoutRoute
+    }
+    '/app/settings/': {
+      id: '/app/settings/'
+      path: '/'
+      fullPath: '/app/settings/'
+      preLoaderRoute: typeof AppSettingsIndexRouteImport
+      parentRoute: typeof AppSettingsLayoutRoute
+    }
     '/app/chat/$id': {
       id: '/app/chat/$id'
       path: '/$id'
@@ -187,6 +204,17 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AppSettingsLayoutRouteChildren {
+  AppSettingsIndexRoute: typeof AppSettingsIndexRoute
+}
+
+const AppSettingsLayoutRouteChildren: AppSettingsLayoutRouteChildren = {
+  AppSettingsIndexRoute: AppSettingsIndexRoute,
+}
+
+const AppSettingsLayoutRouteWithChildren =
+  AppSettingsLayoutRoute._addFileChildren(AppSettingsLayoutRouteChildren)
 
 interface AppChatRouteChildren {
   AppChatIdRoute: typeof AppChatIdRoute
@@ -200,16 +228,16 @@ const AppChatRouteWithChildren =
   AppChatRoute._addFileChildren(AppChatRouteChildren)
 
 interface AppLayoutRouteChildren {
+  AppSettingsLayoutRoute: typeof AppSettingsLayoutRouteWithChildren
   AppChatRoute: typeof AppChatRouteWithChildren
   AppNotificationsRoute: typeof AppNotificationsRoute
-  AppSettingsRoute: typeof AppSettingsRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppLayoutRouteChildren: AppLayoutRouteChildren = {
+  AppSettingsLayoutRoute: AppSettingsLayoutRouteWithChildren,
   AppChatRoute: AppChatRouteWithChildren,
   AppNotificationsRoute: AppNotificationsRoute,
-  AppSettingsRoute: AppSettingsRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
