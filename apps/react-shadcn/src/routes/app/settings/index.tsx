@@ -8,8 +8,6 @@ import { Dark, Light, System } from "~/components/application/modals/appearances
 import { SectionHeader } from "~/components/application/section-headers/section-headers"
 import { SectionLabel } from "~/components/application/section-headers/section-label"
 
-import { Button } from "~/components/base/buttons/button"
-import { FileTrigger } from "~/components/base/file-upload-trigger/file-upload-trigger"
 import { Form } from "~/components/base/form/form"
 import { InputBase } from "~/components/base/input/input"
 import { RadioButtonBase } from "~/components/base/radio-buttons/radio-buttons"
@@ -36,13 +34,13 @@ function AppearanceSettings() {
 
 	const [customColor, setCustomColor] = useState<Color>(parseColor("#7F56D9"))
 	const [color, setColor] = useState<Color>(customColor)
-	const [uploadedAvatar, setUploadedAvatar] = useState<string | undefined>(
+	const [_uploadedAvatar, setUploadedAvatar] = useState<string | undefined>(
 		"https://www.untitledui.com/logos/images/ContrastAI.jpg",
 	)
 
 	const { theme, setTheme } = useTheme()
 
-	const handleAvatarUpload = (files: FileList | null) => {
+	const _handleAvatarUpload = (files: FileList | null) => {
 		const file = files?.[0]
 
 		if (!file) return
@@ -102,32 +100,6 @@ function AppearanceSettings() {
 
 			{/* Form content */}
 			<div className="flex flex-col gap-5">
-				<div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(200px,280px)_1fr] lg:gap-8">
-					<SectionLabel.Root
-						size="sm"
-						title="Company logo"
-						description="Update your company logo."
-					/>
-
-					<div className="flex items-center gap-5">
-						<img
-							src={uploadedAvatar}
-							alt="Company logo"
-							className="size-16 rounded-2xl object-cover ring-1 ring-avatar-contrast-border ring-inset"
-						/>
-
-						<div className="flex gap-4">
-							<FileTrigger acceptedFileTypes={["image/*"]} onSelect={handleAvatarUpload}>
-								<Button size="sm" color="secondary">
-									Replace logo
-								</Button>
-							</FileTrigger>
-						</div>
-					</div>
-				</div>
-
-				<hr className="h-px w-full border-none bg-border-secondary" />
-
 				<div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(200px,280px)_1fr] lg:gap-8">
 					<SectionLabel.Root
 						size="sm"

@@ -1,5 +1,5 @@
 import { v } from "convex/values"
-import { internalQuery, mutation, query } from "./_generated/server"
+import { internalQuery, query } from "./_generated/server"
 import { accountMutation, accountQuery } from "./middleware/withAccount"
 
 export const create = accountMutation({
