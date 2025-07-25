@@ -46,11 +46,7 @@ function AppearanceSettings() {
 		return parseColor("#7F56D9") // Default color
 	}
 
-	const [customColor, setCustomColor] = useState<Color>(getSavedColor())
 	const [color, setColor] = useState<Color>(getSavedColor())
-	const [_uploadedAvatar, _setUploadedAvatar] = useState<string | undefined>(
-		"https://www.untitledui.com/logos/images/ContrastAI.jpg",
-	)
 
 	const { theme, setTheme } = useTheme()
 
@@ -89,12 +85,8 @@ function AppearanceSettings() {
 	const handleCustomColorChange = (value: Color | null) => {
 		if (!value) return
 
-		// If the custom color is already selected, update the color.
-		if (color.toString("hex") === customColor.toString("hex")) {
-			setColor(value)
-		}
-
-		setCustomColor(value)
+		// Always update the selected color when custom color changes
+		setColor(value)
 	}
 
 	const themes = [
@@ -148,7 +140,10 @@ function AppearanceSettings() {
 						<RadioGroup
 							aria-label="Brand color"
 							value={color?.toString("hex")}
-							onChange={(value) => setColor(parseColor(value))}
+							onChange={(value) => {
+								const newColor = parseColor(value)
+								setColor(newColor)
+							}}
 							className="flex flex-col items-start gap-4 md:flex-row md:items-center"
 						>
 							<div className="flex gap-2">
@@ -172,49 +167,7 @@ function AppearanceSettings() {
 									</Radio>
 								))}
 							</div>
-							<Radio
-								value={customColor.toString("hex")}
-								aria-label={customColor.getColorName("en-US")}
-								className="flex shrink-0 items-center gap-3"
-							>
-								{({ isSelected, isFocused }) => (
-									<>
-										<label
-											htmlFor="custom-color-input"
-											className="font-semibold text-secondary text-sm"
-										>
-											Custom
-										</label>
-										<ColorSwatch
-											color={customColor}
-											className={cx(
-												"-outline-offset-1 size-7 shrink-0 cursor-pointer rounded-full outline-1 outline-black/10",
-												(isSelected || isFocused) &&
-													"ring-2 ring-focus-ring ring-offset-2 ring-offset-bg-primary",
-											)}
-										/>
-										<ColorField
-											className="md:hidden"
-											value={customColor}
-											onChange={handleCustomColorChange}
-										>
-											<InputBase
-												id="custom-color-input"
-												size="sm"
-												wrapperClassName="w-24"
-											/>
-										</ColorField>
-									</>
-								)}
-							</Radio>
 						</RadioGroup>
-						<ColorField
-							value={customColor}
-							onChange={handleCustomColorChange}
-							className="max-md:hidden"
-						>
-							<InputBase size="sm" wrapperClassName="w-24" />
-						</ColorField>
 					</div>
 				</div>
 
