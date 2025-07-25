@@ -1,4 +1,5 @@
 import { httpRouter } from "convex/server"
+import { internal } from "./_generated/api"
 import { httpAction } from "./_generated/server"
 
 const http = httpRouter()
@@ -20,6 +21,44 @@ http.route({
 				Vary: "origin",
 			}),
 		})
+	}),
+})
+
+http.route({
+	path: "/workos",
+	method: "POST",
+	handler: httpAction(async (ctx, request) => {
+		const signature = request.headers.get("workos-signature")!
+		const payload = await request.text()
+
+		const result = await ctx.runAction(internal.workosActions.verifyWorkosWebhook, {
+			payload,
+			signature,
+		})
+
+		if (!result.valid) {
+			return new Response(result.error, {
+				status: 400,
+				headers: new Headers({
+					"Content-Type": "text/plain",
+				}),
+			})
+		}
+
+		const res = await ctx.runMutation(internal.workos.processWorkosEvents, {
+			event: result.event,
+		})
+
+		if (!res.success) {
+			return new Response(res.error, {
+				status: 500,
+				headers: new Headers({
+					"Content-Type": "text/plain",
+				}),
+			})
+		}
+
+		return new Response()
 	}),
 })
 

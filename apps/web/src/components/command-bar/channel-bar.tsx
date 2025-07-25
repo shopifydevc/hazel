@@ -12,11 +12,15 @@ import { Command } from "../ui/command-menu"
 import { UserAvatar } from "../ui/user-avatar"
 import { setCommandBarState } from "./command-bar"
 
-export const ChannelBar = (props: { serverId: Accessor<Id<"servers">> }) => {
+export const ChannelBar = () => {
 	const navigate = useNavigate()
+
+	const serverQuery = useQuery(() => convexQuery(api.servers.getCurrentServer, {}))
+	const serverId = createMemo(() => serverQuery.data?._id as Id<"servers">)
+
 	const channelQuery = useQuery(() =>
 		convexQuery(api.channels.getChannels, {
-			serverId: props.serverId(),
+			serverId: serverId(),
 			favoriteFilter: {
 				favorite: false,
 			},
@@ -24,7 +28,7 @@ export const ChannelBar = (props: { serverId: Accessor<Id<"servers">> }) => {
 	)
 	const favoriteChannelsQuery = useQuery(() =>
 		convexQuery(api.channels.getChannels, {
-			serverId: props.serverId(),
+			serverId: serverId(),
 			favoriteFilter: {
 				favorite: true,
 			},
@@ -40,8 +44,8 @@ export const ChannelBar = (props: { serverId: Accessor<Id<"servers">> }) => {
 							class="flex items-center gap-2"
 							onSelect={() => {
 								navigate({
-									to: "/$serverId/chat/$id",
-									params: { id: channel._id, serverId: props.serverId() },
+									to: "/app/chat/$id",
+									params: { id: channel._id },
 								})
 								setCommandBarState("open", false)
 							}}
@@ -52,7 +56,7 @@ export const ChannelBar = (props: { serverId: Accessor<Id<"servers">> }) => {
 					)}
 				</For>
 				<For each={favoriteChannelsQuery.data?.dmChannels}>
-					{(channel) => <DmChannelItem channel={() => channel} serverId={props.serverId} />}
+					{(channel) => <DmChannelItem channel={() => channel} serverId={serverId} />}
 				</For>
 			</Command.Group>
 			<Command.Group heading="Channels">
@@ -62,8 +66,8 @@ export const ChannelBar = (props: { serverId: Accessor<Id<"servers">> }) => {
 							class="flex items-center gap-2"
 							onSelect={() => {
 								navigate({
-									to: "/$serverId/chat/$id",
-									params: { id: channel._id, serverId: props.serverId() },
+									to: "/app/chat/$id",
+									params: { id: channel._id },
 								})
 								setCommandBarState("open", false)
 							}}
@@ -76,7 +80,7 @@ export const ChannelBar = (props: { serverId: Accessor<Id<"servers">> }) => {
 			</Command.Group>
 			<Command.Group heading="Direct Messages">
 				<For each={channelQuery.data?.dmChannels}>
-					{(channel) => <DmChannelItem channel={() => channel} serverId={props.serverId} />}
+					{(channel) => <DmChannelItem channel={() => channel} serverId={serverId} />}
 				</For>
 			</Command.Group>
 		</>
@@ -104,8 +108,8 @@ const DmChannelItem = (props: DmChannelItemProps) => {
 		<Command.Item
 			onSelect={() => {
 				navigate({
-					to: "/$serverId/chat/$id",
-					params: { id: props.channel()._id, serverId: props.serverId() },
+					to: "/app/chat/$id",
+					params: { id: props.channel()._id },
 				})
 				setCommandBarState("open", false)
 			}}

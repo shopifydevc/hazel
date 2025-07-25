@@ -85,7 +85,7 @@ export function ChatMessage(props: ChatMessageProps) {
 					/>
 				</Suspense>
 
-				<MessageHeader message={props.message} showAvatar={showAvatar} serverId={props.serverId} />
+				<MessageHeader message={props.message} showAvatar={showAvatar} />
 				<MessageContent message={props.message} serverId={props.serverId} showAvatar={showAvatar} />
 			</div>
 		</div>

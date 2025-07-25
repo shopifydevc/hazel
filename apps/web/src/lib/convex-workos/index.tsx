@@ -21,6 +21,9 @@ function createUseAuthFromWorkOS(useAuthHook: typeof useAuth) {
 	return () => {
 		const authData = useAuthHook()
 
+		const isLoading = createMemo(() => authData.isLoading)
+		const isAuthenticated = createMemo(() => !!authData.user)
+
 		const fetchAccessToken = createMemo(() => {
 			// Track organization context for potential future use
 			return async (_args: { forceRefreshToken: boolean }) => {
@@ -32,9 +35,6 @@ function createUseAuthFromWorkOS(useAuthHook: typeof useAuth) {
 				}
 			}
 		})
-
-		const isLoading = createMemo(() => authData.isLoading)
-		const isAuthenticated = createMemo(() => !!authData.user)
 
 		return {
 			isLoading,

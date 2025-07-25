@@ -19,13 +19,13 @@ import {
 
 import type { ButtonProps } from "~/components/ui/button"
 import { Button } from "~/components/ui/button"
-import { Separator } from "~/components/ui/separator"
 import { Sheet, SheetContent } from "~/components/ui/sheet"
 import { Skeleton } from "~/components/ui/skeleton"
 import { KobaltTextField, TextFieldInput } from "~/components/ui/text-field"
 
 import { cn } from "~/lib/utils"
 import { IconSidebar1 } from "../iconsv2"
+import { Separator } from "./separator"
 import { Tooltip } from "./tooltip"
 
 const MOBILE_BREAKPOINT = 768

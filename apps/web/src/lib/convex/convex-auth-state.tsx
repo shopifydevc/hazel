@@ -1,11 +1,10 @@
 import {
 	type Accessor,
-	type Context,
-	type JSX,
 	createContext,
 	createEffect,
 	createMemo,
 	createSignal,
+	type JSX,
 	onCleanup,
 	useContext,
 } from "solid-js"
@@ -37,9 +36,7 @@ export function ConvexProviderWithAuth(props: {
 	createAuth: () => {
 		isLoading: Accessor<boolean>
 		isAuthenticated: Accessor<boolean>
-		fetchAccessToken: (args: {
-			forceRefreshToken: boolean
-		}) => Promise<string | null>
+		fetchAccessToken: (args: { forceRefreshToken: boolean }) => Promise<string | null>
 	}
 }) {
 	const [isConvexAuthenticated, setIsConvexAuthenticated] = createSignal<boolean | null>(null)
@@ -63,6 +60,7 @@ export function ConvexProviderWithAuth(props: {
 
 		if (auth.isAuthenticated()) {
 			props.client.setAuth(auth.fetchAccessToken, (backendReportsIsAuthenticated) => {
+				console.log("backendReportsIsAuthenticated", backendReportsIsAuthenticated)
 				if (isThisEffectRelevant) {
 					setIsConvexAuthenticated(backendReportsIsAuthenticated)
 				}
@@ -85,9 +83,7 @@ export function ConvexProviderWithAuth(props: {
 	})
 
 	const isLoading = createMemo(() => isConvexAuthenticated() === null)
-	const isAuthenticated = createMemo(
-		() => props.createAuth().isAuthenticated() && (isConvexAuthenticated() ?? false),
-	)
+	const isAuthenticated = createMemo(() => auth.isAuthenticated() && (isConvexAuthenticated() ?? false))
 
 	const authContextValue = {
 		isLoading: isLoading,

@@ -1,7 +1,12 @@
 {
 	"$schema": "https://biomejs.dev/schemas/2.0.5/schema.json",
-	
-	 "assist": { "actions": { "source": { "organizeImports": "on" } } },
+	"assist": {
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
+	},
 	"files": {
 		"includes": ["**/*.{ts,tsx,json}"]
 	},
@@ -30,7 +35,7 @@
 				"useYield": "off"
 			},
 			"suspicious": {
-				"noReactSpecificProps": "error",
+				"noReactSpecificProps": "off",
 				"noConfusingVoidType": "off",
 				"noExplicitAny": "off",
 				"noArrayIndexKey": "off",

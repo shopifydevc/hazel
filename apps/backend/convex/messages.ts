@@ -2,11 +2,35 @@ import { paginationOptsValidator } from "convex/server"
 import { v } from "convex/values"
 import { asyncMap } from "convex-helpers"
 import { internal } from "./_generated/api"
+import { organizationServerMutation, organizationServerQuery } from "./middleware/withOrganization"
 import { userMutation, userQuery } from "./middleware/withUser"
+
+export const getMessageForOrganization = organizationServerQuery({
+	args: {
+		channelId: v.id("channels"),
+		id: v.id("messages"),
+	},
+	handler: async (ctx, args) => {
+		// Validate user can view the channel
+		const channel = await ctx.db.get(args.channelId)
+		if (!channel) throw new Error("Channel not found")
+		if (channel.organizationId !== ctx.organizationId) throw new Error("Channel not in this organization")
+
+		const message = await ctx.db.get(args.id)
+		if (!message) throw new Error("Message not found")
+
+		const messageAuthor = await ctx.db.get(message.authorId)
+		if (!messageAuthor) throw new Error("Message author not found")
+
+		return {
+			...message,
+			author: messageAuthor,
+		}
+	},
+})
 
 export const getMessage = userQuery({
 	args: {
-		serverId: v.id("servers"),
 		channelId: v.id("channels"),
 		id: v.id("messages"),
 	},
@@ -26,9 +50,69 @@ export const getMessage = userQuery({
 	},
 })
 
+export const getMessagesForOrganization = organizationServerQuery({
+	args: {
+		channelId: v.id("channels"),
+		paginationOpts: paginationOptsValidator,
+	},
+	handler: async (ctx, args) => {
+		const user = await ctx.db
+			.query("users")
+			.first()
+
+		if (!user) {
+			throw new Error("User not found in this organization")
+		}
+
+		const channel = await ctx.db.get(args.channelId)
+		if (!channel) throw new Error("Channel not found")
+		if (channel.organizationId !== ctx.organizationId) throw new Error("Channel not in this organization")
+
+		// Validate user can view the channel
+		// TODO: Add proper channel permission check here
+
+		const messages = await ctx.db
+			.query("messages")
+			.withIndex("by_channelId", (q) => q.eq("channelId", args.channelId))
+			.order("desc")
+			.paginate(args.paginationOpts)
+
+		const messagesWithThreadMessages = await asyncMap(messages.page, async (message) => {
+			if (message.threadChannelId) {
+				const threadMessages = await ctx.db
+					.query("messages")
+					.withIndex("by_channelId", (q) => q.eq("channelId", message.threadChannelId!))
+					.order("desc")
+					.collect()
+
+				return {
+					...message,
+					threadMessages,
+				}
+			}
+
+			return message
+		})
+
+		const messagesWithAuthors = await asyncMap(messagesWithThreadMessages, async (message) => {
+			const author = await ctx.db.get(message.authorId)
+			if (!author) throw new Error("Message author not found")
+
+			return {
+				...message,
+				author,
+			}
+		})
+
+		return {
+			...messages,
+			page: messagesWithAuthors,
+		}
+	},
+})
+
 export const getMessages = userQuery({
 	args: {
-		serverId: v.id("servers"),
 		channelId: v.id("channels"),
 		paginationOpts: paginationOptsValidator,
 	},
@@ -91,9 +175,50 @@ export const getMessages = userQuery({
 	},
 })
 
+export const createMessageForOrganization = organizationServerMutation({
+	args: {
+		content: v.string(),
+		channelId: v.id("channels"),
+		threadChannelId: v.optional(v.id("channels")),
+		replyToMessageId: v.optional(v.id("messages")),
+		attachedFiles: v.array(v.string()),
+	},
+	handler: async (ctx, args) => {
+		if (args.content.trim() === "") {
+			throw new Error("Message content cannot be empty")
+		}
+
+		// Validate channel belongs to this organization
+		const channel = await ctx.db.get(args.channelId)
+		if (!channel) throw new Error("Channel not found")
+		if (channel.organizationId !== ctx.organizationId) throw new Error("Channel not in this organization")
+
+		// TODO: Add proper channel membership validation
+
+		const messageId = await ctx.db.insert("messages", {
+			channelId: args.channelId,
+			content: args.content,
+			threadChannelId: args.threadChannelId,
+			authorId: ctx.account.doc._id,
+			replyToMessageId: args.replyToMessageId,
+			attachedFiles: args.attachedFiles,
+			updatedAt: Date.now(),
+			reactions: [],
+		})
+
+		// TODO: This should be a database trigger
+		await ctx.scheduler.runAfter(0, internal.background.index.sendNotification, {
+			channelId: args.channelId,
+			messageId: messageId,
+			userId: ctx.account.doc._id,
+		})
+
+		return messageId
+	},
+})
+
 export const createMessage = userMutation({
 	args: {
-		serverId: v.id("servers"),
 
 		content: v.string(),
 		channelId: v.id("channels"),
@@ -122,7 +247,6 @@ export const createMessage = userMutation({
 		// TODO: This should be a database trigger
 		await ctx.scheduler.runAfter(0, internal.background.index.sendNotification, {
 			channelId: args.channelId,
-			accountId: ctx.user.doc.accountId,
 			messageId: messageId,
 			userId: ctx.user.id,
 		})
@@ -133,7 +257,6 @@ export const createMessage = userMutation({
 
 export const updateMessage = userMutation({
 	args: {
-		serverId: v.id("servers"),
 
 		id: v.id("messages"),
 		content: v.string(),
@@ -149,7 +272,6 @@ export const updateMessage = userMutation({
 
 export const deleteMessage = userMutation({
 	args: {
-		serverId: v.id("servers"),
 
 		id: v.id("messages"),
 	},
@@ -162,7 +284,6 @@ export const deleteMessage = userMutation({
 
 export const createReaction = userMutation({
 	args: {
-		serverId: v.id("servers"),
 
 		messageId: v.id("messages"),
 		emoji: v.string(),
@@ -189,7 +310,6 @@ export const createReaction = userMutation({
 
 export const deleteReaction = userMutation({
 	args: {
-		serverId: v.id("servers"),
 
 		id: v.id("messages"),
 		emoji: v.string(),

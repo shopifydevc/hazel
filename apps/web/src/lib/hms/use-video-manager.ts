@@ -2,9 +2,9 @@ import {
 	type HMSAudioTrack,
 	type HMSConfig,
 	HMSReactiveStore,
-       type HMSTrackID,
-       selectAudioTrackByID,
-       selectAudioTrackVolume,
+	type HMSTrackID,
+	selectAudioTrackByID,
+	selectAudioTrackVolume,
 	selectIsConnectedToRoom,
 	selectIsLocalAudioEnabled,
 	selectIsLocalScreenShared,
@@ -28,18 +28,18 @@ hms.triggerOnSubscribe()
 export const hmsActions = hms.getActions()
 export const hmsStore = hms.getStore()
 
-export function useCallManager(props: { serverId: Id<"servers"> }) {
+export function useCallManager() {
 	const meQuery = useQuery(() => ({
-		...convexQuery(api.me.getUser, { serverId: props.serverId }),
+		...convexQuery(api.me.getCurrentUser, {}),
 	}))
 
 	const [store, setStore] = createStore({
 		peers: hmsStore.getState(selectPeers).map((peer) => {
 			const track = hmsStore.getState(selectVideoTrackByID(peer.videoTrack))
-                        const audio = hmsStore.getState(selectAudioTrackByID(peer.audioTrack))
-                        const volume = hmsStore.getState(selectAudioTrackVolume(peer.audioTrack))
+			const audio = hmsStore.getState(selectAudioTrackByID(peer.audioTrack))
+			const volume = hmsStore.getState(selectAudioTrackVolume(peer.audioTrack))
 
-                        return { ...peer, track, audio, volume: volume ?? 100 }
+			return { ...peer, track, audio, volume: volume ?? 100 }
 		}),
 		isConnected: hmsStore.getState(selectIsConnectedToRoom),
 		local: {
@@ -126,13 +126,13 @@ export function useCallManager(props: { serverId: Id<"servers"> }) {
 
 			setStore("isConnected", !!selectIsConnectedToRoom(store))
 
-                        const peers = selectPeers(store).map((peer) => {
-                                const track = selectVideoTrackByID(peer.videoTrack)(store)
-                                const audio = selectAudioTrackByID(peer.audioTrack)(store)
-                                const volume = selectAudioTrackVolume(peer.audioTrack)(store)
+			const peers = selectPeers(store).map((peer) => {
+				const track = selectVideoTrackByID(peer.videoTrack)(store)
+				const audio = selectAudioTrackByID(peer.audioTrack)(store)
+				const volume = selectAudioTrackVolume(peer.audioTrack)(store)
 
-                                return { ...peer, track, audio, volume: volume ?? 100 }
-                        })
+				return { ...peer, track, audio, volume: volume ?? 100 }
+			})
 
 			setStore("peers", reconcile(peers, { key: "id" }))
 

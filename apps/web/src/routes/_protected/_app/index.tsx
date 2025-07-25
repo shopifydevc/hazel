@@ -1,13 +1,29 @@
 import { api } from "@hazel/backend/api"
 import { useQuery } from "@tanstack/solid-query"
-import { Link, createFileRoute, useNavigate } from "@tanstack/solid-router"
-import { For, createEffect } from "solid-js"
+import { createFileRoute, Link, useNavigate } from "@tanstack/solid-router"
+import { createEffect, For } from "solid-js"
 import { Card } from "~/components/ui/card"
 import { convexQuery } from "~/lib/convex-query"
-import { getCurrentServerId } from "~/lib/helpers/localstorage"
 
 export const Route = createFileRoute("/_protected/_app/")({
 	component: App,
+	// beforeLoad: async ({ context }) => {
+	// 	await context.convex.awaitAuth()
+
+	// 	const res = await context.convex.query(api.me.getOrganization, {})
+
+	// 	if (res.directive === "redirect") {
+	// 		throw redirect({
+	// 			to: res.to,
+	// 		})
+	// 	}
+
+	// 	if (res.directive === "success") {
+	// 		throw redirect({
+	// 			to: "/app",
+	// 		})
+	// 	}
+	// },
 })
 
 function App() {
@@ -19,18 +35,10 @@ function App() {
 			navigate({
 				to: "/onboarding",
 			})
-		}
-	})
-
-	createEffect(() => {
-		const savedServerId = getCurrentServerId()
-
-		if (savedServerId) {
+		} else if (serversQuery.data && serversQuery.data.length > 0) {
+			// Since one organization = one server, redirect directly to the app
 			navigate({
-				to: "/$serverId",
-				params: {
-					serverId: savedServerId,
-				},
+				to: "/app/chat",
 			})
 		}
 	})
@@ -40,7 +48,7 @@ function App() {
 			<div class="flex flex-row gap-3">
 				<For each={serversQuery.data}>
 					{(server) => (
-						<Link to="/$serverId" params={{ serverId: server._id }}>
+						<Link to="/app">
 							<Card>
 								<Card.Header>
 									<Card.Title>{server.name}</Card.Title>

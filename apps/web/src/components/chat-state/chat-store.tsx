@@ -1,19 +1,9 @@
 import type { Doc, Id } from "@hazel/backend"
 import { api } from "@hazel/backend/api"
 import { useQuery } from "@tanstack/solid-query"
-import {
-	type Accessor,
-	type JSX,
-	Show,
-	Suspense,
-	createContext,
-	createMemo,
-	splitProps,
-	useContext,
-} from "solid-js"
+import { type Accessor, createContext, createMemo, type JSX, Show, splitProps, useContext } from "solid-js"
 import { createStore } from "solid-js/store"
 import { convexQuery } from "~/lib/convex-query"
-import { MessageSkeleton } from "~/routes/_protected/_app/$serverId/chat/-components/channel-without-virtua"
 
 interface ChatStore extends InputChatStore {
 	replyToMessageId: Id<"messages"> | null

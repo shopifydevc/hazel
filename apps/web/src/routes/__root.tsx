@@ -1,13 +1,13 @@
 import type { QueryClient } from "@tanstack/solid-query"
 import { createRootRouteWithContext, Outlet } from "@tanstack/solid-router"
+import type { Client } from "authkit-solidjs"
 
-import type { useAuth } from "clerk-solidjs"
 import type { ConvexSolidClient } from "~/lib/convex"
 
 interface RootContext {
-	auth: ReturnType<typeof useAuth>
 	convex: ConvexSolidClient
 	queryClient: QueryClient
+	authClient: Client
 }
 
 export const Route = createRootRouteWithContext<RootContext>()({
