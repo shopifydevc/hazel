@@ -28,7 +28,7 @@ function RouteComponent() {
 
 	const currentUserQuery = useQuery(() => convexQuery(api.me.get, {}))
 
-	const createDmChannel = createMutation(api.channels.createDmChannelForOrganization)
+	const createDmChannel = createMutation(api.channels.createDmChannel)
 
 	const handleOpenChat = async ({ targetUserId }: { targetUserId: Id<"users"> }) => {
 		if (!targetUserId) {

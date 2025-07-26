@@ -18,7 +18,7 @@ import { cn } from "~/lib/utils"
 export const CreateDmDialog = () => {
 	const friendsQuery = useQuery(() => convexQuery(api.social.getFriendsForOrganization, {}))
 
-	const createDmChannelMutation = createMutation(api.channels.createDmChannelForOrganization)
+	const createDmChannelMutation = createMutation(api.channels.createDmChannel)
 
 	const [friendFilter, setFriendFilter] = createSignal<string>("")
 

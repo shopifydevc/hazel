@@ -1,5 +1,5 @@
 import { convexQuery, useConvexMutation } from "@convex-dev/react-query"
-import type { Doc, Id } from "@hazel/backend"
+import type { Doc } from "@hazel/backend"
 import { api } from "@hazel/backend/api"
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
@@ -30,11 +30,9 @@ export const CreateDmModal = ({ isOpen, onOpenChange }: CreateDmModalProps) => {
 
 	const navigate = useNavigate()
 
-	// Get organization members
 	const friendsQuery = useQuery(convexQuery(api.social.getFriendsForOrganization, {}))
-	const createDmChannelMutation = useConvexMutation(api.channels.createDmChannelForOrganization)
+	const createDmChannelMutation = useConvexMutation(api.channels.createDmChannel)
 
-	// Filter users based on search query
 	const filteredUsers = useMemo(() => {
 		const users = friendsQuery.data || []
 		if (!searchQuery.trim()) return users
@@ -64,7 +62,7 @@ export const CreateDmModal = ({ isOpen, onOpenChange }: CreateDmModalProps) => {
 		setIsCreating(true)
 		try {
 			const channelId = await createDmChannelMutation({
-				userId: selectedUser._id as Id<"users">,
+				userId: selectedUser._id,
 			})
 
 			toast.success(`Started conversation with ${selectedUser.firstName}`)

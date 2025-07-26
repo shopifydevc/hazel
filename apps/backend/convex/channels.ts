@@ -393,42 +393,31 @@ function createParticipantHash(userIds: Id<"users">[]) {
 	return userIds.sort().join(":")
 }
 
-export const createDmChannelForOrganization = organizationServerMutation({
+export const createDmChannel = organizationServerMutation({
 	args: {
 		userId: v.id("users"),
 	},
 	handler: async (ctx, args) => {
 		const user = ctx.account.doc
 
-		// Check if DM channel already exists
+		const participantHash = createParticipantHash([user._id, args.userId])
+
 		const existingChannel = await ctx.db
 			.query("channels")
 			.withIndex("by_organizationId_and_participantHash", (q) =>
-				q.eq("organizationId", ctx.organizationId),
+				q.eq("organizationId", ctx.organizationId).eq("participantHash", participantHash),
 			)
-			.filter((q) => q.eq(q.field("type"), "dm"))
 			.collect()
 
-		for (const channel of existingChannel) {
-			const members = await ctx.db
-				.query("channelMembers")
-				.withIndex("by_channelIdAndUserId", (q) => q.eq("channelId", channel._id))
-				.collect()
-
-			if (
-				members.length === 2 &&
-				members.some((m) => m.userId === user._id) &&
-				members.some((m) => m.userId === args.userId)
-			) {
-				return channel._id
-			}
+		if (existingChannel.length > 0) {
+			return existingChannel[0]._id
 		}
 
-		// Create new DM channel
 		const channelId = await ctx.db.insert("channels", {
 			organizationId: ctx.organizationId,
 			name: "Direct Message",
 			type: "single",
+			participantHash,
 			updatedAt: Date.now(),
 			pinnedMessages: [],
 		})
