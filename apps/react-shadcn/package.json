@@ -50,6 +50,7 @@
 		"tailwindcss-react-aria-components": "^2.0.0"
 	},
 	"devDependencies": {
+		"@react-types/shared": "^3.31.0",
 		"@tailwindcss/postcss": "^4.1.11",
 		"@testing-library/dom": "^10.4.0",
 		"@testing-library/react": "^16.3.0",
