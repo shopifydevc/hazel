@@ -11,14 +11,13 @@ import { Edit01, Plus, Trash01 } from "@untitledui/icons"
 
 import { useState } from "react"
 import type { SortDescriptor } from "react-aria-components"
+import { EmailInviteModal } from "~/components/application/modals/email-invite-modal"
 import { PaginationCardDefault } from "~/components/application/pagination/pagination"
 import { Table, TableCard } from "~/components/application/table/table"
 import { Avatar } from "~/components/base/avatar/avatar"
-import type { BadgeColors } from "~/components/base/badges/badge-types"
 import { Badge, type BadgeColor, BadgeWithDot } from "~/components/base/badges/badges"
 import { Button } from "~/components/base/buttons/button"
 import { ButtonUtility } from "~/components/base/buttons/button-utility"
-import { EmailInviteModal } from "~/components/application/modals/email-invite-modal"
 
 export const Route = createFileRoute("/app/settings/team")({
 	component: RouteComponent,
@@ -184,11 +183,8 @@ function RouteComponent() {
 				)}
 				<PaginationCardDefault page={1} total={Math.ceil(teamMembers.length / 10)} />
 			</TableCard.Root>
-			
-			<EmailInviteModal 
-				isOpen={showInviteModal}
-				onOpenChange={setShowInviteModal}
-			/>
+
+			<EmailInviteModal isOpen={showInviteModal} onOpenChange={setShowInviteModal} />
 		</Form>
 	)
 }
