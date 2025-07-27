@@ -61,32 +61,24 @@ export const resendInvitation = organizationServerMutation({
 		}
 
 		// First, revoke the existing invitation in WorkOS
-		const revokeResult = await ctx.runAction(internal.workosActions.revokeWorkosInvitation, {
+		await ctx.scheduler.runAfter(0, internal.workosActions.revokeWorkosInvitation, {
 			invitationId: invitation.workosInvitationId,
 		})
 
-		if (!revokeResult.success) {
-			// If revoke fails, it might already be expired/revoked in WorkOS
-			console.warn("Failed to revoke invitation in WorkOS:", revokeResult.error)
-		}
-
-		// Send a new invitation
-		const sendResult = await ctx.runAction(internal.workosActions.sendInvitation, {
+		// Send a new invitation through WorkOS
+		await ctx.scheduler.runAfter(0, internal.workosActions.sendInvitation, {
 			email: invitation.email,
 			organizationId: ctx.organization.workosId,
 			role: invitation.role,
 			inviterUserId: ctx.account.doc.externalId,
 		})
 
-		if (!sendResult.success) {
-			throw new Error(`Failed to resend invitation: ${sendResult.error}`)
-		}
-
-		// Update the local invitation with new WorkOS ID and expiration
+		// Update the local invitation status
+		// Note: The new invitation ID will be updated when the invitation.created webhook is received
 		await ctx.db.patch(args.invitationId, {
-			workosInvitationId: sendResult.invitation.id,
-			expiresAt: new Date(sendResult.invitation.expiresAt).getTime(),
 			invitedAt: Date.now(),
+			// Reset expiration to 7 days from now as a placeholder
+			expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
 		})
 
 		return { success: true, message: "Invitation resent successfully" }
@@ -116,13 +108,9 @@ export const revokeInvitation = organizationServerMutation({
 		}
 
 		// Revoke the invitation in WorkOS
-		const revokeResult = await ctx.runAction(internal.workosActions.revokeWorkosInvitation, {
+		await ctx.scheduler.runAfter(0, internal.workosActions.revokeWorkosInvitation, {
 			invitationId: invitation.workosInvitationId,
 		})
-
-		if (!revokeResult.success) {
-			throw new Error(`Failed to revoke invitation: ${revokeResult.error}`)
-		}
 
 		// Update status to revoked
 		await ctx.db.patch(args.invitationId, {
