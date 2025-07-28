@@ -151,6 +151,65 @@ export const inviteMember = organizationServerMutation({
 	},
 })
 
+export const updateMemberRole = accountMutation({
+	args: {
+		organizationId: v.id("organizations"),
+		userId: v.id("users"),
+		newRole: v.union(v.literal("member"), v.literal("admin"), v.literal("owner")),
+	},
+	handler: async (ctx, args) => {
+		// Check if user has permission to update roles
+		const currentUserMembership = await ctx.db
+			.query("organizationMembers")
+			.withIndex("by_organizationId_userId", (q) =>
+				q.eq("organizationId", args.organizationId).eq("userId", ctx.account.doc._id),
+			)
+			.first()
+
+		if (!currentUserMembership || (currentUserMembership.role !== "admin" && currentUserMembership.role !== "owner")) {
+			throw new Error("Only organization admins and owners can update member roles")
+		}
+
+		// Find the member to update
+		const memberToUpdate = await ctx.db
+			.query("organizationMembers")
+			.withIndex("by_organizationId_userId", (q) =>
+				q.eq("organizationId", args.organizationId).eq("userId", args.userId),
+			)
+			.first()
+
+		if (!memberToUpdate) {
+			throw new Error("Member not found in organization")
+		}
+
+		// Only owners can promote/demote other owners or promote to owner
+		if ((memberToUpdate.role === "owner" || args.newRole === "owner") && currentUserMembership.role !== "owner") {
+			throw new Error("Only owners can manage owner roles")
+		}
+
+		// Don't allow demoting the last admin/owner
+		if ((memberToUpdate.role === "admin" || memberToUpdate.role === "owner") && args.newRole === "member") {
+			const adminAndOwnerCount = await ctx.db
+				.query("organizationMembers")
+				.withIndex("by_organizationId", (q) => q.eq("organizationId", args.organizationId))
+				.filter((q) => q.eq(q.field("deletedAt"), undefined))
+				.filter((q) => q.or(q.eq(q.field("role"), "admin"), q.eq(q.field("role"), "owner")))
+				.collect()
+
+			if (adminAndOwnerCount.length === 1) {
+				throw new Error("Cannot demote the last admin/owner of an organization")
+			}
+		}
+
+		// Update the role
+		await ctx.db.patch(memberToUpdate._id, {
+			role: args.newRole,
+		})
+
+		return memberToUpdate._id
+	},
+})
+
 export const removeMember = accountMutation({
 	args: {
 		organizationId: v.id("organizations"),
@@ -165,8 +224,8 @@ export const removeMember = accountMutation({
 			)
 			.first()
 
-		if (!currentUserMembership || currentUserMembership.role !== "admin") {
-			throw new Error("Only organization admins can remove members")
+		if (!currentUserMembership || (currentUserMembership.role !== "admin" && currentUserMembership.role !== "owner")) {
+			throw new Error("Only organization admins and owners can remove members")
 		}
 
 		// Find the member to remove
@@ -181,16 +240,22 @@ export const removeMember = accountMutation({
 			throw new Error("Member not found in organization")
 		}
 
-		// Don't allow removing the last
-		if (memberToRemove.role === "admin") {
-			const adminCount = await ctx.db
+		// Only owners can remove other admins/owners
+		if ((memberToRemove.role === "admin" || memberToRemove.role === "owner") && currentUserMembership.role !== "owner") {
+			throw new Error("Only owners can remove admins and other owners")
+		}
+
+		// Don't allow removing the last admin/owner
+		if (memberToRemove.role === "admin" || memberToRemove.role === "owner") {
+			const adminAndOwnerCount = await ctx.db
 				.query("organizationMembers")
 				.withIndex("by_organizationId", (q) => q.eq("organizationId", args.organizationId))
-				.filter((q) => q.eq(q.field("role"), "admin"))
+				.filter((q) => q.eq(q.field("deletedAt"), undefined))
+				.filter((q) => q.or(q.eq(q.field("role"), "admin"), q.eq(q.field("role"), "owner")))
 				.collect()
 
-			if (adminCount.length === 1) {
-				throw new Error("Cannot remove the last admin of an organization")
+			if (adminAndOwnerCount.length === 1) {
+				throw new Error("Cannot remove the last admin/owner of an organization")
 			}
 		}
 
