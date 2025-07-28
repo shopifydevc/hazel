@@ -2,7 +2,6 @@ import { Avatar } from "~/components/base/avatar/avatar"
 import IconHashtagStroke from "~/components/icons/IconHashtagStroke"
 import { usePresence } from "~/components/presence/presence-provider"
 import { useChat } from "~/hooks/use-chat"
-import { cn } from "~/lib/utils"
 
 export function ChatHeader() {
 	const { channel } = useChat()
@@ -21,7 +20,7 @@ export function ChatHeader() {
 	const onlineCount = channel.members?.filter((member) => isUserOnline(member.userId)).length || 0
 
 	return (
-		<div className="flex h-14 items-center justify-between border-b border-border px-4">
+		<div className="flex h-14 items-center justify-between border-b border-sidebar-border bg-sidebar px-4">
 			<div className="flex items-center gap-3">
 				{isDirectMessage ? (
 					<>
@@ -39,11 +38,6 @@ export function ChatHeader() {
 									?.map((member) => `${member.user.firstName} ${member.user.lastName}`)
 									.join(", ") || "Direct Message"}
 							</h2>
-							{channel.members && channel.members.length === 1 && (
-								<p className="text-xs text-muted-foreground">
-									{isUserOnline(channel.members[0].userId) ? "Active now" : "Offline"}
-								</p>
-							)}
 						</div>
 					</>
 				) : (

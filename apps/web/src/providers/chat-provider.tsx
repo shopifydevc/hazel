@@ -15,7 +15,7 @@ interface TypingUser {
 		lastName: string
 	}
 }
-type TypingUsers = TypingUser[] // Temporary type until typing API is available
+type TypingUsers = TypingUser[]
 
 interface ChatContextValue {
 	channelId: Id<"channels">
@@ -151,6 +151,7 @@ export function ChatProvider({ channelId, children }: ChatProviderProps) {
 		console.log("Loading more messages")
 	}
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
 	const contextValue = useMemo<ChatContextValue>(
 		() => ({
 			channelId,
