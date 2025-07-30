@@ -56,7 +56,7 @@ export const MessageComposer = () => {
 	return (
 		<div className={"relative flex h-max items-center gap-3"}>
 			<TextEditor.Root className="relative w-full gap-2" inputClassName="p-4" onSubmit={handleSubmit}>
-				{(editor) => (
+				{(_editor) => (
 					<>
 						<TextEditor.Tooltip />
 

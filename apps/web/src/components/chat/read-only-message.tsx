@@ -105,7 +105,7 @@ const TextEditorRoot = ({
 				"aria-describedby": `${editorId}-hint`,
 
 				class: cx(
-					"w-full scroll-py-3 overflow-y-auto rounded-lg bg-primary p-5 text-md leading-[1.5] text-primary caret-fg-brand-primary shadow-xs transition duration-100 ease-linear ring-inset selection:bg-fg-brand-primary/10 placeholder:text-placeholder autofill:rounded-lg autofill:text-primary focus:ring-2 focus:ring-brand focus:outline-hidden",
+					"w-full overflow-y-auto text-md leading-[1.5] text-primary caret-fg-brand-primary shadow-xs transition duration-100 ease-linear ring-inset selection:bg-fg-brand-primary/10 placeholder:text-placeholder autofill:rounded-lg autofill:text-primary focus:ring-2 focus:ring-brand focus:outline-hidden",
 
 					inputClassName,
 				),

@@ -131,7 +131,7 @@ const TextEditorRoot = ({
 				),
 			},
 			handleDOMEvents: {
-				keydown: (view, event) => {
+				keydown: (_view, event) => {
 					if (onSubmit && event.key === "Enter" && !event.shiftKey) {
 						event.preventDefault()
 						onSubmit(editor!)
