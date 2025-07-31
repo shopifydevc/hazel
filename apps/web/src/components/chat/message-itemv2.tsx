@@ -1,6 +1,7 @@
 import { convexQuery } from "@convex-dev/react-query"
 import { api } from "@hazel/backend/api"
 import { useQuery } from "@tanstack/react-query"
+import { DownloadCloud02, RefreshCcw02 } from "@untitledui/icons"
 import type { FunctionReturnType } from "convex/server"
 import { format } from "date-fns"
 import { Button } from "react-aria-components"
@@ -8,8 +9,10 @@ import { useChat } from "~/hooks/use-chat"
 import { cx } from "~/utils/cx"
 import { Avatar } from "../base/avatar/avatar"
 import { Badge, BadgeIcon, BadgeWithIcon } from "../base/badges/badges"
-import { Dropdown } from "../base/dropdown/dropdown"
 import { TextEditor } from "./read-only-message"
+import { Button as StyledButton } from "../base/buttons/button"
+import { useState } from "react"
+import { MessageToolbar } from "./message-toolbar"
 
 type Message = FunctionReturnType<typeof api.messages.getMessages>["page"][0]
 
@@ -29,8 +32,11 @@ export function MessageItem2({
 	isPinned = false,
 }: MessageItemProps) {
 	const { editMessage, deleteMessage, addReaction, removeReaction } = useChat()
+	const [isEditing, setIsEditing] = useState(false)
+	const [editContent, setEditContent] = useState(message.content)
 
 	const { data: currentUser } = useQuery(convexQuery(api.me.getCurrentUser, {}))
+	const isOwnMessage = currentUser?._id === message.authorId
 
 	const showAvatar = isGroupStart || !!message.replyToMessageId
 	const isRepliedTo = !!message.replyToMessageId
@@ -44,6 +50,21 @@ export function MessageItem2({
 		} else {
 			addReaction(message._id, emoji)
 		}
+	}
+
+	const handleEdit = () => {
+		if (editContent.trim() && editContent !== message.content) {
+			editMessage(message._id, editContent)
+		}
+		setIsEditing(false)
+	}
+
+	const handleDelete = () => {
+		deleteMessage(message._id)
+	}
+
+	const handleCopy = () => {
+		navigator.clipboard.writeText(message.content)
 	}
 
 	return (
@@ -126,9 +147,44 @@ export function MessageItem2({
 					)}
 
 					{/* Message Content */}
-					<TextEditor.Root content={message.jsonContent}>
-						<TextEditor.Content readOnly />
-					</TextEditor.Root>
+					{isEditing ? (
+						<div className="mt-1">
+							<textarea
+								value={editContent}
+								onChange={(e) => setEditContent(e.target.value)}
+								onKeyDown={(e) => {
+									if (e.key === "Enter" && !e.shiftKey) {
+										e.preventDefault()
+										handleEdit()
+									}
+									if (e.key === "Escape") {
+										setIsEditing(false)
+										setEditContent(message.content)
+									}
+								}}
+								className="w-full rounded-md border border-border bg-background p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+							/>
+							<div className="mt-2 flex gap-2">
+								<StyledButton size="sm" color="primary" onClick={handleEdit}>
+									Save
+								</StyledButton>
+								<StyledButton
+									size="sm"
+									color="secondary"
+									onClick={() => {
+										setIsEditing(false)
+										setEditContent(message.content)
+									}}
+								>
+									Cancel
+								</StyledButton>
+							</div>
+						</div>
+					) : (
+						<TextEditor.Root content={message.jsonContent}>
+							<TextEditor.Content readOnly />
+						</TextEditor.Root>
+					)}
 
 					{/* Attachments Grid Placeholder */}
 					{message.attachedFiles && message.attachedFiles.length > 0 && (
@@ -219,6 +275,40 @@ export function MessageItem2({
 					)}
 				</div>
 			</div>
+
+			{/* Message Toolbar */}
+			<MessageToolbar
+				message={message}
+				isOwnMessage={isOwnMessage}
+				onReaction={handleReaction}
+				onEdit={() => setIsEditing(true)}
+				onDelete={handleDelete}
+				onCopy={handleCopy}
+				onReply={() => {
+					// TODO: Implement reply in thread
+					console.log("Reply in thread")
+				}}
+				onForward={() => {
+					// TODO: Implement forward message
+					console.log("Forward message")
+				}}
+				onMarkUnread={() => {
+					// TODO: Implement mark as unread
+					console.log("Mark as unread")
+				}}
+				onPin={() => {
+					// TODO: Implement pin message
+					console.log("Pin message")
+				}}
+				onReport={() => {
+					// TODO: Implement report message
+					console.log("Report message")
+				}}
+				onViewDetails={() => {
+					// TODO: Implement view details
+					console.log("View details")
+				}}
+			/>
 		</div>
 	)
 }
