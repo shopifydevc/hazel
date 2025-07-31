@@ -3,7 +3,7 @@ import { queryCollectionOptions } from "@tanstack/query-db-collection"
 import { createCollection } from "@tanstack/react-db"
 import { convexQueryOptions } from "."
 
-const _channelCollections = () =>
+export const channelCollections = () =>
 	createCollection(
 		queryCollectionOptions({
 			...convexQueryOptions(api.channels.list, {}),

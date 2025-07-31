@@ -1,3 +1,4 @@
+import type { api } from "@hazel/backend/api"
 import {
 	Copy01,
 	DotsVertical,
@@ -11,10 +12,15 @@ import {
 	Trash01,
 } from "@untitledui/icons"
 import type { FunctionReturnType } from "convex/server"
-import { MenuTrigger } from "react-aria-components"
-import type { api } from "@hazel/backend/api"
+import { Dialog, DialogTrigger, MenuTrigger, Popover } from "react-aria-components"
 import { Button } from "../base/buttons/button"
 import { Dropdown } from "../base/dropdown/dropdown"
+import {
+	EmojiPicker,
+	EmojiPickerContent,
+	EmojiPickerFooter,
+	EmojiPickerSearch,
+} from "../base/emoji-picker/emoji-picker"
 
 type Message = FunctionReturnType<typeof api.messages.getMessages>["page"][0]
 
@@ -50,8 +56,8 @@ export function MessageToolbar({
 	const commonEmojis = ["👍", "❤️", "😂", "🎉", "🤔", "👎"]
 
 	return (
-		<div className="absolute right-2 top-0 -translate-y-1/2 opacity-0 transition-opacity group-hover:opacity-100">
-			<div className="flex items-center gap-px rounded-lg border border-border bg-primary shadow-sm">
+		<div className="-translate-y-1/2 absolute top-0 right-2 opacity-0 transition-opacity group-hover:opacity-100">
+			<div className="flex items-center gap-px rounded-lg border border-primary bg-primary shadow-sm">
 				{/* Quick Reactions */}
 				{commonEmojis.slice(0, 3).map((emoji) => (
 					<Button
@@ -65,8 +71,33 @@ export function MessageToolbar({
 						{emoji}
 					</Button>
 				))}
+				<div className="mx-0.5 h-4 w-px bg-border-primary" />
 
-				{/* More Reactions Dropdown */}
+				<DialogTrigger>
+					<Button
+						size="sm"
+						color="tertiary"
+						aria-label="More reactions"
+						className="!p-1.5 hover:bg-secondary"
+					>
+						<Plus className="size-3.5" />
+					</Button>
+					<Popover>
+						<Dialog className="rounded-lg">
+							<EmojiPicker
+								className="h-[342px]"
+								onEmojiSelect={(emoji) => {
+									onReaction(emoji.emoji)
+								}}
+							>
+								<EmojiPickerSearch />
+								<EmojiPickerContent />
+								<EmojiPickerFooter />
+							</EmojiPicker>
+						</Dialog>
+					</Popover>
+				</DialogTrigger>
+
 				<Dropdown.Root>
 					<MenuTrigger>
 						<Button
@@ -88,9 +119,6 @@ export function MessageToolbar({
 						</Dropdown.Menu>
 					</Dropdown.Popover>
 				</Dropdown.Root>
-
-				{/* Divider */}
-				<div className="mx-0.5 h-4 w-px bg-border" />
 
 				{/* Action Buttons */}
 				<Button
