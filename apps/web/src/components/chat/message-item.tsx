@@ -53,13 +53,27 @@ export function MessageItem({
 		}
 	}
 
-	const handleEdit = (editor: Editor) => {
+	const handleEdit = async (editor: Editor) => {
 		const content = editor.getText()
 		const jsonContent = editor.getJSON()
 		if (content.trim() && (content !== message.content || JSON.stringify(jsonContent) !== JSON.stringify(message.jsonContent))) {
-			editMessage(message._id, content, jsonContent)
+			try {
+				await editMessage(message._id, content, jsonContent)
+				setIsEditing(false)
+			} catch (error) {
+				console.error("Failed to edit message:", error)
+				toast.custom((t) => (
+					<IconNotification
+						title="Failed to edit message"
+						description="Please try again later."
+						color="error"
+						onClose={() => toast.dismiss(t)}
+					/>
+				))
+			}
+		} else {
+			setIsEditing(false)
 		}
-		setIsEditing(false)
 	}
 
 	const handleDelete = () => {
@@ -157,7 +171,7 @@ export function MessageItem({
 									<>
 										<EditableTextEditor.Content />
 										<div className="mt-2 flex gap-2">
-											<StyledButton size="sm" color="primary" onClick={() => handleEdit(editor)}>
+											<StyledButton size="sm" color="primary" onClick={async () => await handleEdit(editor)}>
 												Save
 											</StyledButton>
 											<StyledButton

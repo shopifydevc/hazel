@@ -226,6 +226,8 @@ export const updateMessage = userMutation({
 			jsonContent: args.jsonContent,
 			updatedAt: Date.now(),
 		})
+
+		return args.id
 	},
 })
 
