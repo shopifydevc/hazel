@@ -216,12 +216,15 @@ export const updateMessage = userMutation({
 	args: {
 		id: v.id("messages"),
 		content: v.string(),
+		jsonContent: v.any(),
 	},
 	handler: async (ctx, args) => {
 		await ctx.user.validateOwnsMessage({ ctx, messageId: args.id })
 
 		await ctx.db.patch(args.id, {
 			content: args.content,
+			jsonContent: args.jsonContent,
+			updatedAt: Date.now(),
 		})
 	},
 })
