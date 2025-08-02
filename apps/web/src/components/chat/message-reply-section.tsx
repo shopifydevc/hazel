@@ -68,7 +68,7 @@ export function MessageReplySection({ replyToMessageId, channelId, onClick }: Me
 						<span className="text-secondary text-sm hover:underline">
 							{replyMessage.author.firstName} {replyMessage.author.lastName}
 						</span>
-						<span className="text-foreground text-xs text-ellipsis max-w-xs truncate">
+						<span className="max-w-xs truncate text-ellipsis text-foreground text-xs">
 							{replyMessage.content.split("\n")[0]}
 						</span>
 					</>
