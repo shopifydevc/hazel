@@ -31,15 +31,15 @@ export function MessageReplySection({ replyToMessageId, channelId, onClick }: Me
 		<div className="relative">
 			{/* Reply curve SVG */}
 			<svg
-				className="absolute top-2 left-8 rotate-180 text-secondary"
+				className="-bottom-1 absolute left-5 rotate-90 text-quaternary"
 				xmlns="http://www.w3.org/2000/svg"
 				width="24"
-				height="24"
-				viewBox="0 0 24 24"
+				height="20"
+				viewBox="0 0 24 20"
 				fill="none"
 			>
 				<path
-					d="M12 2 L12 8 Q12 12 8 12 L2 12"
+					d="M2 2 L2 12 Q2 16 6 16 L12 16"
 					stroke="currentColor"
 					strokeWidth="2"
 					strokeLinecap="round"
