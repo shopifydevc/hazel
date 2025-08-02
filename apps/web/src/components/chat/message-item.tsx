@@ -1,15 +1,19 @@
 import { convexQuery } from "@convex-dev/react-query"
 import { api } from "@hazel/backend/api"
 import { useQuery } from "@tanstack/react-query"
+import type { Editor } from "@tiptap/react"
 import type { FunctionReturnType } from "convex/server"
 import { format } from "date-fns"
 import { useState } from "react"
 import { Button } from "react-aria-components"
+import { toast } from "sonner"
 import { useChat } from "~/hooks/use-chat"
 import { cx } from "~/utils/cx"
+import { IconNotification } from "../application/notifications/notifications"
 import { Avatar } from "../base/avatar/avatar"
 import { Badge } from "../base/badges/badges"
 import { Button as StyledButton } from "../base/buttons/button"
+import { TextEditor as EditableTextEditor } from "../base/text-editor/text-editor"
 import { MessageReplySection } from "./message-reply-section"
 import { MessageToolbar } from "./message-toolbar"
 import { TextEditor } from "./read-only-message"
@@ -33,7 +37,6 @@ export function MessageItem({
 }: MessageItemProps) {
 	const { editMessage, deleteMessage, addReaction, removeReaction, setReplyToMessageId } = useChat()
 	const [isEditing, setIsEditing] = useState(false)
-	const [editContent, setEditContent] = useState(message.content)
 
 	const { data: currentUser } = useQuery(convexQuery(api.me.getCurrentUser, {}))
 	const isOwnMessage = currentUser?._id === message.authorId
@@ -52,11 +55,27 @@ export function MessageItem({
 		}
 	}
 
-	const handleEdit = () => {
-		if (editContent.trim() && editContent !== message.content) {
-			editMessage(message._id, editContent)
+	const handleEdit = async (editor: Editor) => {
+		const content = editor.getText()
+		const jsonContent = editor.getJSON()
+		if (content.trim() && (content !== message.content || JSON.stringify(jsonContent) !== JSON.stringify(message.jsonContent))) {
+			try {
+				await editMessage(message._id, content, jsonContent)
+				setIsEditing(false)
+			} catch (error) {
+				console.error("Failed to edit message:", error)
+				toast.custom((t) => (
+					<IconNotification
+						title="Failed to edit message"
+						description="Please try again later."
+						color="error"
+						onClose={() => toast.dismiss(t)}
+					/>
+				))
+			}
+		} else {
+			setIsEditing(false)
 		}
-		setIsEditing(false)
 	}
 
 	const handleDelete = () => {
@@ -65,6 +84,14 @@ export function MessageItem({
 
 	const handleCopy = () => {
 		navigator.clipboard.writeText(message.content)
+		toast.custom((t) => (
+			<IconNotification
+				title="Sucessfully copied!"
+				description="Message content has been copied to your clipboard."
+				color="success"
+				onClose={() => toast.dismiss(t)}
+			/>
+		))
 	}
 
 	return (
@@ -91,9 +118,9 @@ export function MessageItem({
 						if (replyElement) {
 							replyElement.scrollIntoView({ behavior: "smooth", block: "center" })
 							// Add a highlight effect
-							replyElement.classList.add("bg-highlight")
+							replyElement.classList.add("bg-quaternary/30")
 							setTimeout(() => {
-								replyElement.classList.remove("bg-highlight")
+								replyElement.classList.remove("bg-quaternary/30")
 							}, 2000)
 						}
 					}}
@@ -133,36 +160,44 @@ export function MessageItem({
 					{/* Message Content */}
 					{isEditing ? (
 						<div className="mt-1">
-							<textarea
-								value={editContent}
-								onChange={(e) => setEditContent(e.target.value)}
-								onKeyDown={(e) => {
-									if (e.key === "Enter" && !e.shiftKey) {
-										e.preventDefault()
-										handleEdit()
-									}
-									if (e.key === "Escape") {
-										setIsEditing(false)
-										setEditContent(message.content)
-									}
+							<EditableTextEditor.Root
+								content={message.jsonContent}
+								className="gap-0"
+								inputClassName="min-h-[2rem] p-2 text-sm"
+								onSubmit={handleEdit}
+								editorProps={{
+									handleDOMEvents: {
+										keydown: (_view: any, event: KeyboardEvent) => {
+											if (event.key === "Escape") {
+												setIsEditing(false)
+												return true
+											}
+											return false
+										},
+									},
 								}}
-								className="w-full rounded-md border border-border bg-background p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-							/>
-							<div className="mt-2 flex gap-2">
-								<StyledButton size="sm" color="primary" onClick={handleEdit}>
-									Save
-								</StyledButton>
-								<StyledButton
-									size="sm"
-									color="secondary"
-									onClick={() => {
-										setIsEditing(false)
-										setEditContent(message.content)
-									}}
-								>
-									Cancel
-								</StyledButton>
-							</div>
+							>
+								{(editor) => (
+									<>
+										<EditableTextEditor.Content />
+										<div className="mt-2 flex gap-2">
+											<StyledButton size="sm" color="primary" onClick={async () => await handleEdit(editor)}>
+												Save
+											</StyledButton>
+											<StyledButton
+												size="sm"
+												color="secondary"
+												onClick={() => {
+													setIsEditing(false)
+													editor.commands.setContent(message.jsonContent)
+												}}
+											>
+												Cancel
+											</StyledButton>
+										</div>
+									</>
+								)}
+							</EditableTextEditor.Root>
 						</div>
 					) : (
 						<TextEditor.Root content={message.jsonContent}>
@@ -231,21 +266,6 @@ export function MessageItem({
 							))}
 						</div>
 					)}
-
-					{/* <Dropdown.Root>
-						<Button>
-							<span className="text-xs">+</span>
-						</Button>
-						<Dropdown.Popover>
-							<Dropdown.Menu>
-								{["👍", "❤️", "😂", "🎉", "🤔", "👎"].map((emoji) => (
-									<Dropdown.Item key={emoji} onAction={() => handleReaction(emoji)}>
-										{emoji}
-									</Dropdown.Item>
-								))}
-							</Dropdown.Menu>
-						</Dropdown.Popover>
-					</Dropdown.Root> */}
 
 					{/* Thread Button Placeholder */}
 					{message.threadChannelId && (

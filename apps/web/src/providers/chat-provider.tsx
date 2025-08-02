@@ -25,7 +25,7 @@ interface ChatContextValue {
 	hasMoreMessages: boolean
 	isLoadingMessages: boolean
 	sendMessage: (props: { content: string; attachments?: string[]; jsonContent: any }) => void
-	editMessage: (messageId: Id<"messages">, content: string) => void
+	editMessage: (messageId: Id<"messages">, content: string, jsonContent: any) => Promise<void>
 	deleteMessage: (messageId: Id<"messages">) => void
 	addReaction: (messageId: Id<"messages">, emoji: string) => void
 	removeReaction: (messageId: Id<"messages">, emoji: string) => void
@@ -113,12 +113,13 @@ export function ChatProvider({ channelId, children }: ChatProviderProps) {
 		setReplyToMessageId(null)
 	}
 
-	const editMessage = (messageId: Id<"messages">, content: string) => {
+	const editMessage = async (messageId: Id<"messages">, content: string, jsonContent: any) => {
 		if (!organizationId) return
-		editMessageMutation({
+		await editMessageMutation({
 			organizationId,
 			id: messageId,
 			content,
+			jsonContent,
 		})
 	}
 
