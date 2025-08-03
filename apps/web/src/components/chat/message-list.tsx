@@ -67,25 +67,33 @@ export function MessageList() {
 		const container = scrollContainerRef.current
 		if (!container || loadingRef.current) return
 
-		// Since we're using flex-col-reverse, the scroll logic is inverted
-		// scrollTop === 0 means we're at the newest messages (bottom visually)
-		// scrollTop at max means we're at the oldest messages (top visually)
-		
-		const isAtTop = Math.abs(container.scrollHeight - container.clientHeight - container.scrollTop) < 10
+		// With flex-col-reverse:
+		// - scrollTop = 0 means we're at the bottom of container (but shows newest messages at visual bottom)
+		// - scrollTop = max means we're at the top of container (but shows oldest messages at visual top)
+
+		// Backend returns messages DESC, so:
+		// - loadNext = next page = older messages
+		// - loadPrev = previous page = newer messages
+
 		const isAtBottom = container.scrollTop < 10
+		const isAtTop = Math.abs(container.scrollHeight - container.clientHeight - container.scrollTop) < 10
 
-		// Load older messages when scrolled to top (which is visually at the top)
-		if (isAtTop && loadPrev && !isLoadingPrev) {
-			loadingRef.current = true
-			loadPrev()
-			setTimeout(() => { loadingRef.current = false }, 1000)
-		}
-
-		// Load newer messages when scrolled to bottom (which is visually at the bottom)
-		if (isAtBottom && loadNext && !isLoadingNext) {
+		// When at visual top (scrollTop = max), load older messages using loadNext
+		if (isAtTop && loadNext && !isLoadingNext) {
 			loadingRef.current = true
 			loadNext()
-			setTimeout(() => { loadingRef.current = false }, 1000)
+			setTimeout(() => {
+				loadingRef.current = false
+			}, 1000)
+		}
+
+		// When at visual bottom (scrollTop = 0), load newer messages using loadPrev
+		if (isAtBottom && loadPrev && !isLoadingPrev) {
+			loadingRef.current = true
+			loadPrev()
+			setTimeout(() => {
+				loadingRef.current = false
+			}, 1000)
 		}
 	}
 
@@ -113,12 +121,12 @@ export function MessageList() {
 	}
 
 	return (
-		<div 
-			ref={scrollContainerRef} 
+		<div
+			ref={scrollContainerRef}
 			onScroll={handleScroll}
 			className="flex h-full flex-col-reverse overflow-y-auto py-2 pr-4"
 		>
-			{isLoadingNext && (
+			{isLoadingPrev && (
 				<div className="py-2 text-center">
 					<span className="text-muted-foreground text-xs">Loading newer messages...</span>
 				</div>
@@ -154,7 +162,7 @@ export function MessageList() {
 						))}
 					</div>
 				))}
-			{isLoadingPrev && (
+			{isLoadingNext && (
 				<div className="py-2 text-center">
 					<span className="text-muted-foreground text-xs">Loading older messages...</span>
 				</div>
