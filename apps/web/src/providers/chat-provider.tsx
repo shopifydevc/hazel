@@ -96,10 +96,10 @@ export function ChatProvider({ channelId, children }: ChatProviderProps) {
 		convexQuery(api.typingIndicator.list, organizationId ? { channelId, organizationId } : "skip"),
 	)
 	const typingUsers: TypingUsers = typingUsersQuery.data || []
-	
+
 	// Debug: Log typing users updates
 	if (typingUsers.length > 0) {
-		console.log("[DEBUG] Typing users in channel:", typingUsers.map(u => u.user.firstName).join(", "))
+		console.log("[DEBUG] Typing users in channel:", typingUsers.map((u) => u.user.firstName).join(", "))
 	}
 
 	// Mutations

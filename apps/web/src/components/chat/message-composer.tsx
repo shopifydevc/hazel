@@ -1,5 +1,5 @@
 import type { Editor } from "@tiptap/react"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useImperativeHandle, useRef, useState } from "react"
 
 import { useChat } from "~/providers/chat-provider"
 import { cx } from "~/utils/cx"
@@ -7,20 +7,41 @@ import { TextEditor } from "../base/text-editor/text-editor"
 import { MessageComposerActions } from "./message-composer-actions"
 import { ReplyIndicator } from "./reply-indicator"
 
-export const MessageComposer = () => {
+export interface MessageComposerRef {
+	focusAndInsertText: (text: string) => void
+}
+
+interface MessageComposerProps {
+	ref?: React.Ref<MessageComposerRef>
+}
+
+export const MessageComposer = ({ ref }: MessageComposerProps) => {
 	const { sendMessage, startTyping, stopTyping, replyToMessageId, setReplyToMessageId } = useChat()
+	const editorRef = useRef<Editor | null>(null)
 
 	const [isTyping, setIsTyping] = useState(false)
 
 	const textareaRef = useRef<HTMLDivElement>(null)
 	const typingTimeoutRef = useRef<NodeJS.Timeout>(undefined)
 
+	useImperativeHandle(
+		ref,
+		() => ({
+			focusAndInsertText: (text: string) => {
+				if (editorRef.current) {
+					editorRef.current.chain().focus().insertContent(text).run()
+				}
+			},
+		}),
+		[],
+	)
+
 	const handleEditorUpdate = (editor: Editor) => {
 		const content = editor.getText().trim()
-		
+
 		// Debug log for current user typing
 		console.log("[DEBUG] User typing, content length:", content.length)
-		
+
 		if (content && !isTyping) {
 			console.log("[DEBUG] User started typing")
 			setIsTyping(true)
@@ -40,7 +61,7 @@ export const MessageComposer = () => {
 				stopTyping()
 			}, 3000)
 		}
-		
+
 		// If content is empty and user was typing, stop typing
 		if (!content && isTyping) {
 			console.log("[DEBUG] User stopped typing (empty content)")
@@ -51,7 +72,7 @@ export const MessageComposer = () => {
 			}
 		}
 	}
-	
+
 	// Cleanup on unmount
 	useEffect(() => {
 		return () => {
@@ -94,16 +115,19 @@ export const MessageComposer = () => {
 					onSubmit={handleSubmit}
 					onUpdate={handleEditorUpdate}
 				>
-					{(_editor) => (
-						<>
-							<TextEditor.Tooltip />
+					{(editor) => {
+						editorRef.current = editor
+						return (
+							<>
+								<TextEditor.Tooltip />
 
-							<div className="relative flex flex-col gap-2">
-								<TextEditor.Content className="rounded-none" ref={textareaRef} />
-								<MessageComposerActions onSubmit={handleSubmit} />
-							</div>
-						</>
-					)}
+								<div className="relative flex flex-col gap-2">
+									<TextEditor.Content className="rounded-none" ref={textareaRef} />
+									<MessageComposerActions onSubmit={handleSubmit} />
+								</div>
+							</>
+						)
+					}}
 				</TextEditor.Root>
 			</div>
 		</div>

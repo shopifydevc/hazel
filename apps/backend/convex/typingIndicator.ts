@@ -61,7 +61,9 @@ export const list = userQuery({
 		const threshold = Date.now() - TYPING_TIMEOUT
 		const membership = ctx.user.membership
 
-		console.log(`[DEBUG] Listing typing indicators for channel ${channelId}, current time: ${Date.now()}, threshold: ${threshold}, time window: ${TYPING_TIMEOUT}ms`)
+		console.log(
+			`[DEBUG] Listing typing indicators for channel ${channelId}, current time: ${Date.now()}, threshold: ${threshold}, time window: ${TYPING_TIMEOUT}ms`,
+		)
 
 		const typingIndicators = await ctx.db
 			.query("typingIndicators")
@@ -71,8 +73,10 @@ export const list = userQuery({
 		console.log(`[DEBUG] Found ${typingIndicators.length} typing indicators in DB`)
 
 		const typingIndicatorsWithUsers = await asyncMap(typingIndicators, async (indicator) => {
-			console.log(`[DEBUG] Processing indicator for member ${indicator.memberId}, lastTyped: ${new Date(indicator.lastTyped).toISOString()}`)
-			
+			console.log(
+				`[DEBUG] Processing indicator for member ${indicator.memberId}, lastTyped: ${new Date(indicator.lastTyped).toISOString()}`,
+			)
+
 			if (membership && indicator.memberId === membership._id) {
 				console.log(`[DEBUG] Filtering out current user ${membership._id}`)
 				return null
@@ -101,7 +105,7 @@ export const list = userQuery({
 
 		const result = typingIndicatorsWithUsers.filter((indicator) => indicator !== null)
 		console.log(`[DEBUG] Returning ${result.length} typing users`)
-		
+
 		return result
 	},
 })

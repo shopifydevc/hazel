@@ -37,7 +37,7 @@ const useEditorContext = () => {
 	return context
 }
 
-interface TextEditorRootProps extends Partial<Omit<EditorOptions, 'onUpdate'>> {
+interface TextEditorRootProps extends Partial<Omit<EditorOptions, "onUpdate">> {
 	className?: string
 	isDisabled?: boolean
 	limit?: number
