@@ -1,5 +1,4 @@
 import { convexQuery } from "@convex-dev/react-query"
-import type { Id } from "@hazel/backend"
 import { api } from "@hazel/backend/api"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
@@ -29,31 +28,28 @@ function RouteComponent() {
 		[channelsQuery.data],
 	)
 
-	const dmChannels = useMemo(
-		() => channelsQuery.data?.dmChannels || [],
-		[channelsQuery.data],
-	)
+	const dmChannels = useMemo(() => channelsQuery.data?.dmChannels || [], [channelsQuery.data])
 
 	if (channelsQuery.isLoading) {
 		return (
 			<div className="flex h-screen items-center justify-center">
-				<div className="text-muted-foreground">Loading channels...</div>
+				<div className="h-8 w-8 animate-spin rounded-full border-primary border-b-2"></div>
 			</div>
 		)
 	}
 
 	return (
-		<div className="h-screen overflow-auto bg-background">
-			<div className="mx-auto max-w-6xl p-6">
-				<div className="mb-8">
-					<h1 className="text-3xl font-bold">All Channels</h1>
-					<p className="mt-2 text-muted-foreground">Browse and join conversations</p>
+		<div className="container mx-auto px-6 py-12">
+			<div className="flex flex-col gap-6">
+				<div className="w-full">
+					<h1 className="mb-2 font-semibold text-2xl">All Channels</h1>
+					<p className="text-secondary">Browse and join conversations</p>
 				</div>
 
 				{publicChannels.length > 0 && (
-					<div className="mb-8">
-						<h2 className="mb-4 text-lg font-semibold">Public Channels</h2>
-						<div className="grid gap-2">
+					<div className="w-full">
+						<h2 className="mb-4 font-semibold text-lg">Public Channels</h2>
+						<div className="space-y-2">
 							{publicChannels.map((channel) => (
 								<ChannelCard key={channel._id} channel={channel} />
 							))}
@@ -62,9 +58,9 @@ function RouteComponent() {
 				)}
 
 				{privateChannels.length > 0 && (
-					<div className="mb-8">
-						<h2 className="mb-4 text-lg font-semibold">Private Channels</h2>
-						<div className="grid gap-2">
+					<div className="w-full">
+						<h2 className="mb-4 font-semibold text-lg">Private Channels</h2>
+						<div className="space-y-2">
 							{privateChannels.map((channel) => (
 								<ChannelCard key={channel._id} channel={channel} isPrivate />
 							))}
@@ -73,9 +69,9 @@ function RouteComponent() {
 				)}
 
 				{dmChannels.length > 0 && (
-					<div className="mb-8">
-						<h2 className="mb-4 text-lg font-semibold">Direct Messages</h2>
-						<div className="grid gap-2">
+					<div className="w-full">
+						<h2 className="mb-4 font-semibold text-lg">Direct Messages</h2>
+						<div className="space-y-2">
 							{dmChannels.map((channel) => (
 								<DmCard
 									key={channel._id}
@@ -90,7 +86,7 @@ function RouteComponent() {
 
 				{!publicChannels.length && !privateChannels.length && !dmChannels.length && (
 					<div className="flex h-64 items-center justify-center">
-						<p className="text-muted-foreground">No channels available</p>
+						<p className="text-secondary">No channels available</p>
 					</div>
 				)}
 			</div>
@@ -103,34 +99,32 @@ function ChannelCard({ channel, isPrivate = false }: { channel: any; isPrivate?:
 		<Link
 			to="/app/chat/$id"
 			params={{ id: channel._id }}
-			className="group relative flex items-center gap-3 rounded-lg border bg-card p-4 transition-colors hover:bg-accent"
+			className="flex items-center justify-between gap-4 rounded-lg px-4 py-3 transition-colors hover:bg-quaternary/40"
 		>
-			<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-				{isPrivate ? (
-					<IconLockCloseStroke className="h-5 w-5 text-muted-foreground" />
-				) : (
-					<IconHashtagStroke className="h-5 w-5 text-muted-foreground" />
-				)}
-			</div>
-			<div className="flex-1">
-				<div className="flex items-center gap-2">
-					<h3 className={cn("font-medium", channel.isMuted && "opacity-60")}>
-						{channel.name}
-					</h3>
-					{channel.isFavorite && (
-						<span className="text-amber-500">★</span>
+			<div className="flex items-center gap-3">
+				<div className="flex h-10 w-10 items-center justify-center">
+					{isPrivate ? (
+						<IconLockCloseStroke className="size-5 text-secondary" />
+					) : (
+						<IconHashtagStroke className="size-5 text-secondary" />
 					)}
 				</div>
-				{channel.description && (
-					<p className="text-sm text-muted-foreground line-clamp-1">{channel.description}</p>
-				)}
-				<div className="mt-1 flex items-center gap-4 text-xs text-muted-foreground">
-					<span>{channel.members?.length || 0} members</span>
-					{channel.isMuted && <span>Muted</span>}
+				<div>
+					<div className="flex items-center gap-2">
+						<h3 className={cn("font-medium", channel.isMuted && "opacity-60")}>{channel.name}</h3>
+						{channel.isFavorite && <span className="text-amber-500">★</span>}
+					</div>
+					{channel.description && (
+						<p className="line-clamp-1 text-secondary text-sm">{channel.description}</p>
+					)}
+					<div className="mt-1 flex items-center gap-4 text-secondary text-xs">
+						<span>{channel.members?.length || 0} members</span>
+						{channel.isMuted && <span>Muted</span>}
+					</div>
 				</div>
 			</div>
 			{channel.currentUser?.notificationCount > 0 && (
-				<div className="absolute right-4 top-4 flex h-6 min-w-6 items-center justify-center rounded-full bg-destructive px-1.5 text-xs font-medium text-destructive-foreground">
+				<div className="flex h-6 min-w-6 items-center justify-center rounded-full bg-fg-error-primary px-1.5 font-medium text-error-primary text-xs">
 					{channel.currentUser.notificationCount}
 				</div>
 			)}
@@ -157,24 +151,24 @@ function DmCard({
 			<Link
 				to="/app/chat/$id"
 				params={{ id: channel._id }}
-				className="group relative flex items-center gap-3 rounded-lg border bg-card p-4 transition-colors hover:bg-accent"
+				className="flex items-center justify-between gap-4 rounded-lg px-4 py-3 transition-colors hover:bg-quaternary/40"
 			>
-				<Avatar
-					size="md"
-					src={member.user.avatarUrl}
-					alt={`${member.user.firstName} ${member.user.lastName}`}
-					status={isOnline ? "online" : "offline"}
-				/>
-				<div className="flex-1">
-					<h3 className={cn("font-medium", channel.isMuted && "opacity-60")}>
-						{member.user.firstName} {member.user.lastName}
-					</h3>
-					<p className="text-sm text-muted-foreground">
-						{isOnline ? "Active now" : "Offline"}
-					</p>
+				<div className="flex items-center gap-3">
+					<Avatar
+						size="md"
+						src={member.user.avatarUrl}
+						alt={`${member.user.firstName} ${member.user.lastName}`}
+						status={isOnline ? "online" : "offline"}
+					/>
+					<div>
+						<h3 className={cn("font-medium", channel.isMuted && "opacity-60")}>
+							{member.user.firstName} {member.user.lastName}
+						</h3>
+						<p className="text-secondary text-sm">{isOnline ? "Active now" : "Offline"}</p>
+					</div>
 				</div>
 				{channel.currentUser?.notificationCount > 0 && (
-					<div className="absolute right-4 top-4 flex h-6 min-w-6 items-center justify-center rounded-full bg-destructive px-1.5 text-xs font-medium text-destructive-foreground">
+					<div className="flex h-6 min-w-6 items-center justify-center rounded-full bg-destructive px-1.5 font-medium text-destructive-foreground text-xs">
 						{channel.currentUser.notificationCount}
 					</div>
 				)}
@@ -186,30 +180,30 @@ function DmCard({
 		<Link
 			to="/app/chat/$id"
 			params={{ id: channel._id }}
-			className="group relative flex items-center gap-3 rounded-lg border bg-card p-4 transition-colors hover:bg-accent"
+			className="flex items-center justify-between gap-4 rounded-lg px-4 py-3 transition-colors hover:bg-muted/40"
 		>
-			<div className="-space-x-2 flex">
-				{otherMembers.slice(0, 3).map((member: any) => (
-					<Avatar
-						key={member.user._id}
-						className="size-10 border-2 border-background"
-						src={member.user.avatarUrl}
-						alt={member.user.firstName[0]}
-					/>
-				))}
-			</div>
-			<div className="flex-1">
-				<h3 className={cn("font-medium", channel.isMuted && "opacity-60")}>
-					{otherMembers
-						.map((member: any) => `${member.user.firstName} ${member.user.lastName}`)
-						.join(", ")}
-				</h3>
-				<p className="text-sm text-muted-foreground">
-					{otherMembers.length} participants
-				</p>
+			<div className="flex items-center gap-3">
+				<div className="-space-x-2 flex">
+					{otherMembers.slice(0, 3).map((member: any) => (
+						<Avatar
+							key={member.user._id}
+							className="size-10 border-2 border-background"
+							src={member.user.avatarUrl}
+							alt={member.user.firstName[0]}
+						/>
+					))}
+				</div>
+				<div>
+					<h3 className={cn("font-medium", channel.isMuted && "opacity-60")}>
+						{otherMembers
+							.map((member: any) => `${member.user.firstName} ${member.user.lastName}`)
+							.join(", ")}
+					</h3>
+					<p className="text-secondary text-sm">{otherMembers.length} participants</p>
+				</div>
 			</div>
 			{channel.currentUser?.notificationCount > 0 && (
-				<div className="absolute right-4 top-4 flex h-6 min-w-6 items-center justify-center rounded-full bg-destructive px-1.5 text-xs font-medium text-destructive-foreground">
+				<div className="flex h-6 min-w-6 items-center justify-center rounded-full bg-destructive px-1.5 font-medium text-destructive-foreground text-xs">
 					{channel.currentUser.notificationCount}
 				</div>
 			)}
