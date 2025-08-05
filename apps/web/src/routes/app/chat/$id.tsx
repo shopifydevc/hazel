@@ -30,6 +30,34 @@ function RouteComponent() {
 				return
 			}
 
+			// Check if user is interacting with overlay elements (modals, popovers, dropdowns, etc.)
+			const isInOverlay =
+				// Check for modal/dialog elements
+				target.closest('[role="dialog"]') ||
+				target.closest('[aria-modal="true"]') ||
+				// Check for dropdown menus
+				target.closest('[role="menu"]') ||
+				target.closest('[role="listbox"]') ||
+				// Check for tooltips
+				target.closest('[role="tooltip"]') ||
+				// Check for popovers
+				target.closest('[role="presentation"]') ||
+				// Check for combobox/select dropdowns
+				target.closest('[role="combobox"]') ||
+				// Check for overlay classes used by react-aria-components
+				target.closest(".z-50") || // Common z-index for overlays in this codebase
+				// Check for modal overlay backdrop
+				target.closest("[data-overlay]") ||
+				target.closest("[data-popover]") ||
+				// Check if any parent has data attributes indicating overlay state
+				target.closest('[data-state="open"]') ||
+				target.closest('[data-open="true"]')
+
+			// Skip if user is interacting with overlay elements
+			if (isInOverlay) {
+				return
+			}
+
 			// Skip if user is pressing modifier keys
 			if (event.ctrlKey || event.altKey || event.metaKey) {
 				return
