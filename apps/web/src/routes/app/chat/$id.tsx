@@ -1,10 +1,11 @@
 import type { Id } from "@hazel/backend"
 import { createFileRoute } from "@tanstack/react-router"
+import { useEffect, useRef } from "react"
 import { ChatHeader } from "~/components/chat/chat-header"
+import { MessageComposer, type MessageComposerRef } from "~/components/chat/message-composer"
 import { MessageList } from "~/components/chat/message-list"
 import { TypingIndicator } from "~/components/chat/typing-indicator"
 import { ChatProvider } from "~/providers/chat-provider"
-import { MessageComposer } from "../../../components/chat/message-composer"
 
 export const Route = createFileRoute("/app/chat/$id")({
 	component: RouteComponent,
@@ -12,6 +13,71 @@ export const Route = createFileRoute("/app/chat/$id")({
 
 function RouteComponent() {
 	const { id } = Route.useParams()
+	const messageComposerRef = useRef<MessageComposerRef>(null)
+
+	useEffect(() => {
+		const handleGlobalKeyDown = (event: KeyboardEvent) => {
+			// Check if the event target is an input, textarea, or contenteditable element
+			const target = event.target as HTMLElement
+			const isInputElement =
+				target.tagName === "INPUT" ||
+				target.tagName === "TEXTAREA" ||
+				target.contentEditable === "true" ||
+				target.closest('[contenteditable="true"]')
+
+			// Skip if user is already typing in an input field
+			if (isInputElement) {
+				return
+			}
+
+			// Check if user is interacting with overlay elements (modals, popovers, dropdowns, etc.)
+			const isInOverlay =
+				// Check for modal/dialog elements
+				target.closest('[role="dialog"]') ||
+				target.closest('[aria-modal="true"]') ||
+				// Check for dropdown menus
+				target.closest('[role="menu"]') ||
+				target.closest('[role="listbox"]') ||
+				// Check for tooltips
+				target.closest('[role="tooltip"]') ||
+				// Check for popovers
+				target.closest('[role="presentation"]') ||
+				// Check for combobox/select dropdowns
+				target.closest('[role="combobox"]') ||
+				// Check for overlay classes used by react-aria-components
+				target.closest(".z-50") || // Common z-index for overlays in this codebase
+				// Check for modal overlay backdrop
+				target.closest("[data-overlay]") ||
+				target.closest("[data-popover]") ||
+				// Check if any parent has data attributes indicating overlay state
+				target.closest('[data-state="open"]') ||
+				target.closest('[data-open="true"]')
+
+			// Skip if user is interacting with overlay elements
+			if (isInOverlay) {
+				return
+			}
+
+			// Skip if user is pressing modifier keys
+			if (event.ctrlKey || event.altKey || event.metaKey) {
+				return
+			}
+
+			// Check if it's a printable character or space
+			const isPrintableChar = event.key.length === 1
+
+			if (isPrintableChar) {
+				event.preventDefault()
+				messageComposerRef.current?.focusAndInsertText(event.key)
+			}
+		}
+
+		document.addEventListener("keydown", handleGlobalKeyDown)
+
+		return () => {
+			document.removeEventListener("keydown", handleGlobalKeyDown)
+		}
+	}, [])
 
 	return (
 		<ChatProvider channelId={id as Id<"channels">}>
@@ -21,7 +87,7 @@ function RouteComponent() {
 					<MessageList />
 				</div>
 				<div className="px-4 pt-2 pb-4">
-					<MessageComposer />
+					<MessageComposer ref={messageComposerRef} />
 					<TypingIndicator />
 				</div>
 			</div>
