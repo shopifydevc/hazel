@@ -16,7 +16,7 @@ export function useDebouncedIntersection(
 	const [isIntersecting, setIsIntersecting] = useState(false)
 	const [debouncedIntersecting, setDebouncedIntersecting] = useState(false)
 	const targetRef = useRef<HTMLDivElement | null>(null)
-	const debounceTimeoutRef = useRef<NodeJS.Timeout | undefined>()
+	const debounceTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
 	// Debounce the intersection state
 	useEffect(() => {

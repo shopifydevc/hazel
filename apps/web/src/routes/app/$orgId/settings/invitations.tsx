@@ -22,13 +22,16 @@ export const Route = createFileRoute("/app/$orgId/settings/invitations")({
 })
 
 function RouteComponent() {
+	const params = Route.useParams()
 	const [invitationsSortDescriptor, setInvitationsSortDescriptor] = useState<SortDescriptor>({
 		column: "email",
 		direction: "ascending",
 	})
 	const [showInviteModal, setShowInviteModal] = useState(false)
 
-	const invitationsQuery = useConvexQuery(api.invitations.getInvitations, {})
+	const invitationsQuery = useConvexQuery(api.invitations.getInvitations, {
+		organizationId: params.orgId as Id<"organizations">,
+	})
 	const resendInvitationMutation = useConvexMutation(api.invitations.resendInvitation)
 	const revokeInvitationMutation = useConvexMutation(api.invitations.revokeInvitation)
 
@@ -52,7 +55,10 @@ function RouteComponent() {
 
 	const handleResendInvitation = async (invitationId: Id<"invitations">) => {
 		try {
-			await resendInvitationMutation({ invitationId: invitationId })
+			await resendInvitationMutation({
+				invitationId,
+				organizationId: params.orgId as Id<"organizations">,
+			})
 			toast.info("Invitation resent", {
 				description: "The invitation has been resent successfully.",
 			})
@@ -65,7 +71,10 @@ function RouteComponent() {
 
 	const handleRevokeInvitation = async (invitationId: Id<"invitations">) => {
 		try {
-			await revokeInvitationMutation({ invitationId })
+			await revokeInvitationMutation({
+				invitationId,
+				organizationId: params.orgId as Id<"organizations">,
+			})
 			toast.info("Invitation revoked", {
 				description: "The invitation has been revoked successfully.",
 			})

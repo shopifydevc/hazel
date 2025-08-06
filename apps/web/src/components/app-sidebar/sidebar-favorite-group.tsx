@@ -1,13 +1,19 @@
 import { convexQuery } from "@convex-dev/react-query"
+import type { Id } from "@hazel/backend"
 import { api } from "@hazel/backend/api"
 import { useQuery } from "@tanstack/react-query"
+import { useParams } from "@tanstack/react-router"
 import { useMemo } from "react"
 import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu } from "../ui/sidebar"
 import { ChannelItem, DmChannelLink } from "./channel-item"
 
 export const SidebarFavoriteGroup = () => {
+	const { orgId } = useParams({ from: "/app/$orgId" })
+	const organizationId = orgId as Id<"organizations">
+	
 	const favoritedChannelsQuery = useQuery(
 		convexQuery(api.channels.getChannelsForOrganization, {
+			organizationId,
 			favoriteFilter: {
 				favorite: true,
 			},

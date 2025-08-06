@@ -1,8 +1,8 @@
 import { convexQuery, useConvexMutation } from "@convex-dev/react-query"
-import type { Doc } from "@hazel/backend"
+import type { Doc, Id } from "@hazel/backend"
 import { api } from "@hazel/backend/api"
 import { useQuery } from "@tanstack/react-query"
-import { useNavigate } from "@tanstack/react-router"
+import { useNavigate, useParams } from "@tanstack/react-router"
 import { Mail01, MessageSquare02, Plus } from "@untitledui/icons"
 import { type } from "arktype"
 import { useMemo, useState } from "react"
@@ -37,9 +37,13 @@ export const CreateDmModal = ({ isOpen, onOpenChange }: CreateDmModalProps) => {
 	const [selectedUser, setSelectedUser] = useState<Doc<"users"> | null>(null)
 
 	const navigate = useNavigate()
+	const { orgId } = useParams({ from: "/app/$orgId" })
+	const organizationId = orgId as Id<"organizations">
 	const { isUserOnline } = usePresence()
 
-	const friendsQuery = useQuery(convexQuery(api.social.getFriendsForOrganization, {}))
+	const friendsQuery = useQuery(
+		convexQuery(api.social.getFriendsForOrganization, { organizationId })
+	)
 	const createDmChannelMutation = useConvexMutation(api.channels.createDmChannel)
 
 	const form = useAppForm({
@@ -56,6 +60,7 @@ export const CreateDmModal = ({ isOpen, onOpenChange }: CreateDmModalProps) => {
 			try {
 				const channelId = await createDmChannelMutation({
 					userId: value.userId as any,
+					organizationId,
 				})
 
 				toast.success(`Started conversation with ${user.firstName}`)
@@ -68,8 +73,8 @@ export const CreateDmModal = ({ isOpen, onOpenChange }: CreateDmModalProps) => {
 
 				// Navigate to the chat
 				navigate({
-					to: "/app/chat/$id",
-					params: { id: channelId },
+					to: "/app/$orgId/chat/$id",
+					params: { orgId: organizationId, id: channelId },
 				})
 			} catch (error) {
 				console.error("Failed to create DM channel:", error)

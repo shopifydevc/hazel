@@ -1,5 +1,7 @@
 import { useConvexMutation } from "@convex-dev/react-query"
+import type { Id } from "@hazel/backend"
 import { api } from "@hazel/backend/api"
+import { useParams } from "@tanstack/react-router"
 import { type } from "arktype"
 import { useState } from "react"
 import { DialogTrigger as AriaDialogTrigger, Heading as AriaHeading } from "react-aria-components"
@@ -22,6 +24,9 @@ type ChannelFormData = typeof channelSchema.infer
 
 export const NewChannelModal = () => {
 	const [isOpen, setIsOpen] = useState(false)
+	const { orgId } = useParams({ from: "/app/$orgId" })
+	const organizationId = orgId as Id<"organizations">
+	
 	const createChannelMutation = useConvexMutation(api.channels.createChannelForOrganization)
 
 	const form = useAppForm({
@@ -34,7 +39,7 @@ export const NewChannelModal = () => {
 		},
 		onSubmit: async ({ value }) => {
 			try {
-				await createChannelMutation(value)
+				await createChannelMutation({ ...value, organizationId })
 				toast.success("Channel created successfully")
 				setIsOpen(false)
 				form.reset()
