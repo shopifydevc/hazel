@@ -1,10 +1,11 @@
+import { v } from "convex/values"
 import type { Id } from "../_generated/dataModel"
 import { mutation, query } from "../_generated/server"
 import { Account } from "../lib/activeRecords/account"
 import { customMutation, customQuery } from "../lib/customFunctions"
 
 export const organizationServerQuery = customQuery(query, {
-	args: {},
+	args: { organizationId: v.id("organizations") },
 	input: async (ctx, args) => {
 		const identity = await ctx.auth.getUserIdentity()
 
@@ -14,17 +15,8 @@ export const organizationServerQuery = customQuery(query, {
 
 		const account = await Account.fromIdentity(ctx, identity)
 
-		const workosOrganizationId = identity.organizationId as string | undefined
-
-		if (!workosOrganizationId) {
-			throw new Error("No organization associated with this account")
-		}
-
-		// Find the organization by WorkOS ID
-		const organization = await ctx.db
-			.query("organizations")
-			.withIndex("by_workosId", (q) => q.eq("workosId", workosOrganizationId))
-			.first()
+		// Get the organization from args
+		const organization = await ctx.db.get(args.organizationId)
 
 		if (!organization) {
 			throw new Error("Organization not found")
@@ -57,7 +49,7 @@ export const organizationServerQuery = customQuery(query, {
 })
 
 export const organizationServerMutation = customMutation(mutation, {
-	args: {},
+	args: { organizationId: v.id("organizations") },
 	input: async (ctx, args) => {
 		const identity = await ctx.auth.getUserIdentity()
 
@@ -67,17 +59,8 @@ export const organizationServerMutation = customMutation(mutation, {
 
 		const account = await Account.fromIdentity(ctx, identity)
 
-		const workosOrganizationId = identity.organizationId as string | undefined
-
-		if (!workosOrganizationId) {
-			throw new Error("No organization associated with this account")
-		}
-
-		// Find the organization by WorkOS ID
-		const organization = await ctx.db
-			.query("organizations")
-			.withIndex("by_workosId", (q) => q.eq("workosId", workosOrganizationId))
-			.first()
+		// Get the organization from args
+		const organization = await ctx.db.get(args.organizationId)
 
 		if (!organization) {
 			throw new Error("Organization not found")

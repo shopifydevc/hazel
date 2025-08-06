@@ -2,7 +2,7 @@ import { convexQuery, useConvexMutation } from "@convex-dev/react-query"
 import type { Id } from "@hazel/backend"
 import { api } from "@hazel/backend/api"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { Link } from "@tanstack/react-router"
+import { Link, useParams } from "@tanstack/react-router"
 import type { FunctionReturnType } from "convex/server"
 import { useCallback } from "react"
 import { Pressable } from "react-aria"
@@ -27,35 +27,52 @@ export interface ChannelItemProps {
 
 export const ChannelItem = ({ channel }: ChannelItemProps) => {
 	const queryClient = useQueryClient()
+	const params = useParams({ from: "/app/$orgId", strict: false })
+	const orgIdFromRoute = params?.orgId as Id<"organizations"> | undefined
+	
+	// Fall back to getting organization from session if not in route
+	const organizationQuery = useQuery(
+		convexQuery(api.me.getOrganization, orgIdFromRoute ? "skip" : {})
+	)
+	const orgIdFromSession = organizationQuery.data?.directive === "success" 
+		? organizationQuery.data.data._id 
+		: undefined
+	
+	const organizationId = orgIdFromRoute || orgIdFromSession
+	
 	const leaveChannelMutation = useConvexMutation(api.channels.leaveChannelForOrganization)
 	const updateChannelPreferencesMutation = useConvexMutation(
 		api.channels.updateChannelPreferencesForOrganization,
 	)
-	
-	// Get organization ID for prefetching
-	const organizationQuery = useQuery(convexQuery(api.me.getOrganization, {}))
-	const organizationId =
-		organizationQuery.data?.directive === "success" ? organizationQuery.data.data._id : undefined
 
 	const handleLeaveChannel = useCallback(() => {
-		leaveChannelMutation({
-			channelId: channel._id as Id<"channels">,
-		})
-	}, [channel._id, leaveChannelMutation])
+		if (organizationId) {
+			leaveChannelMutation({
+				organizationId,
+				channelId: channel._id as Id<"channels">,
+			})
+		}
+	}, [channel._id, organizationId, leaveChannelMutation])
 
 	const handleToggleMute = useCallback(() => {
-		updateChannelPreferencesMutation({
-			channelId: channel._id as Id<"channels">,
-			isMuted: !channel.isMuted,
-		})
-	}, [channel._id, channel.isMuted, updateChannelPreferencesMutation])
+		if (organizationId) {
+			updateChannelPreferencesMutation({
+				organizationId,
+				channelId: channel._id as Id<"channels">,
+				isMuted: !channel.isMuted,
+			})
+		}
+	}, [channel._id, channel.isMuted, organizationId, updateChannelPreferencesMutation])
 
 	const handleToggleFavorite = useCallback(() => {
-		updateChannelPreferencesMutation({
-			channelId: channel._id as Id<"channels">,
-			isFavorite: !channel.isFavorite,
-		})
-	}, [channel._id, channel.isFavorite, updateChannelPreferencesMutation])
+		if (organizationId) {
+			updateChannelPreferencesMutation({
+				organizationId,
+				channelId: channel._id as Id<"channels">,
+				isFavorite: !channel.isFavorite,
+			})
+		}
+	}, [channel._id, channel.isFavorite, organizationId, updateChannelPreferencesMutation])
 
 	const handleMouseEnter = useCallback(() => {
 		// Prefetch channel data on hover
@@ -72,7 +89,10 @@ export const ChannelItem = ({ channel }: ChannelItemProps) => {
 	return (
 		<SidebarMenuItem onMouseEnter={handleMouseEnter}>
 			<SidebarMenuButton asChild>
-				<Link to="/app/chat/$id" params={{ id: channel._id }}>
+				<Link 
+					to="/app/$orgId/chat/$id"
+					params={{ orgId: organizationId || "", id: channel._id }}
+				>
 					<IconHashtagStroke className="size-5" />
 					<p className={cn("text-ellipsis text-nowrap", channel.isMuted && "opacity-60")}>
 						{channel.name}
@@ -156,39 +176,56 @@ interface DmChannelLinkProps {
 }
 
 export const DmChannelLink = ({ channel, userPresence }: DmChannelLinkProps) => {
-	const { data: me } = useQuery(convexQuery(api.me.getCurrentUser, {}))
+	const params = useParams({ from: "/app/$orgId", strict: false })
+	const orgIdFromRoute = params?.orgId as Id<"organizations"> | undefined
+	
+	// Fall back to getting organization from session if not in route
+	const organizationQuery2 = useQuery(
+		convexQuery(api.me.getOrganization, orgIdFromRoute ? "skip" : {})
+	)
+	const orgIdFromSession = organizationQuery2.data?.directive === "success" 
+		? organizationQuery2.data.data._id 
+		: undefined
+	
+	const organizationId = orgIdFromRoute || orgIdFromSession
+	
+	const { data: me } = useQuery(convexQuery(api.me.getCurrentUser, organizationId ? { organizationId } : "skip"))
 	const queryClient = useQueryClient()
 	const updateChannelPreferencesMutation = useConvexMutation(
 		api.channels.updateChannelPreferencesForOrganization,
 	)
-	
-	// Get organization ID for prefetching
-	const organizationQuery = useQuery(convexQuery(api.me.getOrganization, {}))
-	const organizationId =
-		organizationQuery.data?.directive === "success" ? organizationQuery.data.data._id : undefined
 
 	const filteredMembers = channel.members.filter((member) => member.userId !== me?._id)
 
 	const handleToggleMute = useCallback(() => {
-		updateChannelPreferencesMutation({
-			channelId: channel._id as Id<"channels">,
-			isMuted: !channel.isMuted,
-		})
-	}, [channel._id, channel.isMuted, updateChannelPreferencesMutation])
+		if (organizationId) {
+			updateChannelPreferencesMutation({
+				organizationId,
+				channelId: channel._id as Id<"channels">,
+				isMuted: !channel.isMuted,
+			})
+		}
+	}, [channel._id, channel.isMuted, organizationId, updateChannelPreferencesMutation])
 
 	const handleToggleFavorite = useCallback(() => {
-		updateChannelPreferencesMutation({
-			channelId: channel._id as Id<"channels">,
-			isFavorite: !channel.isFavorite,
-		})
-	}, [channel._id, channel.isFavorite, updateChannelPreferencesMutation])
+		if (organizationId) {
+			updateChannelPreferencesMutation({
+				organizationId,
+				channelId: channel._id as Id<"channels">,
+				isFavorite: !channel.isFavorite,
+			})
+		}
+	}, [channel._id, channel.isFavorite, organizationId, updateChannelPreferencesMutation])
 
 	const handleClose = useCallback(() => {
-		updateChannelPreferencesMutation({
-			channelId: channel._id as Id<"channels">,
-			isHidden: true,
-		})
-	}, [channel._id, updateChannelPreferencesMutation])
+		if (organizationId) {
+			updateChannelPreferencesMutation({
+				organizationId,
+				channelId: channel._id as Id<"channels">,
+				isHidden: true,
+			})
+		}
+	}, [channel._id, organizationId, updateChannelPreferencesMutation])
 
 	const handleMouseEnter = useCallback(() => {
 		// Prefetch channel data on hover
@@ -205,7 +242,10 @@ export const DmChannelLink = ({ channel, userPresence }: DmChannelLinkProps) => 
 	return (
 		<SidebarMenuItem onMouseEnter={handleMouseEnter}>
 			<SidebarMenuButton asChild>
-				<Link to="/app/chat/$id" params={{ id: channel._id }}>
+				<Link 
+					to="/app/$orgId/chat/$id"
+					params={{ orgId: organizationId || "", id: channel._id }}
+				>
 					<div className="-space-x-4 flex items-center justify-center">
 						{channel.type === "single" && filteredMembers.length === 1 ? (
 							<div className="flex items-center justify-center gap-3">

@@ -1,7 +1,8 @@
 import { convexQuery } from "@convex-dev/react-query"
+import type { Id } from "@hazel/backend"
 import { api } from "@hazel/backend/api"
 import { useQuery } from "@tanstack/react-query"
-import { Link } from "@tanstack/react-router"
+import { Link, useParams } from "@tanstack/react-router"
 import { useEffect, useMemo } from "react"
 import { CreateDmButton } from "../application/modals/create-dm-modal"
 import { NewChannelModal } from "../application/modals/new-channel-modal"
@@ -29,12 +30,29 @@ import { SidebarFavoriteGroup } from "./sidebar-favorite-group"
 import { WorkspaceSwitcher } from "./workspace-switcher"
 
 export const AppSidebar = () => {
+	// Try to get orgId from route params
+	const params = useParams({ from: "/app/$orgId", strict: false })
+	const orgIdFromRoute = params?.orgId as Id<"organizations"> | undefined
+	
+	// Fall back to getting organization from session if not in route
+	const organizationQuery = useQuery(
+		convexQuery(api.me.getOrganization, orgIdFromRoute ? "skip" : {})
+	)
+	const orgIdFromSession = organizationQuery.data?.directive === "success" 
+		? organizationQuery.data.data._id 
+		: undefined
+	
+	const organizationId = orgIdFromRoute || orgIdFromSession
+	
 	const channelsQuery = useQuery(
-		convexQuery(api.channels.getChannelsForOrganization, {
-			favoriteFilter: {
-				favorite: false,
-			},
-		}),
+		convexQuery(api.channels.getChannelsForOrganization, 
+			organizationId ? {
+				organizationId,
+				favoriteFilter: {
+					favorite: false,
+				},
+			} : "skip"
+		),
 	)
 
 	const dmChannels = useMemo(() => channelsQuery.data?.dmChannels || [], [channelsQuery.data])
@@ -57,7 +75,8 @@ export const AppSidebar = () => {
 							<SidebarMenuItem>
 								<SidebarMenuButton className="px-2.5 md:px-2" asChild>
 									<Link
-										to="/app"
+										to={organizationId ? "/app/$orgId" : "/app"}
+										params={organizationId ? { orgId: organizationId } : {}}
 										activeOptions={{
 											exact: true,
 										}}
@@ -70,7 +89,8 @@ export const AppSidebar = () => {
 							<SidebarMenuItem>
 								<SidebarMenuButton className="px-2.5 md:px-2" asChild>
 									<Link
-										to="/app/chat"
+										to={organizationId ? "/app/$orgId/chat" : "/app"}
+										params={organizationId ? { orgId: organizationId } : {}}
 										activeOptions={{
 											exact: true,
 										}}
