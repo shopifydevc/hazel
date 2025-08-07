@@ -1,4 +1,8 @@
-import { useNavigate } from "@tanstack/react-router"
+import { convexQuery } from "@convex-dev/react-query"
+import type { Id } from "@hazel/backend"
+import { api } from "@hazel/backend/api"
+import { useQuery } from "@tanstack/react-query"
+import { useNavigate, useParams } from "@tanstack/react-router"
 import { Container, HelpCircle, LayersTwo01, LogOut01, Settings01, User01 } from "@untitledui/icons"
 import { useAuth } from "@workos-inc/authkit-react"
 import { Button as AriaButton } from "react-aria-components"
@@ -9,8 +13,10 @@ import { cx } from "~/utils/cx"
 
 export const NavUser = () => {
 	const { user, signOut } = useAuth()
-
 	const navigate = useNavigate()
+
+	const params = useParams({ from: "/app/$orgId" })
+	const organizationId = params?.orgId as Id<"organizations">
 
 	return (
 		<Dropdown.Root>
@@ -47,9 +53,12 @@ export const NavUser = () => {
 						<Dropdown.Item
 							addon="⌘S"
 							onAction={() => {
-								navigate({
-									to: "/app/settings",
-								})
+								if (organizationId) {
+									navigate({
+										to: "/app/$orgId/settings",
+										params: { orgId: organizationId },
+									})
+								}
 							}}
 							icon={Settings01}
 						>

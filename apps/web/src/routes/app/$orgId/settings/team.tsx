@@ -24,11 +24,12 @@ import { Dropdown } from "~/components/base/dropdown/dropdown"
 import { FeaturedIcon } from "~/components/foundations/featured-icon/featured-icons"
 import { usePresence } from "~/components/presence/presence-provider"
 
-export const Route = createFileRoute("/app/settings/team")({
+export const Route = createFileRoute("/app/$orgId/settings/team")({
 	component: RouteComponent,
 })
 
 function RouteComponent() {
+	const { orgId } = Route.useParams()
 	const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
 		column: "status",
 		direction: "ascending",
@@ -41,7 +42,9 @@ function RouteComponent() {
 	} | null>(null)
 	const [removeUserId, setRemoveUserId] = useState<Id<"users"> | null>(null)
 
-	const teamMembersQuery = useConvexQuery(api.users.getUsers, {})
+	const teamMembersQuery = useConvexQuery(api.users.getUsers, {
+		organizationId: orgId as Id<"organizations">,
+	})
 	const removeMemberMutation = useConvexMutation(api.organizations.removeMember)
 	const currentUserQuery = useConvexQuery(api.me.get)
 	const organizationQuery = useConvexQuery(api.me.getOrganization)

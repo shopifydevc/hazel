@@ -50,14 +50,11 @@ export function useChat() {
 
 interface ChatProviderProps {
 	channelId: Id<"channels">
+	organizationId: Id<"organizations">
 	children: ReactNode
 }
 
-export function ChatProvider({ channelId, children }: ChatProviderProps) {
-	// Get current organization
-	const organizationQuery = useQuery(convexQuery(api.me.getOrganization, {}))
-	const organizationId =
-		organizationQuery.data?.directive === "success" ? organizationQuery.data.data._id : undefined
+export function ChatProvider({ channelId, organizationId, children }: ChatProviderProps) {
 
 	// Reply state
 	const [replyToMessageId, setReplyToMessageId] = useState<Id<"messages"> | null>(null)
@@ -84,17 +81,15 @@ export function ChatProvider({ channelId, children }: ChatProviderProps) {
 	}, [channelId])
 
 	const channelQuery = useQuery(
-		convexQuery(api.channels.getChannel, organizationId ? { channelId, organizationId } : "skip"),
+		convexQuery(api.channels.getChannel, { channelId, organizationId }),
 	)
 
 	const messagesResult = useNextPrevPaginatedQuery(
 		api.messages.getMessages,
-		organizationId
-			? {
-					channelId,
-					organizationId,
-				}
-			: "skip",
+		{
+			channelId,
+			organizationId,
+		},
 		{ initialNumItems: 50 },
 	)
 
@@ -102,13 +97,13 @@ export function ChatProvider({ channelId, children }: ChatProviderProps) {
 	const pinnedMessagesQuery = useQuery(
 		convexQuery(
 			api.pinnedMessages.getPinnedMessages,
-			organizationId ? { channelId, organizationId } : "skip",
+			{ channelId, organizationId },
 		),
 	)
 
 	// Fetch typing users
 	const typingUsersQuery = useQuery(
-		convexQuery(api.typingIndicator.list, organizationId ? { channelId, organizationId } : "skip"),
+		convexQuery(api.typingIndicator.list, { channelId, organizationId }),
 	)
 	const typingUsers: TypingUsers = typingUsersQuery.data || []
 
@@ -138,7 +133,6 @@ export function ChatProvider({ channelId, children }: ChatProviderProps) {
 		attachments?: string[]
 		jsonContent: any
 	}) => {
-		if (!organizationId) return
 		sendMessageMutation({
 			channelId,
 			organizationId,
@@ -152,7 +146,6 @@ export function ChatProvider({ channelId, children }: ChatProviderProps) {
 	}
 
 	const editMessage = async (messageId: Id<"messages">, content: string, jsonContent: any) => {
-		if (!organizationId) return
 		await editMessageMutation({
 			organizationId,
 			id: messageId,
@@ -162,7 +155,6 @@ export function ChatProvider({ channelId, children }: ChatProviderProps) {
 	}
 
 	const deleteMessage = (messageId: Id<"messages">) => {
-		if (!organizationId) return
 		deleteMessageMutation({
 			organizationId,
 			id: messageId,
@@ -170,7 +162,6 @@ export function ChatProvider({ channelId, children }: ChatProviderProps) {
 	}
 
 	const addReaction = (messageId: Id<"messages">, emoji: string) => {
-		if (!organizationId) return
 		addReactionMutation({
 			organizationId,
 			messageId,
@@ -179,7 +170,6 @@ export function ChatProvider({ channelId, children }: ChatProviderProps) {
 	}
 
 	const removeReaction = (messageId: Id<"messages">, emoji: string) => {
-		if (!organizationId) return
 		removeReactionMutation({
 			organizationId,
 			id: messageId,
@@ -188,7 +178,6 @@ export function ChatProvider({ channelId, children }: ChatProviderProps) {
 	}
 
 	const pinMessage = (messageId: Id<"messages">) => {
-		if (!organizationId) return
 		pinMessageMutation({
 			organizationId,
 			messageId,
@@ -197,7 +186,6 @@ export function ChatProvider({ channelId, children }: ChatProviderProps) {
 	}
 
 	const unpinMessage = (messageId: Id<"messages">) => {
-		if (!organizationId) return
 		unpinMessageMutation({
 			organizationId,
 			messageId,
@@ -206,7 +194,6 @@ export function ChatProvider({ channelId, children }: ChatProviderProps) {
 	}
 
 	const startTyping = () => {
-		if (!organizationId) return
 		console.log("[DEBUG] Current user started typing in channel:", channelId)
 		updateTypingMutation({
 			organizationId,
@@ -215,7 +202,6 @@ export function ChatProvider({ channelId, children }: ChatProviderProps) {
 	}
 
 	const stopTyping = () => {
-		if (!organizationId) return
 		console.log("[DEBUG] Current user stopped typing in channel:", channelId)
 		stopTypingMutation({
 			organizationId,
