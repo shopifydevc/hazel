@@ -45,10 +45,8 @@ function OnboardingPage() {
 						<div className="flex items-start space-x-3">
 							<FeaturedIcon icon={Building02} color="brand" size="md" theme="modern" />
 							<div className="flex-1">
-								<h3 className="font-medium text-primary text-sm">
-									Create Your Organization
-								</h3>
-								<p className="mt-1 text-tertiary text-sm">
+								<h3 className="font-medium text-primary text-sm">Create Your Organization</h3>
+								<p className="mt-1 text-sm text-tertiary">
 									Set up a workspace for your team to collaborate
 								</p>
 							</div>
@@ -58,7 +56,7 @@ function OnboardingPage() {
 							<FeaturedIcon icon={Users01} color="brand" size="md" theme="modern" />
 							<div className="flex-1">
 								<h3 className="font-medium text-primary text-sm">Invite Team Members</h3>
-								<p className="mt-1 text-tertiary text-sm">
+								<p className="mt-1 text-sm text-tertiary">
 									Bring your colleagues into the conversation
 								</p>
 							</div>
@@ -86,7 +84,7 @@ function OnboardingPage() {
 						</div>
 					</div>
 
-					<p className="text-center text-tertiary text-sm">
+					<p className="text-center text-sm text-tertiary">
 						Have an invitation? You'll be able to join once your administrator adds you.
 					</p>
 				</div>

@@ -1,7 +1,7 @@
 import { useConvexAction } from "@convex-dev/react-query"
 import { api } from "@hazel/backend/api"
-import { Building02 } from "@untitledui/icons"
 import { useNavigate } from "@tanstack/react-router"
+import { Building02 } from "@untitledui/icons"
 import { type } from "arktype"
 import { useCallback, useEffect } from "react"
 import { DialogTrigger as AriaDialogTrigger, Heading as AriaHeading } from "react-aria-components"
@@ -75,7 +75,7 @@ export const CreateOrganizationModal = ({ isOpen, onOpenChange }: CreateOrganiza
 						// Try to navigate to the app, which will check for orgs
 						await navigate({ to: "/app" })
 						clearInterval(pollInterval)
-					} catch (error) {
+					} catch (_error) {
 						if (attempts >= maxAttempts) {
 							clearInterval(pollInterval)
 							// Fallback to page reload if polling fails
