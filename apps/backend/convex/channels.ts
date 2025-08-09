@@ -23,7 +23,24 @@ export const getChannelForOrganization = organizationServerQuery({
 
 		const currentUser = channelMembers.find((member) => member.userId === user._id)
 
-		if (!currentUser && channel.type !== "public") {
+		// For thread channels, check parent channel access
+		if (channel.type === "thread" && channel.parentChannelId) {
+			const parentChannel = await ctx.db.get(channel.parentChannelId)
+			if (parentChannel && parentChannel.type === "public") {
+				// Allow access to thread if parent is public
+			} else {
+				// Check if user is member of parent channel
+				const parentMember = await ctx.db
+					.query("channelMembers")
+					.withIndex("by_channelIdAndUserId", (q) =>
+						q.eq("channelId", channel.parentChannelId!).eq("userId", user._id)
+					)
+					.first()
+				if (!parentMember) {
+					throw new Error("You are not a member of the parent channel")
+				}
+			}
+		} else if (!currentUser && channel.type !== "public") {
 			throw new Error("You are not a member of this channel")
 		}
 
