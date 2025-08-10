@@ -12,4 +12,4 @@
 
 
 # Fixes 
-- Message Edit not showing up in chat 
+- Once you edited a message all messages after also have the edit tag

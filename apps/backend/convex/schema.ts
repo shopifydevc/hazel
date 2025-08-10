@@ -95,7 +95,7 @@ export const confectSchema = defineSchema({
 					emoji: Schema.String,
 				}),
 			),
-			updatedAt: Schema.Number,
+			updatedAt: Schema.optional(Schema.Number),
 			deletedAt: Schema.optional(Schema.Number),
 		}),
 	).index("by_channelId", ["channelId"]),

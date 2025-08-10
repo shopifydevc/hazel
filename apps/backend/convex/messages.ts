@@ -197,7 +197,6 @@ export const createMessage = userMutation({
 			authorId: ctx.user.id,
 			replyToMessageId: args.replyToMessageId,
 			attachedFiles: args.attachedFiles,
-			updatedAt: Date.now(),
 			reactions: [],
 		})
 
