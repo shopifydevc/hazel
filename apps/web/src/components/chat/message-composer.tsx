@@ -121,8 +121,11 @@ export const MessageComposer = ({ ref, placeholder = "Type a message..." }: Mess
 							<div className={cx("px-3 py-2", replyToMessageId && "border-primary border-t")}>
 								<div className="flex flex-wrap gap-2">
 									{attachmentIds.map((attachmentId) => {
+										// First try to get the file name from uploads (for files being uploaded)
 										const upload = uploads.find((u) => u.attachmentId === attachmentId)
-										const fileName = upload?.fileName || "File"
+										// Then try to get it from the attachments query (for completed uploads)
+										const attachment = attachments?.find((a) => a?.id === attachmentId)
+										const fileName = upload?.fileName || attachment?.fileName || "File"
 										return (
 											<div
 												key={attachmentId}
