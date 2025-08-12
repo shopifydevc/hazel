@@ -41,6 +41,31 @@ export const getAttachmentWithMetadata = userQuery({
 	},
 })
 
+// Get multiple attachments by their IDs
+export const getAttachmentsByIds = userQuery({
+	args: {
+		attachmentIds: v.array(v.id("attachments")),
+		organizationId: v.id("organizations"),
+	},
+	handler: async (ctx, args) => {
+		const attachments = await Promise.all(
+			args.attachmentIds.map(async (id) => {
+				const attachment = await ctx.db.get(id)
+				// Verify the attachment belongs to the organization and is not deleted
+				if (!attachment || attachment.deletedAt || attachment.organizationId !== args.organizationId) {
+					return null
+				}
+				return {
+					id: attachment._id,
+					fileName: attachment.fileName,
+					r2Key: attachment.r2Key,
+				}
+			})
+		)
+		return attachments.filter((a) => a !== null)
+	},
+})
+
 // Helper function to enrich attachment with R2 metadata
 export async function enrichAttachmentWithMetadata(
 	ctx: any,
