@@ -62,6 +62,8 @@ function PreviewLeaf({
 		blockquote?: boolean
 		bold?: boolean
 		code?: boolean
+		"code-snippet"?: boolean
+		"code-block"?: boolean
 		hr?: boolean
 		italic?: boolean
 		list?: boolean
@@ -69,6 +71,8 @@ function PreviewLeaf({
 	} & TText
 >) {
 	const { blockquote, bold, code, hr, italic, list, title } = leaf
+	const codeSnippet = leaf["code-snippet"]
+	const codeBlock = leaf["code-block"]
 
 	return (
 		<span
@@ -80,7 +84,9 @@ function PreviewLeaf({
 				list && "pl-2.5 text-[20px] leading-[10px]",
 				hr && "block border-[#ddd] border-b-2 text-center",
 				blockquote && "inline-block border-[#ddd] border-l-2 pl-2.5 text-[#aaa] italic",
-				code && "bg-[#eee] p-[3px] font-mono",
+				codeSnippet && "bg-[#eee] p-[3px] font-mono text-red-500",
+				codeBlock && "my-2 block rounded-md bg-gray-900 p-3 font-mono text-gray-100",
+				code && !codeSnippet && !codeBlock && "font-mono",
 			)}
 		>
 			{children}
@@ -174,11 +180,9 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
 			const jsonContent = editor.children
 			await onSubmit(textContent, jsonContent)
 
-			// Clear attachments and cleanup
 			setAttachmentIds?.([])
 			actionsRef.current?.cleanup()
 
-			// Reset editor and refocus
 			resetAndFocus()
 		}
 
