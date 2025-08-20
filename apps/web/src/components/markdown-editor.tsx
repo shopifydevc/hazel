@@ -63,6 +63,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
 
 		const focusEditor = useCallback(() => {
 			const editorElement = document.querySelector('[data-slate-editor="true"]') as HTMLElement
+
 			editorElement?.focus()
 		}, [])
 
@@ -73,6 +74,8 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
 					anchor: { path: [0, 0], offset: 0 },
 					focus: { path: [0, 0], offset: 0 },
 				})
+
+				editor.tf.focus()
 				focusEditor()
 			}, 0)
 		}, [editor, focusEditor])
@@ -82,6 +85,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
 			() => ({
 				focusAndInsertText: (text: string) => {
 					editor.transforms.insertText(text)
+
 					focusEditor()
 				},
 				clearContent: resetAndFocus,
@@ -113,20 +117,6 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
 			editor.transforms.insertText(emoji)
 			focusEditor()
 		}
-
-		// 			<MarkdownEditor
-		// 				ref={editorRef}
-		// 				placeholder={placeholder}
-		// 				className={cx(
-		// 					"w-full",
-		// 					(replyToMessageId || attachmentIds.length > 0) && "rounded-t-none",
-		// 				)}
-		// 				onSubmit={handleSubmit}
-		// 				onUpdate={handleEditorUpdate}
-		// 				attachmentIds={attachmentIds}
-		// 				setAttachmentIds={setAttachmentIds}
-		// 				uploads={uploads}
-		// 			/>
 
 		return (
 			<Plate editor={editor} onChange={() => onUpdate?.(Node.string(editor))}>
