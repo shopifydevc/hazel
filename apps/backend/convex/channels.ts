@@ -303,6 +303,76 @@ export const getChannel = userQuery({
 	},
 })
 
+export const getChannelMembers = userQuery({
+	args: {
+		channelId: v.id("channels"),
+		limit: v.optional(v.number()),
+		searchQuery: v.optional(v.string()),
+	},
+	handler: async (ctx, args) => {
+		const limit = args.limit ?? 100
+		const searchQuery = args.searchQuery?.toLowerCase()
+
+		const channel = await ctx.db.get(args.channelId)
+		if (!channel) throw new Error("Channel not found")
+
+		// Verify user has access to this channel
+		const currentUserMember = await ctx.db
+			.query("channelMembers")
+			.withIndex("by_channelIdAndUserId", (q) =>
+				q.eq("channelId", args.channelId).eq("userId", ctx.user.id),
+			)
+			.first()
+
+		// For public channels, allow viewing members even if not joined
+		// For other channels, user must be a member
+		if (!currentUserMember && channel.type !== "public") {
+			throw new Error("You are not a member of this channel")
+		}
+
+		// Get all channel members
+		const channelMembers = await ctx.db
+			.query("channelMembers")
+			.withIndex("by_channelIdAndUserId", (q) => q.eq("channelId", args.channelId))
+			.collect()
+
+		// Fetch user details and apply search filter
+		const membersWithUsers = await asyncMap(channelMembers, async (member) => {
+			const user = await ctx.db.get(member.userId)
+			if (!user) return null
+
+			// Apply search filter if provided
+			if (searchQuery) {
+				const firstName = user.firstName.toLowerCase()
+				const lastName = user.lastName.toLowerCase()
+				const email = user.email.toLowerCase()
+				const fullName = `${firstName} ${lastName}`
+
+				if (
+					!firstName.includes(searchQuery) &&
+					!lastName.includes(searchQuery) &&
+					!email.includes(searchQuery) &&
+					!fullName.includes(searchQuery)
+				) {
+					return null
+				}
+			}
+
+			return {
+				...member,
+				user,
+			}
+		})
+
+		// Filter out null results and apply limit
+		const filteredMembers = membersWithUsers
+			.filter((member) => member !== null)
+			.slice(0, limit)
+
+		return filteredMembers
+	},
+})
+
 export const getPublicChannels = userQuery({
 	args: {},
 	handler: async (ctx, args) => {
