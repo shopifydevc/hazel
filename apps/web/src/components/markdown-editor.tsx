@@ -55,7 +55,7 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
 					...MarkdownKit,
 					...AutoformatKit,
 					// ...CodeBlockKit,
-					// ...MentionKit,
+					...MentionKit,
 				],
 			},
 			[],

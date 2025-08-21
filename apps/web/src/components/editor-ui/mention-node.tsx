@@ -35,9 +35,9 @@ export function MentionElement(
 		<PlateElement
 			{...props}
 			className={cn(
-				"inline-block rounded-md bg-muted px-1.5 py-0.5 align-baseline font-medium text-sm",
+				"inline-block rounded-md bg-secondary px-1.5 py-0.5 align-baseline font-medium text-sm",
 				!readOnly && "cursor-pointer",
-				selected && focused && "ring-2 ring-ring",
+				selected && focused && "ring-2 ring-brand",
 				element.children[0][KEYS.bold] === true && "font-bold",
 				element.children[0][KEYS.italic] === true && "italic",
 				element.children[0][KEYS.underline] === true && "underline",
@@ -83,7 +83,7 @@ export function MentionInputElement(props: PlateElementProps<TComboboxInputEleme
 				showTrigger={false}
 				trigger="@"
 			>
-				<span className="inline-block rounded-md bg-muted px-1.5 py-0.5 align-baseline text-sm ring-ring focus-within:ring-2">
+				<span className="inline-block rounded-md bg-secondary px-1.5 py-0.5 align-baseline text-sm ring-brand focus-within:ring-2">
 					<InlineComboboxInput />
 				</span>
 

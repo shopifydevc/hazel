@@ -51,7 +51,6 @@ function MyMeeting() {
 	const roomState = useRealtimeKitSelector((m) => m.self.roomState)
 
 	return (
-		// @ts-expect-error
 		<RtkUiProvider meeting={meeting}>
 			<div style={{ height: "100vh" }}>
 				{roomState === "init" && <CustomMeetingPreview />}
@@ -61,7 +60,6 @@ function MyMeeting() {
 				<RtkDialogManager />
 
 				{roomState === "joined" && (
-					// @ts-expect-error
 					<RtkMeeting mode="fill" meeting={meeting} showSetupScreen={false} />
 
 					// <div className="flex h-full w-full flex-col">
@@ -78,7 +76,6 @@ function MyMeeting() {
 					// 	</footer>
 					// </div>
 				)}
-				{/* @ts-expect-error */}
 				{roomState === "ended" && <RtkEndedScreen meeting={meeting} />}
 			</div>
 		</RtkUiProvider>
