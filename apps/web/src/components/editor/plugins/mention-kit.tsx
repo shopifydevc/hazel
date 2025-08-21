@@ -12,5 +12,7 @@ export const MentionKit = [
 			insertSpaceAfterMention: false,
 		},
 	}).withComponent(MentionElement),
-	MentionInputPlugin.withComponent(MentionInputElement),
+	MentionInputPlugin.configure({
+		options: {},
+	}).withComponent(MentionInputElement),
 ]

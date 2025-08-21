@@ -35,7 +35,7 @@ export function MentionElement(
 		<PlateElement
 			{...props}
 			className={cn(
-				"inline-block rounded-md bg-secondary px-1.5 py-0.5 align-baseline font-medium text-sm",
+				"inline-block rounded-md bg-brand-primary/30 px-1.5 py-0.5 align-baseline font-medium",
 				!readOnly && "cursor-pointer",
 				selected && focused && "ring-2 ring-brand",
 				element.children[0][KEYS.bold] === true && "font-bold",
@@ -53,13 +53,13 @@ export function MentionElement(
 				// Mac OS IME https://github.com/ianstormtaylor/slate/issues/3490
 				<React.Fragment>
 					{props.children}
-					{props.prefix}
+					{props.prefix || "@"}
 					{element.value}
 				</React.Fragment>
 			) : (
 				// Others like Android https://github.com/ianstormtaylor/slate/pull/5360
 				<React.Fragment>
-					{props.prefix}
+					{props.prefix || "@"}
 					{element.value}
 					{props.children}
 				</React.Fragment>

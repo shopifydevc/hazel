@@ -5,10 +5,11 @@ import { createPlateEditor } from "platejs/react"
 import { memo, useMemo } from "react"
 import { BasicNodesKit } from "./editor/plugins/basic-nodes-kit"
 import { MarkdownKit } from "./editor/plugins/markdown-kit"
+import { MentionKit } from "./editor/plugins/mention-kit"
 import { EditorStatic, type editorVariants } from "./editor-ui/editor-static"
 
 const editor = createPlateEditor({
-	plugins: [...BasicNodesKit, ...MarkdownKit],
+	plugins: [...BasicNodesKit, ...MarkdownKit, ...MentionKit],
 })
 
 export const MarkdownReadonly = memo(
