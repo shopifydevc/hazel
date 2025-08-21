@@ -234,7 +234,7 @@ const InlineComboboxContent: typeof ComboboxPopover = ({ className, ...props }) 
 		<Portal>
 			<ComboboxPopover
 				className={cn(
-					"z-500 max-h-[288px] w-[300px] overflow-y-auto rounded-md bg-popover shadow-md",
+					"z-500 max-h-[288px] w-[300px] overflow-y-auto rounded-md bg-tertiary shadow-md",
 					className,
 				)}
 				{...props}
@@ -244,7 +244,7 @@ const InlineComboboxContent: typeof ComboboxPopover = ({ className, ...props }) 
 }
 
 const comboboxItemVariants = cva(
-	"relative mx-1 flex h-[28px] items-center rounded-sm px-2 text-sm text-foreground outline-none select-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+	"relative mx-1 flex h-[28px] items-center rounded-sm px-2 text-sm text-primary outline-none select-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
 	{
 		defaultVariants: {
 			interactive: true,
@@ -252,7 +252,7 @@ const comboboxItemVariants = cva(
 		variants: {
 			interactive: {
 				false: "",
-				true: "cursor-pointer transition-colors hover:bg-accent hover:text-accent-foreground data-[active-item=true]:bg-accent data-[active-item=true]:text-accent-foreground",
+				true: "cursor-pointer transition-colors hover:bg-secondary hover:text-secondary data-[active-item=true]:bg-tertiary data-[active-item=true]:text-tertiary",
 			},
 		},
 	},
