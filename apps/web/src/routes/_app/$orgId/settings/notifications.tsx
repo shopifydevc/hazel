@@ -61,13 +61,13 @@ function NotificationsSettings() {
 			<div className="flex flex-col gap-5">
 				{/* Desktop Notifications */}
 				<div className="grid grid-cols-1 lg:grid-cols-[minmax(200px,280px)_minmax(400px,512px)] lg:gap-8">
-					<SectionLabel.Root 
-						size="sm" 
-						title="Desktop notifications" 
+					<SectionLabel.Root
+						size="sm"
+						title="Desktop notifications"
 						description="System notifications"
-						className="max-lg:hidden" 
+						className="max-lg:hidden"
 					/>
-					
+
 					<Toggle
 						size="sm"
 						label="Enable desktop notifications"
@@ -81,13 +81,13 @@ function NotificationsSettings() {
 
 				{/* Sound Settings */}
 				<div className="grid grid-cols-1 lg:grid-cols-[minmax(200px,280px)_minmax(400px,512px)] lg:gap-8">
-					<SectionLabel.Root 
-						size="sm" 
-						title="Sound notifications" 
+					<SectionLabel.Root
+						size="sm"
+						title="Sound notifications"
 						description="Audio alerts"
-						className="max-lg:hidden" 
+						className="max-lg:hidden"
 					/>
-					
+
 					<div className="space-y-4">
 						<Toggle
 							size="sm"
@@ -100,12 +100,18 @@ function NotificationsSettings() {
 						{settings.enabled && (
 							<>
 								<div className="space-y-2">
-									<label className="text-sm font-medium text-secondary">Notification sound</label>
+									<label className="text-sm font-medium text-secondary">
+										Notification sound
+									</label>
 									<div className="flex gap-2">
 										<Button
 											type="button"
 											size="sm"
-											color={settings.soundFile === "notification01" ? "primary" : "secondary"}
+											color={
+												settings.soundFile === "notification01"
+													? "primary"
+													: "secondary"
+											}
 											onClick={() => updateSettings({ soundFile: "notification01" })}
 										>
 											Sound 1
@@ -113,7 +119,11 @@ function NotificationsSettings() {
 										<Button
 											type="button"
 											size="sm"
-											color={settings.soundFile === "notification02" ? "primary" : "secondary"}
+											color={
+												settings.soundFile === "notification02"
+													? "primary"
+													: "secondary"
+											}
 											onClick={() => updateSettings({ soundFile: "notification02" })}
 										>
 											Sound 2
@@ -133,7 +143,9 @@ function NotificationsSettings() {
 								<div className="space-y-2">
 									<div className="flex items-center justify-between">
 										<label className="text-sm font-medium text-secondary">Volume</label>
-										<span className="text-sm text-tertiary">{Math.round(settings.volume * 100)}%</span>
+										<span className="text-sm text-tertiary">
+											{Math.round(settings.volume * 100)}%
+										</span>
 									</div>
 									<div className="flex items-center gap-3">
 										{settings.volume === 0 ? (
@@ -148,7 +160,9 @@ function NotificationsSettings() {
 											min="0"
 											max="100"
 											value={settings.volume * 100}
-											onChange={(e) => updateSettings({ volume: Number(e.target.value) / 100 })}
+											onChange={(e) =>
+												updateSettings({ volume: Number(e.target.value) / 100 })
+											}
 											className="flex-1 accent-brand-solid"
 										/>
 									</div>
@@ -162,89 +176,54 @@ function NotificationsSettings() {
 
 				{/* Message Preferences */}
 				<div className="grid grid-cols-1 lg:grid-cols-[minmax(200px,280px)_minmax(400px,512px)] lg:gap-8">
-					<SectionLabel.Root 
-						size="sm" 
-						title="Message notifications" 
+					<SectionLabel.Root
+						size="sm"
+						title="Message notifications"
 						description="When to notify"
-						className="max-lg:hidden" 
+						className="max-lg:hidden"
 					/>
-					
-					<div className="space-y-3">
-						<RadioGroup
-							value={messagePreference}
-							onChange={(value) => setMessagePreference(value as "all" | "mentions" | "direct" | "none")}
-							className="space-y-2"
-						>
-							<label className="flex items-start gap-3">
-								<input
-									type="radio"
-									value="all"
-									checked={messagePreference === "all"}
-									onChange={(e) => setMessagePreference(e.target.value as "all")}
-									className="mt-0.5 accent-brand-solid"
-								/>
-								<div>
-									<p className="text-sm font-medium text-primary">All messages</p>
-									<p className="text-xs text-tertiary">Get notified for every new message</p>
-								</div>
-							</label>
-							
-							<label className="flex items-start gap-3">
-								<input
-									type="radio"
-									value="mentions"
-									checked={messagePreference === "mentions"}
-									onChange={(e) => setMessagePreference(e.target.value as "mentions")}
-									className="mt-0.5 accent-brand-solid"
-								/>
-								<div>
-									<p className="text-sm font-medium text-primary">Mentions only</p>
-									<p className="text-xs text-tertiary">Only when someone @mentions you</p>
-								</div>
-							</label>
-							
-							<label className="flex items-start gap-3">
-								<input
-									type="radio"
-									value="direct"
-									checked={messagePreference === "direct"}
-									onChange={(e) => setMessagePreference(e.target.value as "direct")}
-									className="mt-0.5 accent-brand-solid"
-								/>
-								<div>
-									<p className="text-sm font-medium text-primary">Direct messages & mentions</p>
-									<p className="text-xs text-tertiary">DMs and @mentions only</p>
-								</div>
-							</label>
-							
-							<label className="flex items-start gap-3">
-								<input
-									type="radio"
-									value="none"
-									checked={messagePreference === "none"}
-									onChange={(e) => setMessagePreference(e.target.value as "none")}
-									className="mt-0.5 accent-brand-solid"
-								/>
-								<div>
-									<p className="text-sm font-medium text-primary">Nothing</p>
-									<p className="text-xs text-tertiary">Turn off all message notifications</p>
-								</div>
-							</label>
-						</RadioGroup>
-					</div>
+
+					<RadioGroupCheckbox
+						value={messagePreference}
+						onChange={(value) =>
+							setMessagePreference(value as "all" | "mentions" | "direct" | "none")
+						}
+						options={[
+							{
+								value: "all",
+								label: "All messages",
+								description: "Get notified for every new message",
+							},
+							{
+								value: "mentions",
+								label: "Mentions only",
+								description: "Only when someone @mentions you",
+							},
+							{
+								value: "direct",
+								label: "Direct messages & mentions",
+								description: "DMs and @mentions only",
+							},
+							{
+								value: "none",
+								label: "Nothing",
+								description: "Turn off all message notifications",
+							},
+						]}
+					/>
 				</div>
 
 				<hr className="h-px w-full border-none bg-border-secondary" />
 
 				{/* Email Notifications */}
 				<div className="grid grid-cols-1 lg:grid-cols-[minmax(200px,280px)_minmax(400px,512px)] lg:gap-8">
-					<SectionLabel.Root 
-						size="sm" 
-						title="Email notifications" 
+					<SectionLabel.Root
+						size="sm"
+						title="Email notifications"
 						description="Email preferences"
-						className="max-lg:hidden" 
+						className="max-lg:hidden"
 					/>
-					
+
 					<div className="space-y-4">
 						<Toggle
 							size="sm"
@@ -256,7 +235,9 @@ function NotificationsSettings() {
 
 						{emailNotifications && (
 							<div className="space-y-2">
-								<label className="text-sm font-medium text-secondary">Email digest frequency</label>
+								<label className="text-sm font-medium text-secondary">
+									Email digest frequency
+								</label>
 								<div className="flex gap-2">
 									<Button
 										type="button"
@@ -292,13 +273,13 @@ function NotificationsSettings() {
 
 				{/* Quiet Hours */}
 				<div className="grid grid-cols-1 lg:grid-cols-[minmax(200px,280px)_minmax(400px,512px)] lg:gap-8">
-					<SectionLabel.Root 
-						size="sm" 
-						title="Quiet hours" 
+					<SectionLabel.Root
+						size="sm"
+						title="Quiet hours"
 						description="Do not disturb"
-						className="max-lg:hidden" 
+						className="max-lg:hidden"
 					/>
-					
+
 					<div className="space-y-4">
 						<Toggle
 							size="sm"
@@ -311,7 +292,9 @@ function NotificationsSettings() {
 						{doNotDisturb && (
 							<div className="grid grid-cols-2 gap-4">
 								<div>
-									<label className="mb-2 block text-sm font-medium text-secondary">Start time</label>
+									<label className="mb-2 block text-sm font-medium text-secondary">
+										Start time
+									</label>
 									<input
 										type="time"
 										value={quietHoursStart}
@@ -320,7 +303,9 @@ function NotificationsSettings() {
 									/>
 								</div>
 								<div>
-									<label className="mb-2 block text-sm font-medium text-secondary">End time</label>
+									<label className="mb-2 block text-sm font-medium text-secondary">
+										End time
+									</label>
 									<input
 										type="time"
 										value={quietHoursEnd}
