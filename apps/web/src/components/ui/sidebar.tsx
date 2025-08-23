@@ -1,6 +1,6 @@
 import { Slot } from "@radix-ui/react-slot"
+import { LeftIndent01 } from "@untitledui/icons"
 import { cva, type VariantProps } from "class-variance-authority"
-import { PanelLeftIcon } from "lucide-react"
 import * as React from "react"
 import { Separator } from "~/components/ui/separator"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "~/components/ui/sheet"
@@ -252,7 +252,7 @@ function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<t
 				toggleSidebar()
 			}}
 			{...props}
-			iconLeading={<PanelLeftIcon />}
+			iconLeading={<LeftIndent01 />}
 		></Button>
 	)
 }
