@@ -1,9 +1,8 @@
+import { X } from "@untitledui/icons"
 import { format } from "date-fns"
-import { X } from "lucide-react"
 import { Dialog, DialogTrigger, Popover } from "react-aria-components"
 import { useChat } from "~/hooks/use-chat"
 import { Avatar } from "../base/avatar/avatar"
-import { Button } from "../base/buttons/button"
 import { ButtonUtility } from "../base/buttons/button-utility"
 import { IconPinSlant } from "../icons/IconPinSlant"
 
