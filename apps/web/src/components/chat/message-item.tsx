@@ -368,120 +368,123 @@ export function MessageItem({
 									</>
 								)}
 							</TextEditor.Root> */}
-              </div>
-            ) : (
-              <MarkdownReadonly content={message.content}></MarkdownReadonly>
-            )}
+							</div>
+						) : (
+							<MarkdownReadonly content={message.content}></MarkdownReadonly>
+						)}
 
-            {/* Attachments */}
-            {message.attachments && message.attachments.length > 0 && (
-              <MessageAttachments
-                attachments={message.attachments}
-                organizationId={orgId as Id<"organizations">}
-              />
-            )}
+						{/* Attachments */}
+						{message.attachments && message.attachments.length > 0 && (
+							<MessageAttachments
+								attachments={message.attachments}
+								organizationId={orgId as Id<"organizations">}
+							/>
+						)}
 
-            {/* Reactions */}
-            {message.reactions && message.reactions.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1">
-                {Object.entries(
-                  message.reactions.reduce(
-                    (acc, reaction) => {
-                      if (!acc[reaction.emoji]) {
-                        acc[reaction.emoji] = { count: 0, users: [], hasReacted: false }
-                      }
-                      acc[reaction.emoji].count++
-                      acc[reaction.emoji].users.push(reaction.userId)
-                      if (reaction.userId === currentUser?._id) {
-                        acc[reaction.emoji].hasReacted = true
-                      }
-                      return acc
-                    },
-                    {} as Record<
-                      string,
-                      { count: number; users: string[]; hasReacted: boolean }
-                    >,
-                  ),
-                ).map(([emoji, data]) => (
-                  <Button onPress={() => handleReaction(emoji)} key={emoji}>
-                    <Badge
-                      type="pill-color"
-                      color={data.hasReacted ? "brand" : "gray"}
-                      size="md"
-                    >
-                      {emoji} {data.count}
-                    </Badge>
-                  </Button>
-                ))}
-              </div>
-            )}
+						{/* Reactions */}
+						{message.reactions && message.reactions.length > 0 && (
+							<div className="mt-2 flex flex-wrap gap-1">
+								{Object.entries(
+									message.reactions.reduce(
+										(acc, reaction) => {
+											if (!acc[reaction.emoji]) {
+												acc[reaction.emoji] = {
+													count: 0,
+													users: [],
+													hasReacted: false,
+												}
+											}
+											acc[reaction.emoji].count++
+											acc[reaction.emoji].users.push(reaction.userId)
+											if (reaction.userId === currentUser?._id) {
+												acc[reaction.emoji].hasReacted = true
+											}
+											return acc
+										},
+										{} as Record<
+											string,
+											{ count: number; users: string[]; hasReacted: boolean }
+										>,
+									),
+								).map(([emoji, data]) => (
+									<Button onPress={() => handleReaction(emoji)} key={emoji}>
+										<Badge
+											type="pill-color"
+											color={data.hasReacted ? "brand" : "gray"}
+											size="md"
+										>
+											{emoji} {data.count}
+										</Badge>
+									</Button>
+								))}
+							</div>
+						)}
 
-            {/* Thread Button */}
-            {(message.threadChannelId ||
-              (message.threadMessages && message.threadMessages.length > 0)) && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (message.threadChannelId) {
-                    openThread(message.threadChannelId, message._id)
-                  }
-                }}
-                className="mt-2 flex items-center gap-2 text-secondary text-sm transition-colors hover:text-primary"
-              >
-                <IconThread className="size-4"/>
-                <span>
-								{message.threadMessages?.length || 0}{" "}
-                  {message.threadMessages?.length === 1 ? "reply" : "replies"}
-							</span>
-              </button>
-            )}
-          </div>
-        </div>
+						{/* Thread Button */}
+						{(message.threadChannelId ||
+							(message.threadMessages && message.threadMessages.length > 0)) && (
+							<button
+								type="button"
+								onClick={() => {
+									if (message.threadChannelId) {
+										openThread(message.threadChannelId, message._id)
+									}
+								}}
+								className="mt-2 flex items-center gap-2 text-secondary text-sm transition-colors hover:text-primary"
+							>
+								<IconThread className="size-4" />
+								<span>
+									{message.threadMessages?.length || 0}{" "}
+									{message.threadMessages?.length === 1 ? "reply" : "replies"}
+								</span>
+							</button>
+						)}
+					</div>
+				</div>
 
-        {/* Message Toolbar - Only render when hovered or menu is open to improve performance */}
-        {(hasBeenHovered || isMenuOpen) && (
-          <MessageToolbar
-            message={message}
-            isOwnMessage={isOwnMessage}
-            isPinned={isMessagePinned}
-            onReaction={handleReaction}
-            onEdit={() => setIsEditing(true)}
-            onDelete={handleDelete}
-            onCopy={handleCopy}
-            onReply={() => {
-              setReplyToMessageId(message._id)
-            }}
-            onThread={() => {
-              createThread(message._id)
-            }}
-            onForward={() => {
-              // TODO: Implement forward message
-              console.log("Forward message")
-            }}
-            onMarkUnread={() => {
-              // TODO: Implement mark as unread
-              console.log("Mark as unread")
-            }}
-            onPin={() => {
-              if (isMessagePinned) {
-                unpinMessage(message._id)
-              } else {
-                pinMessage(message._id)
-              }
-            }}
-            onReport={() => {
-              // TODO: Implement report message
-              console.log("Report message")
-            }}
-            onViewDetails={() => {
-              // TODO: Implement view details
-              console.log("View details")
-            }}
-            onMenuOpenChange={setIsMenuOpen}
-          />
-        )}
-      </div>
-    </>
-    
-  )
+				{/* Message Toolbar - Only render when hovered or menu is open to improve performance */}
+				{(hasBeenHovered || isMenuOpen) && (
+					<MessageToolbar
+						message={message}
+						isOwnMessage={isOwnMessage}
+						isPinned={isMessagePinned}
+						onReaction={handleReaction}
+						onEdit={() => setIsEditing(true)}
+						onDelete={handleDelete}
+						onCopy={handleCopy}
+						onReply={() => {
+							setReplyToMessageId(message._id)
+						}}
+						onThread={() => {
+							createThread(message._id)
+						}}
+						onForward={() => {
+							// TODO: Implement forward message
+							console.log("Forward message")
+						}}
+						onMarkUnread={() => {
+							// TODO: Implement mark as unread
+							console.log("Mark as unread")
+						}}
+						onPin={() => {
+							if (isMessagePinned) {
+								unpinMessage(message._id)
+							} else {
+								pinMessage(message._id)
+							}
+						}}
+						onReport={() => {
+							// TODO: Implement report message
+							console.log("Report message")
+						}}
+						onViewDetails={() => {
+							// TODO: Implement view details
+							console.log("View details")
+						}}
+						onMenuOpenChange={setIsMenuOpen}
+					/>
+				)}
+			</div>
+		</>
+	)
 }
