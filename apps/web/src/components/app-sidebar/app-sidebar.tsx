@@ -3,7 +3,7 @@ import type { Id } from "@hazel/backend"
 import { api } from "@hazel/backend/api"
 import { useQuery } from "@tanstack/react-query"
 import { Link, useParams } from "@tanstack/react-router"
-import { useEffect, useMemo } from "react"
+import { useMemo } from "react"
 import { CreateDmButton } from "../application/modals/create-dm-modal"
 import IconChatChatting1 from "../icons/IconChatChatting1"
 import IconGridDashboard01DuoSolid from "../icons/IconGridDashboard01DuoSolid"
@@ -22,6 +22,7 @@ import {
 	SidebarMenuBadge,
 	SidebarMenuButton,
 	SidebarMenuItem,
+	useSidebar,
 } from "../ui/sidebar"
 import { ChannelActionsDropdown } from "./channel-actions-dropdown"
 import { ChannelItem, DmChannelLink } from "./channel-item"
@@ -30,6 +31,7 @@ import { SidebarFavoriteGroup } from "./sidebar-favorite-group"
 import { WorkspaceSwitcher } from "./workspace-switcher"
 
 export const AppSidebar = () => {
+	const { isMobile } = useSidebar()
 	const params = useParams({ from: "/_app/$orgId" })
 	const organizationId = params?.orgId as Id<"organizations">
 
@@ -50,7 +52,6 @@ export const AppSidebar = () => {
 	const dmChannels = useMemo(() => channelsQuery.data?.dmChannels || [], [channelsQuery.data])
 
 	const { presenceList } = usePresence()
-
 	return (
 		<Sidebar collapsible="icon" className="overflow-hidden *:data-[sidebar=sidebar]:flex-row">
 			<Sidebar
@@ -93,6 +94,52 @@ export const AppSidebar = () => {
 							</SidebarMenuItem>
 						</SidebarGroupContent>
 					</SidebarGroup>
+					{isMobile && (
+						<SidebarGroupContent className="sm:hidden">
+							<SidebarGroup>
+								<SidebarMenuItem>
+									<SidebarMenuButton>
+										<IconNotificationBellOn1 />
+										Notifications
+										<SidebarMenuBadge className="rounded-full bg-destructive">
+											1
+										</SidebarMenuBadge>
+									</SidebarMenuButton>
+								</SidebarMenuItem>
+							</SidebarGroup>
+							<SidebarFavoriteGroup />
+							<SidebarGroup>
+								<SidebarGroupLabel>Channels</SidebarGroupLabel>
+								<SidebarGroupAction>
+									<ChannelActionsDropdown />
+								</SidebarGroupAction>
+								<SidebarGroupContent>
+									<SidebarMenu>
+										{channelsQuery.data?.organizationChannels?.map((channel) => (
+											<ChannelItem key={channel._id} channel={channel} />
+										))}
+									</SidebarMenu>
+								</SidebarGroupContent>
+							</SidebarGroup>
+							<SidebarGroup>
+								<SidebarGroupLabel>Direct Messages</SidebarGroupLabel>
+								<SidebarGroupAction>
+									<CreateDmButton />
+								</SidebarGroupAction>
+								<SidebarGroupContent>
+									<SidebarMenu>
+										{dmChannels.map((channel) => (
+											<DmChannelLink
+												key={channel._id}
+												userPresence={presenceList}
+												channel={channel}
+											/>
+										))}
+									</SidebarMenu>
+								</SidebarGroupContent>
+							</SidebarGroup>
+						</SidebarGroupContent>
+					)}
 				</SidebarContent>
 				<SidebarFooter>
 					<NavUser />
