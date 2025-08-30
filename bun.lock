@@ -44,6 +44,7 @@
         "@effect/sql": "^0.44.2",
         "@effect/sql-drizzle": "^0.43.0",
         "@effect/sql-pg": "^0.45.1",
+        "@hazel/db": "workspace:*",
         "@opentelemetry/sdk-logs": "^0.203.0",
         "@opentelemetry/sdk-metrics": "^2.0.1",
         "@opentelemetry/sdk-trace-node": "^2.0.1",
@@ -54,7 +55,6 @@
       },
       "devDependencies": {
         "@types/bun": "latest",
-        "drizzle-kit": "^0.31.4",
       },
     },
     "apps/mobile": {
@@ -188,6 +188,21 @@
         "vite": "7.1.2",
         "vitest": "^3.2.4",
         "web-vitals": "^5.1.0",
+      },
+    },
+    "packages/db": {
+      "name": "@hazel/db",
+      "version": "0.0.0",
+      "dependencies": {
+        "@effect/experimental": "^0.54.6",
+        "drizzle-orm": "^0.44.5",
+        "effect": "^3.17.9",
+        "postgres": "^3.4.7",
+        "uuid": "^11.1.0",
+      },
+      "devDependencies": {
+        "drizzle-kit": "^0.31.4",
+        "typescript": "^5.9.2",
       },
     },
   },
@@ -731,6 +746,8 @@
     "@formkit/auto-animate": ["@formkit/auto-animate@0.8.2", "", {}, "sha512-SwPWfeRa5veb1hOIBMdzI+73te5puUBHmqqaF1Bu7FjvxlYSz/kJcZKSa9Cg60zL0uRNeJL2SbRxV6Jp6Q1nFQ=="],
 
     "@hazel/backend": ["@hazel/backend@workspace:apps/backend"],
+
+    "@hazel/db": ["@hazel/db@workspace:packages/db"],
 
     "@ide/backoff": ["@ide/backoff@1.0.0", "", {}, "sha512-F0YfUDjvT+Mtt/R4xdl2X0EYCHMMiJqNLdxHD++jDT5ydEFIyqbCHh51Qx2E211dgZprPKhV7sHmnXKpLuvc5g=="],
 

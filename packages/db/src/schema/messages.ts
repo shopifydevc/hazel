@@ -1,17 +1,18 @@
 import { index, integer, pgTable, text, timestamp, uniqueIndex, uuid, varchar } from "drizzle-orm/pg-core"
+import type { ChannelId, MessageId, UserId } from "../lib/schema"
 
 // Messages table
 export const messagesTable = pgTable(
 	"messages",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
-		channelId: uuid("channel_id").notNull(),
-		authorId: uuid("author_id").notNull(),
+		id: uuid("id").primaryKey().defaultRandom().$type<MessageId>(),
+		channelId: uuid("channel_id").notNull().$type<ChannelId>(),
+		authorId: uuid("author_id").notNull().$type<UserId>(),
 		content: text("content").notNull(),
 		// Reply to another message
-		replyToMessageId: uuid("reply_to_message_id"),
+		replyToMessageId: uuid("reply_to_message_id").$type<MessageId>(),
 		// Thread channel (if this message started a thread)
-		threadChannelId: uuid("thread_channel_id"),
+		threadChannelId: uuid("thread_channel_id").$type<ChannelId>(),
 		createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 		updatedAt: timestamp("updated_at", { mode: "date" }),
 		deletedAt: timestamp("deleted_at", { mode: "date" }),

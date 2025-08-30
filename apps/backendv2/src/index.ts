@@ -1,21 +1,18 @@
 import { OtlpTracer } from "@effect/opentelemetry"
 import {
 	FetchHttpClient,
-	HttpApi,
-	HttpApiBuilder,
-	HttpApiEndpoint,
-	HttpApiGroup,
 	HttpApiScalar,
 	HttpLayerRouter,
 	HttpMiddleware,
 	HttpServerResponse,
 } from "@effect/platform"
 import { BunHttpServer, BunRuntime } from "@effect/platform-bun"
-import { Effect, Layer } from "effect"
+import { Layer } from "effect"
 import { HazelApi } from "./api"
 import { HttpApiRoutes } from "./http"
-
-import { DatabaseLive } from "./services/db"
+import { MessageRepo } from "./repositories/message-repo"
+import { AuthorizationLive } from "./services/auth"
+import { DatabaseLive } from "./services/database"
 
 const HealthRouter = HttpLayerRouter.use((router) =>
 	router.add("GET", "/health", HttpServerResponse.text("OK")),
@@ -43,7 +40,7 @@ const TracerLive = OtlpTracer.layer({
 	},
 }).pipe(Layer.provide(FetchHttpClient.layer))
 
-const MainLive = Layer.mergeAll(DatabaseLive)
+const MainLive = Layer.mergeAll(MessageRepo.Default, DatabaseLive)
 
 HttpLayerRouter.serve(AllRoutes).pipe(
 	HttpMiddleware.withTracerDisabledWhen(
@@ -51,6 +48,7 @@ HttpLayerRouter.serve(AllRoutes).pipe(
 	),
 	Layer.provide(MainLive),
 	Layer.provide(TracerLive),
+	Layer.provide(AuthorizationLive),
 	Layer.provide(BunHttpServer.layer({ port: 3003 })),
 	Layer.launch,
 	BunRuntime.runMain,
