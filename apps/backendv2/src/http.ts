@@ -4,7 +4,13 @@ import { HazelApi } from "./api"
 import { HttpChannelLive } from "./routes/channels.http"
 import { HttpMessageLive } from "./routes/messages.http"
 import { HttpRootLive } from "./routes/root.http"
+import { HttpWebhookLive } from "./routes/webhooks.http"
 
 export const HttpApiRoutes = HttpLayerRouter.addHttpApi(HazelApi, {
 	openapiPath: "/docs/openapi.json",
-}).pipe(Layer.provide(HttpRootLive), Layer.provide(HttpChannelLive), Layer.provide(HttpMessageLive))
+}).pipe(
+	Layer.provide(HttpRootLive),
+	Layer.provide(HttpChannelLive),
+	Layer.provide(HttpMessageLive),
+	Layer.provide(HttpWebhookLive),
+)

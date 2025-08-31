@@ -1,6 +1,6 @@
 import type { OrganizationId, UserId } from "@hazel/db/schema"
 import type { Event } from "@workos-inc/node"
-import { Data, Effect, Option, pipe } from "effect"
+import { Effect, Option, pipe, Schema } from "effect"
 import { InvitationRepo } from "../repositories/invitation-repo"
 import { OrganizationMemberRepo } from "../repositories/organization-member-repo"
 import { OrganizationRepo } from "../repositories/organization-repo"
@@ -9,10 +9,13 @@ import { DatabaseLive } from "./database"
 import { WorkOS } from "./workos"
 
 // Error types
-export class WorkOSSyncError extends Data.TaggedError("WorkOSSyncError")<{
-	message: string
-	cause?: unknown
-}> {}
+export class WorkOSSyncError extends Schema.TaggedError<WorkOSSyncError>("WorkOSSyncError")(
+	"WorkOSSyncError",
+	{
+		message: Schema.String,
+		cause: Schema.optional(Schema.Unknown),
+	},
+) {}
 
 // Sync result types
 export interface SyncResult {
@@ -429,19 +432,19 @@ export class WorkOSSync extends Effect.Service<WorkOSSync>()("WorkOSSync", {
 				endTime: 0,
 			}
 
-			console.log("Starting WorkOS sync...")
+			yield* Effect.logInfo("Starting WorkOS sync...")
 
 			// Step 1: Sync all users
-			console.log("Syncing users...")
+			yield* Effect.logInfo("Syncing users...")
 			result.users = yield* syncUsers
-			console.log(
+			yield* Effect.logInfo(
 				`Users sync complete: created=${result.users.created}, updated=${result.users.updated}, deleted=${result.users.deleted}`,
 			)
 
 			// Step 2: Sync all organizations
-			console.log("Syncing organizations...")
+			yield* Effect.logInfo("Syncing organizations...")
 			result.organizations = yield* syncOrganizations
-			console.log(
+			yield* Effect.logInfo(
 				`Organizations sync complete: created=${result.organizations.created}, updated=${result.organizations.updated}, deleted=${result.organizations.deleted}`,
 			)
 
@@ -451,14 +454,14 @@ export class WorkOSSync extends Effect.Service<WorkOSSync>()("WorkOSSync", {
 			yield* Effect.all(
 				organizations.map((org) =>
 					Effect.gen(function* () {
-						console.log(`Syncing memberships for org ${org.workosId}...`)
+						yield* Effect.logInfo(`Syncing memberships for org ${org.workosId}...`)
 						const membershipResult = yield* syncOrganizationMemberships(org.id, org.workosId)
 						result.memberships.created += membershipResult.created
 						result.memberships.updated += membershipResult.updated
 						result.memberships.deleted += membershipResult.deleted
 						result.memberships.errors.push(...membershipResult.errors)
 
-						console.log(`Syncing invitations for org ${org.workosId}...`)
+						yield* Effect.logInfo(`Syncing invitations for org ${org.workosId}...`)
 						const invitationResult = yield* syncInvitations(
 							org.id as OrganizationId,
 							org.workosId,
@@ -482,10 +485,10 @@ export class WorkOSSync extends Effect.Service<WorkOSSync>()("WorkOSSync", {
 			result.endTime = Date.now()
 			const duration = (result.endTime - result.startTime) / 1000
 
-			console.log(`WorkOS sync completed in ${duration}s with ${result.totalErrors} errors`)
+			yield* Effect.logInfo(`WorkOS sync completed in ${duration}s with ${result.totalErrors} errors`)
 
 			if (result.totalErrors > 0) {
-				console.error("Sync errors:", {
+				yield* Effect.logError("Sync errors:", {
 					users: result.users.errors,
 					organizations: result.organizations.errors,
 					memberships: result.memberships.errors,
@@ -529,18 +532,14 @@ export class WorkOSSync extends Effect.Service<WorkOSSync>()("WorkOSSync", {
 
 						case "organization.created":
 						case "organization.updated": {
-							const orgData = {
+							yield* orgRepo.upsertByWorkosId({
 								workosId: typedEvent.data.id,
 								name: typedEvent.data.name,
-								slug: typedEvent.data.name
-									.toLowerCase()
-									.replace(/[^a-z0-9]+/g, "-")
-									.replace(/^-|-$/g, ""),
 								logoUrl: null,
-								settings: "{}",
+								settings: null,
 								deletedAt: null,
-							}
-							yield* orgRepo.upsertByWorkosId(orgData)
+								slug: null,
+							})
 							break
 						}
 
@@ -557,8 +556,8 @@ export class WorkOSSync extends Effect.Service<WorkOSSync>()("WorkOSSync", {
 
 							if (Option.isSome(org) && Option.isSome(user)) {
 								const memberData = {
-									organizationId: org.value.id as any,
-									userId: user.value.id as any,
+									organizationId: org.value.id,
+									userId: user.value.id,
 									role: (typedEvent.data.role.slug || "member") as
 										| "admin"
 										| "member"
@@ -583,7 +582,7 @@ export class WorkOSSync extends Effect.Service<WorkOSSync>()("WorkOSSync", {
 						}
 
 						default:
-							console.log(`Unhandled WorkOS event type: ${typedEvent.event}`)
+							yield* Effect.logInfo(`Unhandled WorkOS event type: ${typedEvent.event}`)
 					}
 
 					return { success: true }

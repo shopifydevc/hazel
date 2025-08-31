@@ -77,10 +77,53 @@ export class MessageGroup extends HttpApiGroup.make("messages")
 	.prefix("/messages")
 	.middleware(Authorization) {}
 
+// WorkOS Webhook Types
+export class WorkOSWebhookPayload extends Schema.Class<WorkOSWebhookPayload>("WorkOSWebhookPayload")({
+	event: Schema.String,
+	data: Schema.Unknown,
+	id: Schema.String,
+	created_at: Schema.String,
+}) {}
+
+export class WebhookResponse extends Schema.Class<WebhookResponse>("WebhookResponse")({
+	success: Schema.Boolean,
+	message: Schema.optional(Schema.String),
+}) {}
+
+export class InvalidWebhookSignature extends Schema.TaggedError<InvalidWebhookSignature>(
+	"InvalidWebhookSignature",
+)(
+	"InvalidWebhookSignature",
+	{
+		message: Schema.String,
+	},
+	HttpApiSchema.annotations({
+		status: 401,
+	}),
+) {}
+
+export class WebhookGroup extends HttpApiGroup.make("webhooks")
+	.add(
+		HttpApiEndpoint.post("workos")`/workos`
+			.setPayload(Schema.Unknown) // Raw payload for signature verification
+			.addSuccess(WebhookResponse)
+			.addError(InvalidWebhookSignature)
+			.addError(InternalServerError)
+			.annotateContext(
+				OpenApi.annotations({
+					title: "WorkOS Webhook",
+					description: "Receive and process WorkOS webhook events",
+					summary: "Process WorkOS webhook events",
+				}),
+			),
+	)
+	.prefix("/webhooks") {}
+
 export class HazelApi extends HttpApi.make("HazelApp")
 	.add(ChannelGroup)
 	.add(MessageGroup)
 	.add(RootGroup)
+	.add(WebhookGroup)
 	.annotateContext(
 		OpenApi.annotations({
 			title: "Hazel Chat API",

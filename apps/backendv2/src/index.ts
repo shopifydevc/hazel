@@ -11,9 +11,16 @@ import { Layer } from "effect"
 import { HazelApi } from "./api"
 import { HttpApiRoutes } from "./http"
 import { ChannelRepo } from "./repositories/channel-repo"
+import { InvitationRepo } from "./repositories/invitation-repo"
 import { MessageRepo } from "./repositories/message-repo"
+import { OrganizationMemberRepo } from "./repositories/organization-member-repo"
+import { OrganizationRepo } from "./repositories/organization-repo"
+import { UserRepo } from "./repositories/user-repo"
 import { AuthorizationLive } from "./services/auth"
 import { DatabaseLive } from "./services/database"
+import { WorkOS } from "./services/workos"
+import { WorkOSSync } from "./services/workos-sync"
+import { WorkOSWebhookVerifier } from "./services/workos-webhook"
 
 export { HazelApi }
 
@@ -43,7 +50,18 @@ const TracerLive = OtlpTracer.layer({
 	},
 }).pipe(Layer.provide(FetchHttpClient.layer))
 
-const MainLive = Layer.mergeAll(MessageRepo.Default, ChannelRepo.Default, DatabaseLive)
+const MainLive = Layer.mergeAll(
+	MessageRepo.Default,
+	ChannelRepo.Default,
+	UserRepo.Default,
+	OrganizationRepo.Default,
+	OrganizationMemberRepo.Default,
+	InvitationRepo.Default,
+	WorkOS.Default,
+	WorkOSSync.Default,
+	WorkOSWebhookVerifier.Default,
+	DatabaseLive,
+)
 
 HttpLayerRouter.serve(AllRoutes).pipe(
 	HttpMiddleware.withTracerDisabledWhen(

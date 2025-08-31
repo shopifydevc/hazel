@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm"
-import { index, pgEnum, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core"
+import { index, jsonb, pgEnum, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core"
 import type { OrganizationId, OrganizationMemberId } from "../lib/schema"
 
 // Organization member roles
@@ -12,10 +12,9 @@ export const organizationsTable = pgTable(
 		id: uuid("id").primaryKey().defaultRandom().$type<OrganizationId>(),
 		workosId: varchar("workos_id", { length: 255 }).notNull().unique(),
 		name: varchar("name", { length: 255 }).notNull(),
-		slug: varchar("slug", { length: 100 }).notNull().unique(),
+		slug: varchar("slug", { length: 100 }).unique(),
 		logoUrl: text("logo_url"),
-		// Settings as JSONB - storing as text for now, can be migrated to jsonb column
-		settings: text("settings").default("{}"),
+		settings: jsonb("settings"),
 		createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 		updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
 		deletedAt: timestamp("deleted_at", { mode: "date" }),

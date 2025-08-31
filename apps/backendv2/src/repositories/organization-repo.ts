@@ -34,18 +34,13 @@ export class OrganizationRepo extends Effect.Service<OrganizationRepo>()("Organi
 					client
 						.insert(schema.organizationsTable)
 						.values({
-							...data,
-							logoUrl: data.logoUrl,
-							settings: data.settings,
-							deletedAt: data.deletedAt,
+							name: data.name,
+							workosId: data.workosId,
 						})
 						.onConflictDoUpdate({
 							target: schema.organizationsTable.workosId,
 							set: {
 								name: data.name,
-								slug: data.slug,
-								logoUrl: data.logoUrl,
-								settings: data.settings,
 							},
 						})
 						.returning(),
