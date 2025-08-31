@@ -24,10 +24,28 @@ import IconVolumeMute1 from "../icons/IconVolumeMute1"
 import IconVolumeOne1 from "../icons/IconVolumeOne1"
 import { SidebarMenuAction, SidebarMenuButton, SidebarMenuItem } from "../ui/sidebar"
 
-type ChannelsResponse = FunctionReturnType<typeof api.channels.getChannelsForOrganization>
+type ChannelType = typeof Channel.Model.Type
+export interface EnrichedChannel extends ChannelType {
+	isMuted: boolean
+	isFavorite: boolean
+	isHidden: boolean
+	currentUser: {
+		notificationCount: number
+	}
+	members: Array<{
+		userId: string
+		user: {
+			id: string
+			firstName: string
+			lastName: string
+			avatarUrl: string
+			email: string
+		}
+	}>
+}
 
 export interface ChannelItemProps {
-	channel: typeof Channel.Model.Type
+	channel: EnrichedChannel
 }
 
 export const ChannelItem = ({ channel }: ChannelItemProps) => {
@@ -193,7 +211,7 @@ export const DmChannelLink = ({ channel, userPresence }: DmChannelLinkProps) => 
 		api.channels.updateChannelPreferencesForOrganization,
 	)
 
-	const filteredMembers = channel.members.filter((member) => member.userId !== me?.id)
+	const filteredMembers = (channel.members || []).filter((member) => member.userId !== me?._id)
 
 	const handleToggleMute = useCallback(() => {
 		if (organizationId) {

@@ -2,11 +2,18 @@ import { convexQuery } from "@convex-dev/react-query"
 import type { Id } from "@hazel/backend"
 import { api } from "@hazel/backend/api"
 import type { OrganizationId } from "@hazel/db/schema"
-import { and, eq, or, useLiveQuery } from "@tanstack/react-db"
+import { and, eq, inArray, or, useLiveQuery } from "@tanstack/react-db"
 import { useQuery } from "@tanstack/react-query"
 import { Link, useParams } from "@tanstack/react-router"
+import { useAuth } from "@workos-inc/authkit-react"
+import { useMemo } from "react"
 import IconChat1 from "~/components/icons/IconChat1"
-import { channelCollection } from "~/db/collections"
+import {
+	channelCollection,
+	channelMemberCollection,
+	organizationCollection,
+	userCollection,
+} from "~/db/collections"
 import { CreateDmButton } from "../application/modals/create-dm-modal"
 import IconChatChatting1 from "../icons/IconChatChatting1"
 import IconGridDashboard01DuoSolid from "../icons/IconGridDashboard01DuoSolid"
@@ -27,7 +34,7 @@ import {
 	useSidebar,
 } from "../ui/sidebar"
 import { ChannelActionsDropdown } from "./channel-actions-dropdown"
-import { ChannelItem, DmChannelLink } from "./channel-item"
+import { ChannelItem, DmChannelLink, type EnrichedChannel } from "./channel-item"
 import { NavUser } from "./nav-user"
 import { SidebarFavoriteGroup } from "./sidebar-favorite-group"
 import { WorkspaceSwitcher } from "./workspace-switcher"
@@ -148,17 +155,83 @@ export const AppSidebar = ({ setOpenCmd }: { setOpenCmd: (open: boolean) => void
 }
 
 const ChannelGroup = (props: { organizationId: OrganizationId }) => {
-	const { data: channels } = useLiveQuery((q) =>
+	const { user } = useAuth()
+	const userId = user?.id
+
+	const { data: userChannels } = useLiveQuery((q) =>
 		q
 			.from({ channel: channelCollection })
+			.innerJoin({ member: channelMemberCollection }, ({ channel, member }) =>
+				eq(member.channelId, channel.id),
+			)
 			.where((q) =>
 				and(
 					eq(q.channel.organizationId, props.organizationId),
 					or(eq(q.channel.type, "public"), eq(q.channel.type, "private")),
+					eq(q.member.userId, userId || ""),
+					eq(q.member.isHidden, false),
 				),
 			)
 			.orderBy(({ channel }) => channel.createdAt, "asc"),
 	)
+
+	const channelIds = useMemo(() => {
+		if (!userChannels) return []
+		return userChannels.map((row) => row.channel.id)
+	}, [userChannels])
+
+	const { data: allParticipants } = useLiveQuery((q) => {
+		return q
+			.from({ member: channelMemberCollection })
+			.innerJoin({ user: userCollection }, ({ member, user }) => eq(member.userId, user.id))
+			.where((q) => inArray(q.member.channelId, channelIds))
+	})
+
+	const channels = useMemo(() => {
+		if (!userChannels || !userId) return []
+
+		// Create a map of channel participants
+		const participantsByChannel = new Map<string, Array<any>>()
+
+		if (allParticipants) {
+			// Debug: log the structure
+			if (allParticipants.length > 0) {
+				console.log("Participant structure:", allParticipants[0])
+			}
+
+			allParticipants.forEach((row) => {
+				// The data should be under member and user keys after the join
+				const member = row.member
+				const user = row.user
+				const channelId = member?.channelId
+
+				if (channelId && !participantsByChannel.has(channelId)) {
+					participantsByChannel.set(channelId, [])
+				}
+				if (channelId) {
+					participantsByChannel.get(channelId)!.push({
+						userId: member.userId,
+						user: user,
+					})
+				}
+			})
+		}
+
+		// Build enriched channels
+		return userChannels.map((row) => {
+			const channel: EnrichedChannel = {
+				...row.channel,
+				members: participantsByChannel.get(row.channel.id) || [],
+				isMuted: row.member.isMuted || false,
+				isFavorite: row.member.isFavorite || false,
+				isHidden: row.member.isHidden || false,
+				currentUser: {
+					notificationCount: row.member.notificationCount || 0,
+				},
+			}
+			return channel
+		})
+	}, [userChannels, allParticipants, userId])
 
 	return (
 		<SidebarGroup>
@@ -178,17 +251,76 @@ const ChannelGroup = (props: { organizationId: OrganizationId }) => {
 }
 
 const DmChannelGroup = (props: { organizationId: OrganizationId }) => {
-	const { data: dmChannels } = useLiveQuery((q) =>
+	const { user } = useAuth()
+	const userId = user?.id
+
+	const { data: userDmChannels } = useLiveQuery((q) =>
 		q
 			.from({ channel: channelCollection })
+			.innerJoin({ member: channelMemberCollection }, ({ channel, member }) =>
+				eq(member.channelId, channel.id),
+			)
 			.where((q) =>
 				and(
 					eq(q.channel.organizationId, props.organizationId),
 					or(eq(q.channel.type, "direct"), eq(q.channel.type, "single")),
+					eq(q.member.userId, userId || ""),
+					eq(q.member.isHidden, false),
 				),
 			)
 			.orderBy(({ channel }) => channel.createdAt, "asc"),
 	)
+
+	const dmChannelIds = useMemo(() => {
+		if (!userDmChannels) return []
+		return userDmChannels.map((row) => row.channel.id)
+	}, [userDmChannels])
+
+	const { data: dmParticipants } = useLiveQuery((q) => {
+		return q
+			.from({ member: channelMemberCollection })
+			.innerJoin({ user: userCollection }, ({ member, user }) => eq(member.userId, user.id))
+			.where((q) => inArray(q.member.channelId, dmChannelIds))
+	})
+
+	const dmChannels = useMemo(() => {
+		if (!userDmChannels || !userId) return []
+
+		const participantsByChannel = new Map<string, Array<any>>()
+
+		if (dmParticipants) {
+			dmParticipants.forEach((row) => {
+				const member = row.member
+				const user = row.user
+				const channelId = member?.channelId
+
+				if (channelId && !participantsByChannel.has(channelId)) {
+					participantsByChannel.set(channelId, [])
+				}
+				if (channelId) {
+					participantsByChannel.get(channelId)!.push({
+						userId: member.userId,
+						user: user,
+					})
+				}
+			})
+		}
+
+		// Build enriched channels
+		return userDmChannels.map((row) => {
+			const channel: EnrichedChannel = {
+				...row.channel,
+				members: participantsByChannel.get(row.channel.id) || [],
+				isMuted: row.member.isMuted || false,
+				isFavorite: row.member.isFavorite || false,
+				isHidden: row.member.isHidden || false,
+				currentUser: {
+					notificationCount: row.member.notificationCount || 0,
+				},
+			}
+			return channel
+		})
+	}, [userDmChannels, dmParticipants, userId])
 
 	return (
 		<SidebarGroup>
@@ -212,11 +344,12 @@ const ActiveServer = () => {
 	const { orgId } = useParams({
 		from: "/_app/$orgId",
 	})
-	const { data } = useQuery(
-		convexQuery(api.organizations.getOrganizationById, {
-			organizationId: orgId as Id<"organizations">,
-		}),
+
+	const { data } = useLiveQuery((q) =>
+		q
+			.from({ organization: organizationCollection })
+			.where(({ organization }) => eq(organization.id, orgId as OrganizationId)),
 	)
 
-	return <div className="font-semibold text-foreground text-lg">{data?.name}</div>
+	return <div className="font-semibold text-foreground text-lg">{data[0]?.name}</div>
 }
