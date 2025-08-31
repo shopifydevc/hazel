@@ -173,7 +173,7 @@ export const ChannelItem = ({ channel }: ChannelItemProps) => {
 }
 
 interface DmChannelLinkProps {
-	channel: ChannelsResponse["dmChannels"][0]
+	channel: EnrichedChannel
 	userPresence: {
 		userId: string
 		online: boolean
