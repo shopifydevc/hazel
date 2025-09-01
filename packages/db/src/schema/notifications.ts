@@ -4,16 +4,16 @@ import { index, pgTable, timestamp, uuid, varchar } from "drizzle-orm/pg-core"
 export const notificationsTable = pgTable(
 	"notifications",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
-		memberId: uuid("member_id").notNull(),
+		id: uuid().primaryKey().defaultRandom(),
+		memberId: uuid().notNull(),
 		// Can be a channel or organization
-		targetedResourceId: uuid("targeted_resource_id"),
-		targetedResourceType: varchar("targeted_resource_type", { length: 50 }), // 'channel' or 'organization'
+		targetedResourceId: uuid(),
+		targetedResourceType: varchar({ length: 50 }), // 'channel' or 'organization'
 		// Can be a message
-		resourceId: uuid("resource_id"),
-		resourceType: varchar("resource_type", { length: 50 }), // 'message'
-		createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-		readAt: timestamp("read_at", { mode: "date" }),
+		resourceId: uuid(),
+		resourceType: varchar({ length: 50 }), // 'message'
+		createdAt: timestamp({ mode: "date" }).notNull().defaultNow(),
+		readAt: timestamp({ mode: "date" }),
 	},
 	(table) => [
 		index("notifications_member_id_idx").on(table.memberId),

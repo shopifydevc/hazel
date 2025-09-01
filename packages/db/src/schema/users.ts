@@ -1,4 +1,4 @@
-import { index, pgEnum, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core"
+import { index, jsonb, pgEnum, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core"
 import type { UserId } from "../lib/schema"
 
 // User status enum
@@ -8,18 +8,18 @@ export const userStatusEnum = pgEnum("user_status", ["online", "offline", "away"
 export const usersTable = pgTable(
 	"users",
 	{
-		id: uuid("id").primaryKey().defaultRandom().$type<UserId>(),
-		externalId: varchar("external_id", { length: 255 }).notNull().unique(), // WorkOS/Clerk ID
-		email: varchar("email", { length: 255 }).notNull(),
-		firstName: varchar("first_name", { length: 100 }).notNull(),
-		lastName: varchar("last_name", { length: 100 }).notNull(),
-		avatarUrl: text("avatar_url").notNull(),
-		status: userStatusEnum("status").notNull().default("offline"),
-		lastSeen: timestamp("last_seen", { mode: "date" }).notNull().defaultNow(),
-		settings: text("settings").default("{}"), // JSONB stored as text for now
-		createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-		updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
-		deletedAt: timestamp("deleted_at", { mode: "date" }),
+		id: uuid().primaryKey().defaultRandom().$type<UserId>(),
+		externalId: varchar({ length: 255 }).notNull().unique(),
+		email: varchar({ length: 255 }).notNull(),
+		firstName: varchar({ length: 100 }).notNull(),
+		lastName: varchar({ length: 100 }).notNull(),
+		avatarUrl: text().notNull(),
+		status: userStatusEnum().notNull().default("offline"),
+		lastSeen: timestamp({ mode: "date" }).notNull().defaultNow(),
+		settings: jsonb(),
+		createdAt: timestamp({ mode: "date" }).notNull().defaultNow(),
+		updatedAt: timestamp({ mode: "date" }).notNull().defaultNow(),
+		deletedAt: timestamp({ mode: "date" }),
 	},
 	(table) => [
 		index("users_external_id_idx").on(table.externalId),

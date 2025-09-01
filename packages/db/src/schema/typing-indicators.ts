@@ -4,10 +4,10 @@ import { bigint, index, pgTable, uuid } from "drizzle-orm/pg-core"
 export const typingIndicatorsTable = pgTable(
 	"typing_indicators",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
-		channelId: uuid("channel_id").notNull(),
-		memberId: uuid("member_id").notNull(),
-		lastTyped: bigint("last_typed", { mode: "number" }).notNull(), // Unix timestamp in milliseconds
+		id: uuid().primaryKey().defaultRandom(),
+		channelId: uuid().notNull(),
+		memberId: uuid().notNull(),
+		lastTyped: bigint({ mode: "number" }).notNull(), // Unix timestamp in milliseconds
 	},
 	(table) => [
 		index("typing_indicators_member_idx").on(table.channelId, table.memberId),

@@ -5,17 +5,17 @@ import type { ChannelId, MessageId, UserId } from "../lib/schema"
 export const messagesTable = pgTable(
 	"messages",
 	{
-		id: uuid("id").primaryKey().defaultRandom().$type<MessageId>(),
-		channelId: uuid("channel_id").notNull().$type<ChannelId>(),
-		authorId: uuid("author_id").notNull().$type<UserId>(),
-		content: text("content").notNull(),
+		id: uuid().primaryKey().defaultRandom().$type<MessageId>(),
+		channelId: uuid().notNull().$type<ChannelId>(),
+		authorId: uuid().notNull().$type<UserId>(),
+		content: text().notNull(),
 		// Reply to another message
-		replyToMessageId: uuid("reply_to_message_id").$type<MessageId>(),
+		replyToMessageId: uuid().$type<MessageId>(),
 		// Thread channel (if this message started a thread)
-		threadChannelId: uuid("thread_channel_id").$type<ChannelId>(),
-		createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-		updatedAt: timestamp("updated_at", { mode: "date" }),
-		deletedAt: timestamp("deleted_at", { mode: "date" }),
+		threadChannelId: uuid().$type<ChannelId>(),
+		createdAt: timestamp({ mode: "date" }).notNull().defaultNow(),
+		updatedAt: timestamp({ mode: "date" }),
+		deletedAt: timestamp({ mode: "date" }),
 	},
 	(table) => [
 		index("messages_channel_id_idx").on(table.channelId),
@@ -31,11 +31,11 @@ export const messagesTable = pgTable(
 export const messageReactionsTable = pgTable(
 	"message_reactions",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
-		messageId: uuid("message_id").notNull(),
-		userId: uuid("user_id").notNull(),
-		emoji: varchar("emoji", { length: 50 }).notNull(),
-		createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+		id: uuid().primaryKey().defaultRandom(),
+		messageId: uuid().notNull(),
+		userId: uuid().notNull(),
+		emoji: varchar({ length: 50 }).notNull(),
+		createdAt: timestamp({ mode: "date" }).notNull().defaultNow(),
 	},
 	(table) => [
 		index("reactions_message_id_idx").on(table.messageId),
@@ -48,11 +48,11 @@ export const messageReactionsTable = pgTable(
 export const messageAttachmentsTable = pgTable(
 	"message_attachments",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
-		messageId: uuid("message_id").notNull(),
-		attachmentId: uuid("attachment_id").notNull(),
-		displayOrder: integer("display_order").notNull().default(0),
-		createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+		id: uuid().primaryKey().defaultRandom(),
+		messageId: uuid().notNull(),
+		attachmentId: uuid().notNull(),
+		displayOrder: integer().notNull().default(0),
+		createdAt: timestamp({ mode: "date" }).notNull().defaultNow(),
 	},
 	(table) => [
 		index("msg_attachments_message_id_idx").on(table.messageId),

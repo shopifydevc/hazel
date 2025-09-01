@@ -8,15 +8,15 @@ export const attachmentsTable = pgTable(
 	"attachments",
 	{
 		id: uuid("id").primaryKey().defaultRandom(),
-		organizationId: uuid("organization_id").notNull(),
-		channelId: uuid("channel_id"),
-		messageId: uuid("message_id"),
-		fileName: varchar("file_name", { length: 255 }).notNull(),
-		r2Key: varchar("r2_key", { length: 500 }).notNull(), // S3/R2 storage key
-		uploadedBy: uuid("uploaded_by").notNull(),
-		status: attachmentStatusEnum("status").notNull().default("uploading"),
-		uploadedAt: timestamp("uploaded_at", { mode: "date" }).notNull().defaultNow(),
-		deletedAt: timestamp("deleted_at", { mode: "date" }),
+		organizationId: uuid().notNull(),
+		channelId: uuid(),
+		messageId: uuid(),
+		fileName: varchar({ length: 255 }).notNull(),
+		r2Key: varchar({ length: 500 }).notNull(), // S3/R2 storage key
+		uploadedBy: uuid().notNull(),
+		status: attachmentStatusEnum().notNull().default("uploading"),
+		uploadedAt: timestamp({ mode: "date" }).notNull().defaultNow(),
+		deletedAt: timestamp({ mode: "date" }),
 	},
 	(table) => [
 		index("attachments_organization_id_idx").on(table.organizationId),

@@ -4,13 +4,13 @@ import { bigint, index, pgTable, timestamp, uuid, varchar } from "drizzle-orm/pg
 export const presenceTable = pgTable(
 	"presence",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
-		roomId: varchar("room_id", { length: 255 }).notNull(), // Can be channel ID or other room identifier
-		userId: uuid("user_id").notNull(),
-		sessionId: varchar("session_id", { length: 255 }).notNull(),
-		lastHeartbeat: timestamp("last_heartbeat", { mode: "date" }).notNull().defaultNow(),
-		interval: bigint("interval", { mode: "number" }).notNull(), // Heartbeat interval in ms
-		createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+		id: uuid().primaryKey().defaultRandom(),
+		roomId: varchar({ length: 255 }).notNull(), // Can be channel ID or other room identifier
+		userId: uuid().notNull(),
+		sessionId: varchar({ length: 255 }).notNull(),
+		lastHeartbeat: timestamp({ mode: "date" }).notNull().defaultNow(),
+		interval: bigint({ mode: "number" }).notNull(), // Heartbeat interval in ms
+		createdAt: timestamp({ mode: "date" }).notNull().defaultNow(),
 	},
 	(table) => [
 		index("presence_room_id_idx").on(table.roomId),

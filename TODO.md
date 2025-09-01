@@ -1,3 +1,2 @@
-1. Sync flow WorkOS => DB
+1. Make it work in most views
 2. Auth middleware working => client with bearer token
-3. 

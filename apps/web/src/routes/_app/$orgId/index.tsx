@@ -31,7 +31,6 @@ function RouteComponent() {
 	const [searchQuery, setSearchQuery] = useState("")
 	const { user: authUser } = useAuth()
 
-	// Query organization members with their user data
 	const { data: membersData } = useLiveQuery((q) =>
 		q
 			.from({ member: organizationMemberCollection })
@@ -44,12 +43,14 @@ function RouteComponent() {
 			})),
 	)
 
-	// Get current user data
+	console.log("membersData", membersData)
+
 	const { data: currentUser } = useLiveQuery((q) =>
 		q
 			.from({ user: userCollection })
 			.where(({ user }) => eq(user.externalId, authUser?.id || ""))
 			.select(({ user }) => user)
+			.orderBy(({ user }) => user.lastSeen, "desc")
 			.limit(1),
 	)
 
@@ -119,7 +120,7 @@ function RouteComponent() {
 			</div>
 
 			<div className="w-full space-y-2">
-				{membersQuery.isLoading ? (
+				{!membersData ? (
 					<div className="flex items-center justify-center py-8">
 						<div className="h-8 w-8 animate-spin rounded-full border-primary border-b-2"></div>
 					</div>
@@ -130,9 +131,10 @@ function RouteComponent() {
 							: "No members in this organization"}
 					</div>
 				) : (
-					filteredMembers.map((member: any) => {
+					filteredMembers.map((member) => {
 						const fullName = `${member.firstName} ${member.lastName}`.trim()
-						const isCurrentUser = currentUser && currentUser.length > 0 && currentUser[0].id === member.id
+						const isCurrentUser =
+							currentUser && currentUser.length > 0 && currentUser[0].id === member.id
 						return (
 							<div
 								key={member.id}

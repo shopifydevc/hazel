@@ -14,11 +14,9 @@ import {
 	User,
 } from "@hazel/db/models"
 import { electricCollectionOptions } from "@tanstack/electric-db-collection"
-import { queryCollectionOptions } from "@tanstack/query-db-collection"
 import { createCollection } from "@tanstack/react-db"
 import { Effect, Schema } from "effect"
 import { backendClient } from "~/lib/client"
-import { convexQueryOptions } from "."
 
 const electricUrl =
 	"https://api.electric-sql.cloud/v1/shape?source_id=382e0de8-797d-4395-9a5e-dafa86df0821&secret=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzb3VyY2VfaWQiOiIzODJlMGRlOC03OTdkLTQzOTUtOWE1ZS1kYWZhODZkZjA4MjEiLCJpYXQiOjE3NTY0MTkzMTJ9.Mgw0AAyt-vDM8In0G5BZN7FK6oYkvZV5Lw1sE4wRT6c"
@@ -30,6 +28,9 @@ export const organizationCollection = createCollection(
 			url: electricUrl,
 			params: {
 				table: "organizations",
+			},
+			parser: {
+				timestamptz: (date) => new Date(date),
 			},
 		},
 		schema: Schema.standardSchemaV1(Organization.Model.json),
@@ -45,6 +46,9 @@ export const invitationCollection = createCollection(
 			params: {
 				table: "invitations",
 			},
+			parser: {
+				timestamptz: (date) => new Date(date),
+			},
 		},
 		schema: Schema.standardSchemaV1(Invitation.Model.json),
 		getKey: (item) => item.id,
@@ -58,6 +62,9 @@ export const messageCollection = createCollection(
 			url: electricUrl,
 			params: {
 				table: "messages",
+			},
+			parser: {
+				timestamptz: (date) => new Date(date),
 			},
 		},
 		schema: Schema.standardSchemaV1(Message.Model.json),
@@ -87,6 +94,9 @@ export const pinnedMessageCollection = createCollection(
 			params: {
 				table: "pinned_messages",
 			},
+			parser: {
+				timestamptz: (date) => new Date(date),
+			},
 		},
 		schema: Schema.standardSchemaV1(PinnedMessage.Model.json),
 		getKey: (item) => item.id,
@@ -100,6 +110,9 @@ export const notificationCollection = createCollection(
 			url: electricUrl,
 			params: {
 				table: "notifications",
+			},
+			parser: {
+				timestamptz: (date) => new Date(date),
 			},
 		},
 		schema: Schema.standardSchemaV1(Notification.Model.json),
@@ -115,6 +128,9 @@ export const userCollection = createCollection(
 			params: {
 				table: "users",
 			},
+			parser: {
+				timestamptz: (date) => new Date(date),
+			},
 		},
 		schema: Schema.standardSchemaV1(User.Model.json),
 		getKey: (item) => item.id,
@@ -128,6 +144,9 @@ export const organizationMemberCollection = createCollection(
 			url: electricUrl,
 			params: {
 				table: "organization_members",
+			},
+			parser: {
+				timestamptz: (date) => new Date(date),
 			},
 		},
 		schema: Schema.standardSchemaV1(OrganizationMember.Model.json),
@@ -143,6 +162,9 @@ export const channelCollection = createCollection(
 			params: {
 				table: "channels",
 			},
+			parser: {
+				timestamptz: (date) => new Date(date),
+			},
 		},
 		schema: Schema.standardSchemaV1(Channel.Model.json),
 		getKey: (item) => item.id,
@@ -157,6 +179,9 @@ export const channelMemberCollection = createCollection(
 			params: {
 				table: "channel_members",
 			},
+			parser: {
+				timestamptz: (date) => new Date(date),
+			},
 		},
 		schema: Schema.standardSchemaV1(ChannelMember.Model.json),
 		getKey: (item) => item.id,
@@ -170,6 +195,9 @@ export const attachmentCollection = createCollection(
 			url: electricUrl,
 			params: {
 				table: "attachments",
+			},
+			parser: {
+				timestamptz: (date) => new Date(date),
 			},
 		},
 		schema: Schema.standardSchemaV1(Attachment.Model.json),

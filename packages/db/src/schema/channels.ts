@@ -18,17 +18,17 @@ export const channelTypeEnum = pgEnum("channel_type", ["public", "private", "thr
 export const channelsTable = pgTable(
 	"channels",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
-		name: varchar("name", { length: 255 }).notNull(),
-		type: channelTypeEnum("type").notNull(),
-		organizationId: uuid("organization_id").notNull(),
+		id: uuid().primaryKey().defaultRandom(),
+		name: varchar({ length: 255 }).notNull(),
+		type: channelTypeEnum().notNull(),
+		organizationId: uuid().notNull(),
 		// For thread channels - reference to parent channel
-		parentChannelId: uuid("parent_channel_id"),
+		parentChannelId: uuid(),
 		// For direct/group channels - sorted list of participant IDs for uniqueness
 		// In PostgreSQL, we'll handle this with a separate table and unique constraint
-		createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-		updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
-		deletedAt: timestamp("deleted_at", { mode: "date" }),
+		createdAt: timestamp({ mode: "date" }).notNull().defaultNow(),
+		updatedAt: timestamp({ mode: "date" }).notNull().defaultNow(),
+		deletedAt: timestamp({ mode: "date" }),
 	},
 	(table) => [
 		index("channels_organization_id_idx").on(table.organizationId),
@@ -42,26 +42,22 @@ export const channelsTable = pgTable(
 export const channelMembersTable = pgTable(
 	"channel_members",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
-		channelId: uuid("channel_id").notNull(),
-		userId: uuid("user_id").notNull(),
-		isHidden: boolean("is_hidden").notNull().default(false),
-		isMuted: boolean("is_muted").notNull().default(false),
-		isFavorite: boolean("is_favorite").notNull().default(false),
-		lastSeenMessageId: uuid("last_seen_message_id"),
-		notificationCount: integer("notification_count").notNull().default(0),
-		joinedAt: timestamp("joined_at", { mode: "date" }).notNull().defaultNow(),
-		createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-		deletedAt: timestamp("deleted_at", { mode: "date" }),
+		id: uuid().primaryKey().defaultRandom(),
+		channelId: uuid().notNull(),
+		userId: uuid().notNull(),
+		isHidden: boolean().notNull().default(false),
+		isMuted: boolean().notNull().default(false),
+		isFavorite: boolean().notNull().default(false),
+		lastSeenMessageId: uuid(),
+		notificationCount: integer().notNull().default(0),
+		joinedAt: timestamp({ mode: "date" }).notNull().defaultNow(),
+		createdAt: timestamp({ mode: "date" }).notNull().defaultNow(),
+		deletedAt: timestamp({ mode: "date" }),
 	},
 	(table) => [
 		index("channel_members_channel_id_idx").on(table.channelId),
 		index("channel_members_user_id_idx").on(table.userId),
 		index("channel_members_channel_user_idx").on(table.channelId, table.userId),
-		// Unique constraint for active memberships
-		uniqueIndex("channel_members_unique_active_idx")
-			.on(table.channelId, table.userId)
-			.where(sql`deleted_at IS NULL`),
 	],
 )
 
@@ -70,10 +66,10 @@ export const channelMembersTable = pgTable(
 export const directMessageParticipantsTable = pgTable(
 	"direct_message_participants",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
-		channelId: uuid("channel_id").notNull(),
-		userId: uuid("user_id").notNull(),
-		organizationId: uuid("organization_id").notNull(),
+		id: uuid().primaryKey().defaultRandom(),
+		channelId: uuid().notNull(),
+		userId: uuid().notNull(),
+		organizationId: uuid().notNull(),
 	},
 	(table) => [
 		index("dm_participants_channel_id_idx").on(table.channelId),

@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * Test script for WorkOS webhook endpoint
- * 
+ *
  * Usage:
  * 1. Update WEBHOOK_SECRET to match your .env file
  * 2. Run: bun run scripts/test-webhook.ts
@@ -39,7 +39,7 @@ function generateSignature(secret: string, payload: string): { header: string; t
 	const hmac = crypto.createHmac("sha256", secret)
 	hmac.update(signedPayload)
 	const signature = hmac.digest("hex")
-	
+
 	return {
 		header: `t=${timestamp}, sig=${signature}`,
 		timestamp,
@@ -95,7 +95,7 @@ async function sendTestWebhook() {
  */
 async function testInvalidSignature() {
 	console.log("\n\n🧪 Testing invalid signature...")
-	
+
 	const payloadString = JSON.stringify(samplePayload)
 	const invalidSignature = "t=1234567890, sig=invalid_signature_here"
 
@@ -129,7 +129,7 @@ async function testInvalidSignature() {
  */
 async function testMissingSignature() {
 	console.log("\n\n🧪 Testing missing signature header...")
-	
+
 	const payloadString = JSON.stringify(samplePayload)
 
 	try {
@@ -159,16 +159,16 @@ async function testMissingSignature() {
 // Run all tests
 async function runTests() {
 	console.log("🚀 Starting WorkOS webhook tests...\n")
-	
+
 	// Test valid webhook
 	await sendTestWebhook()
-	
+
 	// Test invalid signature
 	await testInvalidSignature()
-	
+
 	// Test missing signature
 	await testMissingSignature()
-	
+
 	console.log("\n\n✨ All tests completed!")
 }
 

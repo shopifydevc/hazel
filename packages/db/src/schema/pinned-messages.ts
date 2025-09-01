@@ -4,11 +4,11 @@ import { index, pgTable, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-cor
 export const pinnedMessagesTable = pgTable(
 	"pinned_messages",
 	{
-		id: uuid("id").primaryKey().defaultRandom(),
-		channelId: uuid("channel_id").notNull(),
-		messageId: uuid("message_id").notNull(),
-		pinnedBy: uuid("pinned_by").notNull(),
-		pinnedAt: timestamp("pinned_at", { mode: "date" }).notNull().defaultNow(),
+		id: uuid().primaryKey().defaultRandom(),
+		channelId: uuid().notNull(),
+		messageId: uuid().notNull(),
+		pinnedBy: uuid().notNull(),
+		pinnedAt: timestamp({ mode: "date" }).notNull().defaultNow(),
 	},
 	(table) => [
 		index("pinned_messages_channel_id_idx").on(table.channelId),

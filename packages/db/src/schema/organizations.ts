@@ -9,15 +9,15 @@ export const organizationRoleEnum = pgEnum("organization_role", ["admin", "membe
 export const organizationsTable = pgTable(
 	"organizations",
 	{
-		id: uuid("id").primaryKey().defaultRandom().$type<OrganizationId>(),
-		workosId: varchar("workos_id", { length: 255 }).notNull().unique(),
-		name: varchar("name", { length: 255 }).notNull(),
-		slug: varchar("slug", { length: 100 }).unique(),
-		logoUrl: text("logo_url"),
-		settings: jsonb("settings"),
-		createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-		updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
-		deletedAt: timestamp("deleted_at", { mode: "date" }),
+		id: uuid().primaryKey().defaultRandom().$type<OrganizationId>(),
+		workosId: varchar({ length: 255 }).notNull().unique(),
+		name: varchar({ length: 255 }).notNull(),
+		slug: varchar({ length: 100 }).unique(),
+		logoUrl: text(),
+		settings: jsonb(),
+		createdAt: timestamp({ mode: "date" }).notNull().defaultNow(),
+		updatedAt: timestamp({ mode: "date" }).notNull().defaultNow(),
+		deletedAt: timestamp({ mode: "date" }),
 	},
 	(table) => [
 		index("organizations_workos_id_idx").on(table.workosId),
@@ -30,25 +30,21 @@ export const organizationsTable = pgTable(
 export const organizationMembersTable = pgTable(
 	"organization_members",
 	{
-		id: uuid("id").primaryKey().defaultRandom().$type<OrganizationMemberId>(),
-		organizationId: uuid("organization_id")
+		id: uuid().primaryKey().defaultRandom().$type<OrganizationMemberId>(),
+		organizationId: uuid()
 			.notNull()
 			.references(() => organizationsTable.id, { onDelete: "cascade" }),
-		userId: uuid("user_id").notNull(),
-		role: organizationRoleEnum("role").notNull().default("member"),
-		joinedAt: timestamp("joined_at", { mode: "date" }).notNull().defaultNow(),
-		invitedBy: uuid("invited_by"),
-		createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
-		deletedAt: timestamp("deleted_at", { mode: "date" }),
+		userId: uuid().notNull(),
+		role: organizationRoleEnum().notNull().default("member"),
+		joinedAt: timestamp({ mode: "date" }).notNull().defaultNow(),
+		invitedBy: uuid(),
+		createdAt: timestamp({ mode: "date" }).notNull().defaultNow(),
+		deletedAt: timestamp({ mode: "date" }),
 	},
 	(table) => [
 		index("org_members_organization_id_idx").on(table.organizationId),
 		index("org_members_user_id_idx").on(table.userId),
 		index("org_members_org_user_idx").on(table.organizationId, table.userId),
-		// Unique constraint for active memberships (where deletedAt is null)
-		index("org_members_unique_active_idx")
-			.on(table.organizationId, table.userId)
-			.where(sql`deleted_at IS NULL`),
 	],
 )
 
