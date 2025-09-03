@@ -9,18 +9,19 @@ export const Route = createFileRoute("/_app/")({
 
 function RouteComponent() {
 	const { user } = useUser()
-	
+
 	// Get the user's first organization through organization members
 	const { data: orgMembers, isLoading } = useLiveQuery(
 		(q) =>
-			q.from({ member: organizationMemberCollection })
+			q
+				.from({ member: organizationMemberCollection })
 				.innerJoin({ org: organizationCollection }, ({ member, org }) =>
-					eq(member.organizationId, org.id)
+					eq(member.organizationId, org.id),
 				)
 				.where(({ member }) => eq(member.userId, user?.id || ""))
 				.orderBy(({ member }) => member.createdAt, "asc")
 				.limit(1),
-		[user?.id]
+		[user?.id],
 	)
 
 	if (isLoading) {

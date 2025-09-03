@@ -11,6 +11,7 @@ import "./styles/styles.css"
 
 import { QueryClientProvider } from "@tanstack/react-query"
 import { Toaster } from "./components/application/notifications/toaster.tsx"
+import { Loader } from "./components/loader.tsx"
 import { ThemeProvider } from "./components/theme-provider.tsx"
 import { convex, convexQueryClient, queryClient } from "./db/index.ts"
 import { ConvexClientProvider } from "./providers/convex-client-providers.tsx"
@@ -25,6 +26,7 @@ const router = createRouter({
 	scrollRestoration: true,
 	defaultStructuralSharing: true,
 	defaultPreloadStaleTime: 0,
+	defaultPendingComponent: Loader,
 	Wrap: ({ children }) => (
 		<ThemeProvider>
 			<QueryClientProvider client={queryClient}>

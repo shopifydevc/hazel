@@ -20,13 +20,14 @@ function OnboardingPage() {
 	// Check if user already has organizations
 	const { data: userOrganizations } = useLiveQuery(
 		(q) =>
-			q.from({ member: organizationMemberCollection })
+			q
+				.from({ member: organizationMemberCollection })
 				.innerJoin({ org: organizationCollection }, ({ member, org }) =>
-					eq(member.organizationId, org.id)
+					eq(member.organizationId, org.id),
 				)
 				.where(({ member }) => eq(member.userId, user?.id || ""))
 				.orderBy(({ member }) => member.createdAt, "asc"),
-		[user?.id]
+		[user?.id],
 	)
 
 	// If user has organizations, redirect to the first one

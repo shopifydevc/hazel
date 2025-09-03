@@ -38,10 +38,10 @@ export const SidebarFavoriteGroup = () => {
 
 	const { publicPrivateChannelIds, dmChannelIds } = useMemo(() => {
 		if (!favoriteChannels) return { publicPrivateChannelIds: [], dmChannelIds: [] }
-		
+
 		const publicPrivate: ChannelId[] = []
 		const dm: ChannelId[] = []
-		
+
 		favoriteChannels.forEach((row) => {
 			if (row.channel.type === "public" || row.channel.type === "private") {
 				publicPrivate.push(row.channel.id)
@@ -49,7 +49,7 @@ export const SidebarFavoriteGroup = () => {
 				dm.push(row.channel.id)
 			}
 		})
-		
+
 		return { publicPrivateChannelIds: publicPrivate, dmChannelIds: dm }
 	}, [favoriteChannels])
 
@@ -66,11 +66,7 @@ export const SidebarFavoriteGroup = () => {
 						<ChannelItem key={channelId} channelId={channelId} />
 					))}
 					{dmChannelIds.map((channelId) => (
-						<DmChannelLink
-							key={channelId}
-							channelId={channelId}
-							userPresence={[]}
-						/>
+						<DmChannelLink key={channelId} channelId={channelId} userPresence={[]} />
 					))}
 				</SidebarMenu>
 			</SidebarGroupContent>
