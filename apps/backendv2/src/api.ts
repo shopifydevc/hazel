@@ -1,6 +1,6 @@
 import { HttpApi, HttpApiEndpoint, HttpApiGroup, HttpApiSchema, OpenApi } from "@effect/platform"
-import { Channel, Message } from "@hazel/db/models"
-import { MessageId } from "@hazel/db/schema"
+import { Channel, ChannelMember, Message } from "@hazel/db/models"
+import { ChannelId, ChannelMemberId, MessageId } from "@hazel/db/schema"
 import { Schema } from "effect"
 import { Authorization } from "./lib/auth"
 import { InternalServerError, UnauthorizedError } from "./lib/errors"
@@ -35,8 +35,25 @@ export class ChannelNotFoundError extends Schema.TaggedError<ChannelNotFoundErro
 	}),
 ) {}
 
+export class ChannelMemberNotFoundError extends Schema.TaggedError<ChannelMemberNotFoundError>(
+	"ChannelMemberNotFoundError",
+)(
+	"ChannelMemberNotFoundError",
+	{
+		channelMemberId: Schema.UUID,
+	},
+	HttpApiSchema.annotations({
+		status: 404,
+	}),
+) {}
+
 export class CreateChannelResponse extends Schema.Class<CreateChannelResponse>("CreateChannelResponse")({
 	data: Channel.Model.json,
+	transactionId: TransactionId,
+}) {}
+
+export class ChannelMemberResponse extends Schema.Class<ChannelMemberResponse>("ChannelMemberResponse")({
+	data: ChannelMember.Model.json,
 	transactionId: TransactionId,
 }) {}
 
@@ -52,6 +69,37 @@ export class ChannelGroup extends HttpApiGroup.make("channels")
 					title: "Create Channel",
 					description: "Create a new channel in an organization",
 					summary: "Create a new channel",
+				}),
+			),
+	)
+	.add(
+		HttpApiEndpoint.put("update", `/:id`)
+			.setPath(Schema.Struct({ id: ChannelId }))
+			.setPayload(Channel.Model.jsonUpdate)
+			.addSuccess(CreateChannelResponse)
+			.addError(ChannelNotFoundError)
+			.addError(UnauthorizedError)
+			.addError(InternalServerError)
+			.annotateContext(
+				OpenApi.annotations({
+					title: "Update Channel",
+					description: "Update an existing channel",
+					summary: "Update a channel",
+				}),
+			),
+	)
+	.add(
+		HttpApiEndpoint.del("delete", "/:id")
+			.setPath(Schema.Struct({ id: ChannelId }))
+			.addSuccess(Schema.Struct({ transactionId: TransactionId }))
+			.addError(ChannelNotFoundError)
+			.addError(UnauthorizedError)
+			.addError(InternalServerError)
+			.annotateContext(
+				OpenApi.annotations({
+					title: "Delete Channel",
+					description: "Delete an existing channel",
+					summary: "Delete a channel",
 				}),
 			),
 	)
@@ -106,6 +154,56 @@ export class MessageGroup extends HttpApiGroup.make("messages")
 			),
 	)
 	.prefix("/messages")
+	.middleware(Authorization) {}
+
+export class ChannelMemberGroup extends HttpApiGroup.make("channelMembers")
+	.add(
+		HttpApiEndpoint.post("create", `/`)
+			.setPayload(ChannelMember.Model.jsonCreate)
+			.addSuccess(ChannelMemberResponse)
+			.addError(ChannelNotFoundError)
+			.addError(UnauthorizedError)
+			.addError(InternalServerError)
+			.annotateContext(
+				OpenApi.annotations({
+					title: "Create Channel Member",
+					description: "Add a user to a channel",
+					summary: "Create a channel member",
+				}),
+			),
+	)
+	.add(
+		HttpApiEndpoint.put("update", `/:id`)
+			.setPath(Schema.Struct({ id: ChannelMemberId }))
+			.setPayload(ChannelMember.Model.jsonUpdate)
+			.addSuccess(ChannelMemberResponse)
+			.addError(ChannelMemberNotFoundError)
+			.addError(UnauthorizedError)
+			.addError(InternalServerError)
+			.annotateContext(
+				OpenApi.annotations({
+					title: "Update Channel Member",
+					description: "Update channel member preferences and settings",
+					summary: "Update a channel member",
+				}),
+			),
+	)
+	.add(
+		HttpApiEndpoint.del("delete", "/:id")
+			.setPath(Schema.Struct({ id: ChannelMemberId }))
+			.addSuccess(Schema.Struct({ transactionId: TransactionId }))
+			.addError(ChannelMemberNotFoundError)
+			.addError(UnauthorizedError)
+			.addError(InternalServerError)
+			.annotateContext(
+				OpenApi.annotations({
+					title: "Delete Channel Member",
+					description: "Remove a user from a channel",
+					summary: "Remove a channel member",
+				}),
+			),
+	)
+	.prefix("/channel-members")
 	.middleware(Authorization) {}
 
 // WorkOS Webhook Types
@@ -191,6 +289,7 @@ export class MockDataGroup extends HttpApiGroup.make("mockData")
 
 export class HazelApi extends HttpApi.make("HazelApp")
 	.add(ChannelGroup)
+	.add(ChannelMemberGroup)
 	.add(MessageGroup)
 	.add(RootGroup)
 	.add(WebhookGroup)

@@ -1,7 +1,6 @@
 import { Schema } from "effect"
 import { ChannelId, ChannelMemberId, MessageId, UserId } from "../lib/schema"
 import * as M from "../services/model"
-import { baseFields } from "./utils"
 
 export class Model extends M.Class<Model>("ChannelMember")({
 	id: M.Generated(ChannelMemberId),
@@ -12,8 +11,23 @@ export class Model extends M.Class<Model>("ChannelMember")({
 	isFavorite: Schema.Boolean,
 	lastSeenMessageId: Schema.NullOr(MessageId),
 	notificationCount: Schema.Number,
-	joinedAt: Schema.Date,
-	...baseFields,
+	joinedAt: M.GeneratedByApp(
+		Schema.DateFromSelf.annotations({
+			jsonSchema: { type: "string", format: "date-time" },
+		}),
+	),
+	createdAt: M.Generated(
+		Schema.Date.annotations({
+			jsonSchema: { type: "string", format: "date-time" },
+		}),
+	),
+	deletedAt: M.GeneratedByApp(
+		Schema.NullOr(
+			Schema.Date.annotations({
+				jsonSchema: { type: "string", format: "date-time" },
+			}),
+		),
+	),
 }) {}
 
 export const Insert = Model.insert

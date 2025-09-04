@@ -69,7 +69,6 @@ export const messageCollection = createCollection(
 		getKey: (item) => item.id,
 		onInsert: async ({ transaction }) => {
 			const { modified: newMessage } = transaction.mutations[0]
-			console.log("newMessage", newMessage)
 			const results = await Effect.runPromise(
 				Effect.gen(function* () {
 					const client = yield* backendClient
@@ -219,6 +218,56 @@ export const channelCollection = createCollection(
 		},
 		schema: Schema.standardSchemaV1(Channel.Model.json),
 		getKey: (item) => item.id,
+		onInsert: async ({ transaction }) => {
+			const { modified: newChannel } = transaction.mutations[0]
+
+			const results = await Effect.runPromise(
+				Effect.gen(function* () {
+					const client = yield* backendClient
+
+					return yield* client.channels.create({
+						payload: newChannel,
+					})
+				}),
+			)
+
+			return { txid: results.transactionId }
+		},
+		onUpdate: async ({ transaction }) => {
+			const { modified: newChannel } = transaction.mutations[0]
+
+			const results = await Effect.runPromise(
+				Effect.gen(function* () {
+					const client = yield* backendClient
+
+					return yield* client.channels.update({
+						payload: newChannel,
+						path: {
+							id: newChannel.id,
+						},
+					})
+				}),
+			)
+
+			return { txid: results.transactionId }
+		},
+		onDelete: async ({ transaction }) => {
+			const { original: deletedChannel } = transaction.mutations[0]
+
+			const results = await Effect.runPromise(
+				Effect.gen(function* () {
+					const client = yield* backendClient
+
+					return yield* client.channels.delete({
+						path: {
+							id: deletedChannel.id,
+						},
+					})
+				}),
+			)
+
+			return { txid: results.transactionId }
+		},
 	}),
 )
 
@@ -236,6 +285,58 @@ export const channelMemberCollection = createCollection(
 		},
 		schema: Schema.standardSchemaV1(ChannelMember.Model.json),
 		getKey: (item) => item.id,
+		onInsert: async ({ transaction }) => {
+			const { modified: newChannelMember } = transaction.mutations[0]
+
+			console.log("newChannelMember", newChannelMember)
+
+			const results = await Effect.runPromise(
+				Effect.gen(function* () {
+					const client = yield* backendClient
+
+					return yield* client.channelMembers.create({
+						payload: newChannelMember,
+					})
+				}),
+			)
+
+			return { txid: results.transactionId }
+		},
+		onUpdate: async ({ transaction }) => {
+			const { modified: newChannelMember } = transaction.mutations[0]
+
+			const results = await Effect.runPromise(
+				Effect.gen(function* () {
+					const client = yield* backendClient
+
+					return yield* client.channelMembers.update({
+						payload: newChannelMember,
+						path: {
+							id: newChannelMember.id,
+						},
+					})
+				}),
+			)
+
+			return { txid: results.transactionId }
+		},
+		onDelete: async ({ transaction }) => {
+			const { original: deletedChannelMember } = transaction.mutations[0]
+
+			const results = await Effect.runPromise(
+				Effect.gen(function* () {
+					const client = yield* backendClient
+
+					return yield* client.channelMembers.delete({
+						path: {
+							id: deletedChannelMember.id,
+						},
+					})
+				}),
+			)
+
+			return { txid: results.transactionId }
+		},
 	}),
 )
 

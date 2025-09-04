@@ -1,11 +1,13 @@
 "use client"
 
-import type { ChannelId, OrganizationId } from "@hazel/db/schema"
-import { and, eq, useLiveQuery } from "@tanstack/react-db"
+import { type ChannelId, ChannelMemberId } from "@hazel/db/schema"
+import { eq, inArray, not, useLiveQuery } from "@tanstack/react-db"
 import { useParams } from "@tanstack/react-router"
+import { DateTime } from "effect"
 import { useState } from "react"
 import { Heading as AriaHeading } from "react-aria-components"
 import { toast } from "sonner"
+import { v4 as uuid } from "uuid"
 import { Button } from "~/components/base/buttons/button"
 import { CloseButton } from "~/components/base/buttons/close-button"
 import { Input } from "~/components/base/input/input"
@@ -25,22 +27,20 @@ export const JoinChannelModal = ({ isOpen, setIsOpen }: JoinChannelModalProps) =
 	const { user } = useUser()
 
 	const { data: unjoinedChannels } = useLiveQuery(
-		(q) =>
-			q
+		(q) => {
+			const userChannelIds = q
+				.from({ m: channelMemberCollection })
+				.where(({ m }) => eq(m.userId, user?.id))
+				.select(({ m }) => ({ channelId: m.channelId }))
+			return q
 				.from({ channel: channelCollection })
-				.leftJoin({ member: channelMemberCollection }, ({ channel, member }) =>
-					and(eq(member.channelId, channel.id), eq(member.userId, user?.id || "")),
-				)
-				.where(({ channel, member }) =>
-					and(
-						eq(channel.organizationId, orgId as OrganizationId),
-						eq(channel.type, "public"),
-						eq(member.id, null), // User is not a member
-					),
-				)
-				.select(({ channel }) => channel),
+				.where(({ channel }) => not(inArray(channel.id, userChannelIds)))
+				.select(({ channel }) => ({ ...channel }))
+		},
 		[user?.id, orgId],
 	)
+
+	console.log("unjoinedChannels", unjoinedChannels)
 
 	const handleJoinChannel = async (channelId: ChannelId) => {
 		try {
@@ -50,16 +50,15 @@ export const JoinChannelModal = ({ isOpen, setIsOpen }: JoinChannelModalProps) =
 			}
 
 			channelMemberCollection.insert({
-				id: crypto.randomUUID() as any,
+				id: ChannelMemberId.make(uuid()),
 				channelId,
 				userId: user.id,
-				joinedAt: new Date(),
 				isHidden: false,
 				isMuted: false,
 				isFavorite: false,
 				notificationCount: 0,
+				joinedAt: new Date(),
 				createdAt: new Date(),
-				updatedAt: null,
 				deletedAt: null,
 				lastSeenMessageId: null,
 			})

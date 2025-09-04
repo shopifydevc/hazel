@@ -10,6 +10,7 @@ import {
 	uuid,
 	varchar,
 } from "drizzle-orm/pg-core"
+import type { ChannelId, ChannelMemberId, MessageId, OrganizationId, UserId } from "../lib/schema"
 
 // Channel types
 export const channelTypeEnum = pgEnum("channel_type", ["public", "private", "thread", "direct", "single"])
@@ -18,14 +19,13 @@ export const channelTypeEnum = pgEnum("channel_type", ["public", "private", "thr
 export const channelsTable = pgTable(
 	"channels",
 	{
-		id: uuid().primaryKey().defaultRandom(),
+		id: uuid().primaryKey().defaultRandom().$type<ChannelId>(),
 		name: varchar({ length: 255 }).notNull(),
 		type: channelTypeEnum().notNull(),
-		organizationId: uuid().notNull(),
-		// For thread channels - reference to parent channel
-		parentChannelId: uuid(),
-		// For direct/group channels - sorted list of participant IDs for uniqueness
-		// In PostgreSQL, we'll handle this with a separate table and unique constraint
+		organizationId: uuid().notNull().$type<OrganizationId>(),
+
+		parentChannelId: uuid().$type<ChannelId>(),
+
 		createdAt: timestamp({ mode: "date" }).notNull().defaultNow(),
 		updatedAt: timestamp({ mode: "date" }).notNull().defaultNow(),
 		deletedAt: timestamp({ mode: "date" }),
@@ -42,13 +42,13 @@ export const channelsTable = pgTable(
 export const channelMembersTable = pgTable(
 	"channel_members",
 	{
-		id: uuid().primaryKey().defaultRandom(),
-		channelId: uuid().notNull(),
-		userId: uuid().notNull(),
+		id: uuid().primaryKey().defaultRandom().$type<ChannelMemberId>(),
+		channelId: uuid().notNull().$type<ChannelId>(),
+		userId: uuid().notNull().$type<UserId>(),
 		isHidden: boolean().notNull().default(false),
 		isMuted: boolean().notNull().default(false),
 		isFavorite: boolean().notNull().default(false),
-		lastSeenMessageId: uuid(),
+		lastSeenMessageId: uuid().$type<MessageId>(),
 		notificationCount: integer().notNull().default(0),
 		joinedAt: timestamp({ mode: "date" }).notNull().defaultNow(),
 		createdAt: timestamp({ mode: "date" }).notNull().defaultNow(),

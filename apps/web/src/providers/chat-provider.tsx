@@ -147,8 +147,7 @@ export function ChatProvider({ channelId, organizationId, children }: ChatProvid
 			content,
 			replyToMessageId,
 			threadChannelId: null,
-			// @ts-expect-error
-			createdAt: new Date().toISOString(),
+			createdAt: new Date(),
 			updatedAt: null,
 			deletedAt: null,
 		})

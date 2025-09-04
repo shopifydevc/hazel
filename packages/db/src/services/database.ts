@@ -177,8 +177,7 @@ const makeService = (config: Config) =>
 				const executor = tx ?? execute
 
 				return Effect.gen(function* () {
-					// TODO: Maybe we should use `Schema.encode` here
-					const validatedInput = yield* Schema.decodeUnknown(inputSchema)(rawData)
+					const validatedInput = yield* Schema.validate(inputSchema)(rawData)
 
 					const result = yield* queryFn(executor, validatedInput)
 					return result

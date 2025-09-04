@@ -10,8 +10,8 @@ export class Model extends M.Class<Model>("Channel")({
 	id: M.Generated(ChannelId),
 	name: Schema.String,
 	type: ChannelType,
-	organizationId: M.GeneratedByApp(OrganizationId),
-	parentChannelId: M.GeneratedByApp(Schema.NullOr(ChannelId)),
+	organizationId: OrganizationId,
+	parentChannelId: Schema.NullOr(ChannelId),
 	...baseFields,
 }) {}
 

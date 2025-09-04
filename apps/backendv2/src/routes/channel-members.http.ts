@@ -72,7 +72,6 @@ export const HttpChannelMemberLive = HttpApiBuilder.group(HazelApi, "channelMemb
 								const updatedChannelMember = yield* ChannelMemberRepo.update({
 									id: path.id,
 									...payload,
-									updatedAt: new Date(),
 								})
 
 								const txid = yield* generateTransactionId(tx)
