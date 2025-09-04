@@ -1,8 +1,7 @@
 "use client"
 
-import { useConvexMutation, useConvexQuery } from "@convex-dev/react-query"
-import type { Id } from "@hazel/backend"
-import { api } from "@hazel/backend/api"
+import type { ChannelId, OrganizationId } from "@hazel/db/schema"
+import { and, eq, useLiveQuery } from "@tanstack/react-db"
 import { useParams } from "@tanstack/react-router"
 import { useState } from "react"
 import { Heading as AriaHeading } from "react-aria-components"
@@ -11,6 +10,8 @@ import { Button } from "~/components/base/buttons/button"
 import { CloseButton } from "~/components/base/buttons/close-button"
 import { Input } from "~/components/base/input/input"
 import IconHashtagStroke from "~/components/icons/IconHashtagStroke"
+import { channelCollection, channelMemberCollection } from "~/db/collections"
+import { useUser } from "~/lib/auth"
 import { Dialog, DialogTrigger, Modal, ModalOverlay } from "./modal"
 
 interface JoinChannelModalProps {
@@ -21,18 +22,46 @@ interface JoinChannelModalProps {
 export const JoinChannelModal = ({ isOpen, setIsOpen }: JoinChannelModalProps) => {
 	const [searchQuery, setSearchQuery] = useState("")
 	const { orgId } = useParams({ from: "/_app/$orgId" })
+	const { user } = useUser()
 
-	const unjoinedChannels = useConvexQuery(api.channels.getUnjoinedPublicChannelsForOrganization, {
-		organizationId: orgId as Id<"organizations">,
-	})
+	const { data: unjoinedChannels } = useLiveQuery(
+		(q) =>
+			q
+				.from({ channel: channelCollection })
+				.leftJoin({ member: channelMemberCollection }, ({ channel, member }) =>
+					and(eq(member.channelId, channel.id), eq(member.userId, user?.id || "")),
+				)
+				.where(({ channel, member }) =>
+					and(
+						eq(channel.organizationId, orgId as OrganizationId),
+						eq(channel.type, "public"),
+						eq(member.id, null), // User is not a member
+					),
+				)
+				.select(({ channel }) => channel),
+		[user?.id, orgId],
+	)
 
-	const joinChannel = useConvexMutation(api.channels.joinChannelForOrganization)
-
-	const handleJoinChannel = async (channelId: Id<"channels">) => {
+	const handleJoinChannel = async (channelId: ChannelId) => {
 		try {
-			await joinChannel({
-				organizationId: orgId as Id<"organizations">,
+			if (!user?.id) {
+				toast.error("User not authenticated")
+				return
+			}
+
+			channelMemberCollection.insert({
+				id: crypto.randomUUID() as any,
 				channelId,
+				userId: user.id,
+				joinedAt: new Date(),
+				isHidden: false,
+				isMuted: false,
+				isFavorite: false,
+				notificationCount: 0,
+				createdAt: new Date(),
+				updatedAt: null,
+				deletedAt: null,
+				lastSeenMessageId: null,
 			})
 			toast.success("Successfully joined channel")
 			setIsOpen(false)
@@ -94,7 +123,7 @@ export const JoinChannelModal = ({ isOpen, setIsOpen }: JoinChannelModalProps) =
 									<div className="space-y-2">
 										{filteredChannels.map((channel) => (
 											<div
-												key={channel._id}
+												key={channel.id}
 												className="flex items-center justify-between rounded-lg border border-secondary p-3 transition-colors hover:bg-secondary"
 											>
 												<div className="flex items-center gap-3">
@@ -106,7 +135,7 @@ export const JoinChannelModal = ({ isOpen, setIsOpen }: JoinChannelModalProps) =
 												<Button
 													size="sm"
 													color="primary"
-													onClick={() => handleJoinChannel(channel._id)}
+													onClick={() => handleJoinChannel(channel.id)}
 												>
 													Join
 												</Button>
