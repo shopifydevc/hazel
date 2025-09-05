@@ -6,3 +6,11 @@
 - DM Channel Creation (mutation)
 - Invite User (mutation)
 - File Size + File Upload 
+
+- typing indicator
+- presence
+
+- Chat Avatar going away after server side mutation
+
+
+- Policies in backend
