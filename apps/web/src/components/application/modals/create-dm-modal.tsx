@@ -56,26 +56,16 @@ export const CreateDmModal = ({ isOpen, onOpenChange }: CreateDmModalProps) => {
 	const { isUserOnline } = usePresence()
 	const { user } = useUser()
 
-	// Get all users in the organization (excluding current user)
-	const { data: organizationUsers } = useLiveQuery((q) =>
-		q
-			.from({ member: organizationMemberCollection })
-			.innerJoin({ user: userCollection }, ({ member, user }) => eq(member.userId, user.id))
-			.where(({ member }) => eq(member.organizationId, organizationId))
-			.select(({ user }) => ({
-				id: user.id,
-				firstName: user.firstName,
-				lastName: user.lastName,
-				avatarUrl: user.avatarUrl,
-				externalId: user.externalId,
-				email: user.email,
-				status: user.status,
-				lastSeen: user.lastSeen,
-				settings: user.settings,
-				createdAt: user.createdAt,
-				updatedAt: user.updatedAt,
-				deletedAt: user.deletedAt,
-			})),
+	const { data: organizationUsers } = useLiveQuery(
+		(q) =>
+			q
+				.from({ member: organizationMemberCollection })
+				.innerJoin({ user: userCollection }, ({ member, user }) => eq(member.userId, user.id))
+				.where(({ member }) => eq(member.organizationId, organizationId))
+				.select(({ user }) => ({
+					...user,
+				})),
+		[organizationId],
 	)
 
 	const form = useAppForm({

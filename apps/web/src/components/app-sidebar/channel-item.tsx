@@ -1,7 +1,4 @@
-import { useConvexMutation } from "@convex-dev/react-query"
-import { api } from "@hazel/backend/api"
 import type { ChannelId, OrganizationId } from "@hazel/db/schema"
-import { useQueryClient } from "@tanstack/react-query"
 import { Link, useParams } from "@tanstack/react-router"
 import { useCallback } from "react"
 import IconDeleteDustbin011 from "~/components/icons/IconDeleteDustbin011"
@@ -9,7 +6,6 @@ import IconPencilEdit from "~/components/icons/IconPencilEdit"
 import { channelMemberCollection } from "~/db/collections"
 import { useChannelWithCurrentUser } from "~/db/hooks"
 import { useUser } from "~/lib/auth"
-import { cn } from "~/lib/utils"
 import { cx } from "~/utils/cx"
 import { Avatar } from "../base/avatar/avatar"
 import { Dropdown } from "../base/dropdown/dropdown"
@@ -58,7 +54,7 @@ export const ChannelItem = ({ channelId }: ChannelItemProps) => {
 				<Link to="/$orgId/chat/$id" params={{ orgId: organizationId || "", id: channelId }}>
 					<IconHashtagStroke className="size-5" />
 					<p
-						className={cn(
+						className={cx(
 							"text-ellipsis text-nowrap",
 							channel.currentUser.isMuted && "opacity-60",
 						)}
@@ -209,7 +205,7 @@ export const DmChannelLink = ({ channelId, userPresence }: DmChannelLinkProps) =
 								/>
 
 								<p
-									className={cn(
+									className={cx(
 										"max-w-40 truncate",
 										channel.currentUser.isMuted && "opacity-60",
 									)}
@@ -243,7 +239,7 @@ export const DmChannelLink = ({ channelId, userPresence }: DmChannelLinkProps) =
 									)}
 								</div>
 								<p
-									className={cn(
+									className={cx(
 										"max-w-40 truncate",
 										channel.currentUser.isMuted && "opacity-60",
 									)}

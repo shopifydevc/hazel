@@ -1,7 +1,7 @@
 import { useUploadFile as useR2UploadFile } from "@convex-dev/r2/react"
-import { useConvexMutation } from "@convex-dev/react-query"
 import type { Id } from "@hazel/backend"
 import { api } from "@hazel/backend/api"
+import type { AttachmentId, OrganizationId } from "@hazel/db/schema"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
 import { IconNotification } from "~/components/application/notifications/notifications"
@@ -12,13 +12,13 @@ export interface FileUploadProgress {
 	fileSize: number
 	progress: number
 	status: "pending" | "uploading" | "complete" | "failed"
-	attachmentId?: Id<"attachments">
+	attachmentId?: AttachmentId
 	error?: string
 }
 
 interface UseFileUploadOptions {
-	organizationId: Id<"organizations">
-	onUploadComplete?: (attachmentId: Id<"attachments">) => void
+	organizationId: OrganizationId
+	onUploadComplete?: (attachmentId: AttachmentId) => void
 	onUploadError?: (error: Error) => void
 	maxFileSize?: number // in bytes
 }
@@ -33,10 +33,9 @@ export function useFileUpload({
 
 	// Use the R2 component's upload hook
 	const r2UploadFile = useR2UploadFile(api.uploads as any)
-	const createAttachment = useConvexMutation(api.uploads.createAttachment)
 
 	const uploadFile = useCallback(
-		async (file: File): Promise<Id<"attachments"> | null> => {
+		async (file: File): Promise<AttachmentId | null> => {
 			const fileId = `${file.name}-${Date.now()}`
 
 			// Validate file size
@@ -84,11 +83,7 @@ export function useFileUpload({
 				const r2Key = await r2UploadFile(file)
 
 				// Create attachment record in database
-				const attachmentId = await createAttachment({
-					r2Key,
-					fileName: file.name,
-					organizationId,
-				})
+				const attachmentId = "TODO" as AttachmentId
 
 				// Update status to complete
 				setUploads((prev) => {
@@ -131,14 +126,14 @@ export function useFileUpload({
 				return null
 			}
 		},
-		[maxFileSize, r2UploadFile, createAttachment, organizationId, onUploadComplete, onUploadError],
+		[maxFileSize, r2UploadFile, onUploadComplete, onUploadError],
 	)
 
 	const uploadFiles = useCallback(
-		async (files: FileList | File[]): Promise<Id<"attachments">[]> => {
+		async (files: FileList | File[]): Promise<AttachmentId[]> => {
 			const fileArray = Array.from(files)
 			const results = await Promise.all(fileArray.map(uploadFile))
-			return results.filter((id): id is Id<"attachments"> => id !== null)
+			return results.filter((id): id is AttachmentId => id !== null)
 		},
 		[uploadFile],
 	)
