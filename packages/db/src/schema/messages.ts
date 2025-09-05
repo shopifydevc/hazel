@@ -13,9 +13,9 @@ export const messagesTable = pgTable(
 		replyToMessageId: uuid().$type<MessageId>(),
 		// Thread channel (if this message started a thread)
 		threadChannelId: uuid().$type<ChannelId>(),
-		createdAt: timestamp({ mode: "date" }).notNull().defaultNow(),
-		updatedAt: timestamp({ mode: "date" }),
-		deletedAt: timestamp({ mode: "date" }),
+		createdAt: timestamp({ mode: "date", withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp({ mode: "date", withTimezone: true }),
+		deletedAt: timestamp({ mode: "date", withTimezone: true }),
 	},
 	(table) => [
 		index("messages_channel_id_idx").on(table.channelId),
@@ -35,7 +35,7 @@ export const messageReactionsTable = pgTable(
 		messageId: uuid().notNull(),
 		userId: uuid().notNull(),
 		emoji: varchar({ length: 50 }).notNull(),
-		createdAt: timestamp({ mode: "date" }).notNull().defaultNow(),
+		createdAt: timestamp({ mode: "date", withTimezone: true }).notNull().defaultNow(),
 	},
 	(table) => [
 		index("reactions_message_id_idx").on(table.messageId),
@@ -52,7 +52,7 @@ export const messageAttachmentsTable = pgTable(
 		messageId: uuid().notNull(),
 		attachmentId: uuid().notNull(),
 		displayOrder: integer().notNull().default(0),
-		createdAt: timestamp({ mode: "date" }).notNull().defaultNow(),
+		createdAt: timestamp({ mode: "date", withTimezone: true }).notNull().defaultNow(),
 	},
 	(table) => [
 		index("msg_attachments_message_id_idx").on(table.messageId),

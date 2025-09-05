@@ -8,7 +8,7 @@ export const pinnedMessagesTable = pgTable(
 		channelId: uuid().notNull(),
 		messageId: uuid().notNull(),
 		pinnedBy: uuid().notNull(),
-		pinnedAt: timestamp({ mode: "date" }).notNull().defaultNow(),
+		pinnedAt: timestamp({ mode: "date", withTimezone: true }).notNull().defaultNow(),
 	},
 	(table) => [
 		index("pinned_messages_channel_id_idx").on(table.channelId),

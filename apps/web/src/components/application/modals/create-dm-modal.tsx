@@ -1,13 +1,19 @@
 import type { User } from "@hazel/db/models"
-import { ChannelId, ChannelMemberId, DirectMessageParticipantId, type OrganizationId, type UserId } from "@hazel/db/schema"
+import {
+	ChannelId,
+	ChannelMemberId,
+	DirectMessageParticipantId,
+	type OrganizationId,
+	type UserId,
+} from "@hazel/db/schema"
 import { eq, useLiveQuery } from "@tanstack/react-db"
 import { useNavigate, useParams } from "@tanstack/react-router"
 import { Mail01, MessageSquare02, Plus } from "@untitledui/icons"
 import { type } from "arktype"
 import { useMemo, useState } from "react"
-import { v4 as uuid } from "uuid"
 import { Heading as AriaHeading } from "react-aria-components"
 import { toast } from "sonner"
+import { v4 as uuid } from "uuid"
 import { Dialog, Modal, ModalFooter, ModalOverlay } from "~/components/application/modals/modal"
 import { Avatar } from "~/components/base/avatar/avatar"
 import { Button } from "~/components/base/buttons/button"
@@ -51,28 +57,25 @@ export const CreateDmModal = ({ isOpen, onOpenChange }: CreateDmModalProps) => {
 	const { user } = useUser()
 
 	// Get all users in the organization (excluding current user)
-	const { data: organizationUsers } = useLiveQuery(
-		(q) =>
-			q
-				.from({ member: organizationMemberCollection })
-				.innerJoin({ user: userCollection }, ({ member, user }) => eq(member.userId, user.id))
-				.where(({ member }) => 
-					eq(member.organizationId, organizationId)
-				)
-				.select(({ user }) => ({
-					id: user.id,
-					firstName: user.firstName,
-					lastName: user.lastName,
-					avatarUrl: user.avatarUrl,
-					externalId: user.externalId,
-					email: user.email,
-					status: user.status,
-					lastSeen: user.lastSeen,
-					settings: user.settings,
-					createdAt: user.createdAt,
-					updatedAt: user.updatedAt,
-					deletedAt: user.deletedAt,
-				}))
+	const { data: organizationUsers } = useLiveQuery((q) =>
+		q
+			.from({ member: organizationMemberCollection })
+			.innerJoin({ user: userCollection }, ({ member, user }) => eq(member.userId, user.id))
+			.where(({ member }) => eq(member.organizationId, organizationId))
+			.select(({ user }) => ({
+				id: user.id,
+				firstName: user.firstName,
+				lastName: user.lastName,
+				avatarUrl: user.avatarUrl,
+				externalId: user.externalId,
+				email: user.email,
+				status: user.status,
+				lastSeen: user.lastSeen,
+				settings: user.settings,
+				createdAt: user.createdAt,
+				updatedAt: user.updatedAt,
+				deletedAt: user.deletedAt,
+			})),
 	)
 
 	const form = useAppForm({
@@ -91,9 +94,9 @@ export const CreateDmModal = ({ isOpen, onOpenChange }: CreateDmModalProps) => {
 				// Create the channel
 				if (value.userIds.length === 1) {
 					// Single DM
-					channelCollection.insert({
+					const test = channelCollection.insert({
 						id: channelId,
-						name: "", // DM channels typically don't have names
+						name: "",
 						type: "direct",
 						organizationId,
 						parentChannelId: null,
@@ -105,14 +108,14 @@ export const CreateDmModal = ({ isOpen, onOpenChange }: CreateDmModalProps) => {
 					// Add participants to direct message
 					const currentUserId = user?.id as UserId
 					const otherUserId = value.userIds[0] as UserId
-					
+
 					directMessageParticipantCollection.insert({
 						id: DirectMessageParticipantId.make(uuid()),
 						channelId,
 						userId: currentUserId,
 						organizationId,
 					})
-					
+
 					directMessageParticipantCollection.insert({
 						id: DirectMessageParticipantId.make(uuid()),
 						channelId,
@@ -124,9 +127,10 @@ export const CreateDmModal = ({ isOpen, onOpenChange }: CreateDmModalProps) => {
 					toast.success(`Started conversation with ${targetUser?.firstName}`)
 				} else {
 					// Group DM
-					channelCollection.insert({
+					// TODO: NOT GONNA WORK NEEDS TRANSACTION
+					const test = channelCollection.insert({
 						id: channelId,
-						name: "", // Could be set to participants' names
+						name: "",
 						type: "direct",
 						organizationId,
 						parentChannelId: null,
@@ -136,8 +140,8 @@ export const CreateDmModal = ({ isOpen, onOpenChange }: CreateDmModalProps) => {
 					})
 
 					// Add all participants including current user
-					const allUserIds = [user?.id as UserId, ...value.userIds.map(id => id as UserId)]
-					
+					const allUserIds = [user?.id as UserId, ...value.userIds.map((id) => id as UserId)]
+
 					for (const userId of allUserIds) {
 						channelMemberCollection.insert({
 							id: ChannelMemberId.make(uuid()),
@@ -180,7 +184,7 @@ export const CreateDmModal = ({ isOpen, onOpenChange }: CreateDmModalProps) => {
 		const users = organizationUsers || []
 		// Filter out current user
 		const otherUsers = users.filter((u) => u?.id !== user?.id)
-		
+
 		if (!searchQuery.trim()) return otherUsers
 
 		const query = searchQuery.toLowerCase()

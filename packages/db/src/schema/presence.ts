@@ -8,9 +8,9 @@ export const presenceTable = pgTable(
 		roomId: varchar({ length: 255 }).notNull(), // Can be channel ID or other room identifier
 		userId: uuid().notNull(),
 		sessionId: varchar({ length: 255 }).notNull(),
-		lastHeartbeat: timestamp({ mode: "date" }).notNull().defaultNow(),
+		lastHeartbeat: timestamp({ mode: "date", withTimezone: true }).notNull().defaultNow(),
 		interval: bigint({ mode: "number" }).notNull(), // Heartbeat interval in ms
-		createdAt: timestamp({ mode: "date" }).notNull().defaultNow(),
+		createdAt: timestamp({ mode: "date", withTimezone: true }).notNull().defaultNow(),
 	},
 	(table) => [
 		index("presence_room_id_idx").on(table.roomId),

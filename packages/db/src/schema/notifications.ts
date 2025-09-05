@@ -12,8 +12,8 @@ export const notificationsTable = pgTable(
 		// Can be a message
 		resourceId: uuid(),
 		resourceType: varchar({ length: 50 }), // 'message'
-		createdAt: timestamp({ mode: "date" }).notNull().defaultNow(),
-		readAt: timestamp({ mode: "date" }),
+		createdAt: timestamp({ mode: "date", withTimezone: true }).notNull().defaultNow(),
+		readAt: timestamp({ mode: "date", withTimezone: true }),
 	},
 	(table) => [
 		index("notifications_member_id_idx").on(table.memberId),

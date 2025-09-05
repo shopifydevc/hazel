@@ -15,8 +15,8 @@ export const attachmentsTable = pgTable(
 		r2Key: varchar({ length: 500 }).notNull(), // S3/R2 storage key
 		uploadedBy: uuid().notNull(),
 		status: attachmentStatusEnum().notNull().default("uploading"),
-		uploadedAt: timestamp({ mode: "date" }).notNull().defaultNow(),
-		deletedAt: timestamp({ mode: "date" }),
+		uploadedAt: timestamp({ mode: "date", withTimezone: true }).notNull().defaultNow(),
+		deletedAt: timestamp({ mode: "date", withTimezone: true }),
 	},
 	(table) => [
 		index("attachments_organization_id_idx").on(table.organizationId),

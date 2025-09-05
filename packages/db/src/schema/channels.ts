@@ -26,9 +26,9 @@ export const channelsTable = pgTable(
 
 		parentChannelId: uuid().$type<ChannelId>(),
 
-		createdAt: timestamp({ mode: "date" }).notNull().defaultNow(),
-		updatedAt: timestamp({ mode: "date" }).notNull().defaultNow(),
-		deletedAt: timestamp({ mode: "date" }),
+		createdAt: timestamp({ mode: "date", withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp({ mode: "date", withTimezone: true }).notNull().defaultNow(),
+		deletedAt: timestamp({ mode: "date", withTimezone: true }),
 	},
 	(table) => [
 		index("channels_organization_id_idx").on(table.organizationId),
@@ -50,9 +50,9 @@ export const channelMembersTable = pgTable(
 		isFavorite: boolean().notNull().default(false),
 		lastSeenMessageId: uuid().$type<MessageId>(),
 		notificationCount: integer().notNull().default(0),
-		joinedAt: timestamp({ mode: "date" }).notNull().defaultNow(),
-		createdAt: timestamp({ mode: "date" }).notNull().defaultNow(),
-		deletedAt: timestamp({ mode: "date" }),
+		joinedAt: timestamp({ mode: "date", withTimezone: true }).notNull().defaultNow(),
+		createdAt: timestamp({ mode: "date", withTimezone: true }).notNull().defaultNow(),
+		deletedAt: timestamp({ mode: "date", withTimezone: true }),
 	},
 	(table) => [
 		index("channel_members_channel_id_idx").on(table.channelId),
