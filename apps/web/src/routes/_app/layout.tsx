@@ -1,6 +1,4 @@
-import { createFileRoute, Navigate, Outlet } from "@tanstack/react-router"
-import { useAuth } from "@workos-inc/authkit-react"
-import { Authenticated, Unauthenticated } from "convex/react"
+import { createFileRoute, Outlet } from "@tanstack/react-router"
 import { organizationCollection, organizationMemberCollection } from "~/db/collections"
 
 export const Route = createFileRoute("/_app")({
@@ -13,22 +11,5 @@ export const Route = createFileRoute("/_app")({
 })
 
 function RouteComponent() {
-	const { isLoading } = useAuth()
-	return (
-		<>
-			<Authenticated>
-				<Outlet />
-			</Authenticated>
-			<Unauthenticated>
-				{!isLoading && (
-					<Navigate
-						to="/auth/login"
-						search={{
-							returnTo: location.pathname,
-						}}
-					/>
-				)}
-			</Unauthenticated>
-		</>
-	)
+	return <Outlet />
 }

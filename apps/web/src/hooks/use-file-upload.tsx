@@ -1,5 +1,3 @@
-import { useUploadFile as useR2UploadFile } from "@convex-dev/r2/react"
-
 import type { AttachmentId, OrganizationId } from "@hazel/db/schema"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"

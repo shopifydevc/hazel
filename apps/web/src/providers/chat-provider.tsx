@@ -8,7 +8,6 @@ import {
 	UserId,
 } from "@hazel/db/schema"
 import { eq, useLiveQuery } from "@tanstack/react-db"
-import type { FunctionReturnType } from "convex/server"
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { v4 as uuid } from "uuid"
 import {
@@ -126,7 +125,6 @@ export function ChatProvider({ channelId, organizationId, children }: ChatProvid
 
 	// Fetch typing users
 	// TODO: Implement
-	// const typingUsersQuery = useQuery(convexQuery(api.typingIndicator.list, { channelId, organizationId }))
 	const typingUsers: TypingUsers = []
 
 	// Message operations
