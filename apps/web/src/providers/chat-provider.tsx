@@ -248,18 +248,13 @@ export function ChatProvider({ channelId, organizationId, children }: ChatProvid
 		setActiveThreadMessageId(null)
 	}
 
-	console.log("messagesData", messagesData)
-
-	// Use messages directly from TanStack DB
-	const currentMessages = messagesData || []
-
 	// Update previous messages when we have new data
-	if (currentMessages.length > 0) {
-		previousMessagesRef.current = currentMessages
+	if (messagesData.length > 0) {
+		previousMessagesRef.current = messagesData
 	}
 
 	// Use previous messages during loading states to prevent flashing
-	const messages = currentMessages.length > 0 ? currentMessages : previousMessagesRef.current
+	const messages = messagesData.length > 0 ? messagesData : previousMessagesRef.current
 
 	// Play sound when new messages arrive from other users (only when window is not focused)
 	useEffect(() => {

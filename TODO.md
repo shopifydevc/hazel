@@ -1,4 +1,5 @@
 2. Auth middleware working => client with bearer token
+    - AuthorID should be in 
 3. Api Key protect mock endpoint + connect with frotnend
 4. Replace OrgId in url to slug
 
@@ -14,3 +15,9 @@
 
 
 - Policies in backend
+
+
+NEXT UPPP
+# Implement Auth
+- FROM AUTH TOKEN GET USER_ID
+- PUT ALL USER_ID STUFF to Model.GeneratedByApp
