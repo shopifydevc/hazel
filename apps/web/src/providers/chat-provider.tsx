@@ -36,7 +36,7 @@ interface ChatContextValue {
 	editMessage: (messageId: MessageId, content: string) => Promise<void>
 	deleteMessage: (messageId: MessageId) => void
 	addReaction: (messageId: MessageId, emoji: string) => void
-	removeReaction: (messageId: MessageId, emoji: string) => void
+	removeReaction: (reactionId: MessageReactionId) => void
 	pinMessage: (messageId: MessageId) => void
 	unpinMessage: (messageId: MessageId) => void
 	startTyping: () => void
@@ -167,14 +167,10 @@ export function ChatProvider({ channelId, organizationId, children }: ChatProvid
 		})
 	}
 
-	const removeReaction = (_messageId: MessageId, _emoji: string) => {
+	const removeReaction = (reactionId: MessageReactionId) => {
 		if (!user?.id) return
 
-		// Find the user's reaction for this message and emoji
-		// Note: This would ideally use a proper query to find the reaction ID
-		// For now, we'll need to implement this based on how reactions are stored
-		// TODO: Add proper reaction lookup logic
-		console.log("removeReaction not fully implemented - need reaction ID lookup")
+		messageReactionCollection.delete(reactionId)
 	}
 
 	const pinMessage = (messageId: MessageId) => {

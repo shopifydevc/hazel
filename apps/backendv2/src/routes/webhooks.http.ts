@@ -14,7 +14,7 @@ export const HttpWebhookLive = HttpApiBuilder.group(HazelApi, "webhooks", (handl
 			// Get the signature header
 			const signatureHeader = request.headers["workos-signature"]
 			if (!signatureHeader) {
-				yield* Effect.fail(
+				return yield* Effect.fail(
 					new InvalidWebhookSignature({
 						message: "Missing workos-signature header",
 					}),

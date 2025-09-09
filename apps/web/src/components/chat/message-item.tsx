@@ -79,7 +79,7 @@ export function MessageItem({
 
 		const existingReaction = reactions.find((r) => r.emoji === emoji && r.userId === currentUser?.id)
 		if (existingReaction) {
-			removeReaction(message.id, emoji)
+			removeReaction(existingReaction.id)
 		} else {
 			addReaction(message.id, emoji)
 		}
