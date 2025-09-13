@@ -1,6 +1,7 @@
 {
 	"$schema": "https://turborepo.com/schema.json",
 	"globalEnv": [
+		"PORT",
 		"DATABASE_URL",
 		"WORKOS_API_KEY",
 		"WORKOS_WEBHOOK_SECRET",
