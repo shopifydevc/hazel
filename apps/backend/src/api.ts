@@ -1,8 +1,5 @@
 import { HttpApi, HttpApiEndpoint, HttpApiGroup, HttpApiSchema, OpenApi } from "@effect/platform"
 import { Schema } from "effect"
-import { Authorization } from "./lib/auth"
-import { InternalServerError, UnauthorizedError } from "./lib/errors"
-import { TransactionId } from "./lib/schema"
 import {
 	AttachmentGroup,
 	ChannelGroup,

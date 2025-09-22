@@ -1,3 +1,6 @@
+import { HttpApi, HttpApiGroup } from "@effect/platform"
+import { ChannelGroup } from "./channels"
+
 export * from "./attachments"
 export * from "./channelMembers"
 export * from "./channels"
