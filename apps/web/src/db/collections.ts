@@ -677,7 +677,7 @@ export const channelMemberCollection = createCollection(
 	electricCollectionOptions({
 		id: "channel_members",
 		shapeOptions: {
-			url: electricUrl,
+			url: `${electricUrl}`,
 			params: {
 				table: "channel_members",
 			},
@@ -690,7 +690,6 @@ export const channelMemberCollection = createCollection(
 		onInsert: async ({ transaction }) => {
 			const { modified: newChannelMember } = transaction.mutations[0]
 
-			console.log("newChannelMember", newChannelMember)
 			const workOsClient = await authClient
 			const _accessToken = await workOsClient.getAccessToken()
 

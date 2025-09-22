@@ -7,7 +7,7 @@ export const DatabaseLive = Layer.unwrapEffect(
 		Effect.map((envVars) =>
 			Database.layer({
 				url: envVars.DATABASE_URL,
-				ssl: false,
+				ssl: true,
 			}),
 		),
 	),

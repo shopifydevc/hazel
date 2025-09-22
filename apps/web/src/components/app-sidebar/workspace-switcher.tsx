@@ -17,10 +17,12 @@ import IconUserPlus1 from "../icons/IconUserPlus1"
 export const WorkspaceSwitcher = () => {
 	const [inviteModalOpen, setInviteModalOpen] = useState(false)
 	const [createOrgModalOpen, setCreateOrgModalOpen] = useState(false)
-	const { switchToOrganization } = useAuth()
-	const navigate = useNavigate()
+
 	const params = useParams({ strict: false })
 	const { user } = useUser()
+
+	const { switchToOrganization } = useAuth()
+	const navigate = useNavigate()
 
 	const organizationId = params.orgId as OrganizationId
 
@@ -45,6 +47,8 @@ export const WorkspaceSwitcher = () => {
 				.orderBy(({ member }) => member.createdAt, "asc"),
 		[user?.id],
 	)
+
+	// const userOrganizations= []
 
 	const currentOrg = currentOrgData?.[0]
 	const organizations = userOrganizations?.map((row) => row.org) || []
