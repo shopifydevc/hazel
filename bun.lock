@@ -46,13 +46,15 @@
     "apps/electric-proxy": {
       "name": "@hazel/electric-proxy",
       "dependencies": {
-        "@effect/platform": "^0.90.10",
-        "@effect/platform-bun": "^0.79.1",
         "@electric-sql/client": "^1.0.10",
-        "effect": "^3.17.14",
+        "cors": "^2.8.5",
+        "express": "^4.21.2",
       },
       "devDependencies": {
-        "@types/bun": "latest",
+        "@types/cors": "^2.8.17",
+        "@types/express": "^5.0.0",
+        "@types/node": "^22.10.5",
+        "tsx": "^4.19.2",
         "typescript": "^5.9.2",
       },
     },
