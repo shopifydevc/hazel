@@ -1,8 +1,8 @@
-import type { AttachmentId, ChannelId, OrganizationId } from "@hazel/db/schema"
-import { inArray, useLiveQuery } from "@tanstack/react-db"
+import type { AttachmentId, OrganizationId } from "@hazel/db/schema"
+import { and, eq, inArray, useLiveQuery } from "@tanstack/react-db"
 import { useParams } from "@tanstack/react-router"
-import { Attachment01, Loading03, XClose } from "@untitledui/icons"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { Attachment01, XClose } from "@untitledui/icons"
+import { useMemo, useRef, useState } from "react"
 import { attachmentCollection, channelMemberCollection } from "~/db/collections"
 import { useFileUpload } from "~/hooks/use-file-upload"
 import { useTyping } from "~/hooks/use-typing"
@@ -30,7 +30,12 @@ export const MessageComposer = ({ placeholder = "Type a message..." }: MessageCo
 		(q) =>
 			q
 				.from({ member: channelMemberCollection })
-				.where(({ member }) => member.channelId === channelId && member.userId === user?.id)
+				.where(({ member }) =>
+					and(
+						eq(member.channelId, channelId),
+						eq(member.userId, user?.id || '')
+					)
+				)
 				.orderBy(({ member }) => member.createdAt, "desc")
 				.limit(1),
 		[channelId, user?.id],
