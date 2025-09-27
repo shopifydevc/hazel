@@ -3,6 +3,7 @@ import { and, eq, or, useLiveQuery } from "@tanstack/react-db"
 import { Link, useParams } from "@tanstack/react-router"
 import { useAuth } from "@workos-inc/authkit-react"
 import { useMemo } from "react"
+import { ErrorBoundary } from "react-error-boundary"
 import IconChat1 from "~/components/icons/IconChat1"
 import { channelCollection, channelMemberCollection, organizationCollection } from "~/db/collections"
 import { useUser } from "~/lib/auth"
@@ -30,9 +31,6 @@ import { ChannelItem, DmChannelLink } from "./channel-item"
 import { NavUser } from "./nav-user"
 import { SidebarFavoriteGroup } from "./sidebar-favorite-group"
 import { WorkspaceSwitcher } from "./workspace-switcher"
-
-import { ErrorBoundary } from "react-error-boundary";
-
 
 export const AppSidebar = ({ setOpenCmd }: { setOpenCmd: (open: boolean) => void }) => {
 	const { isMobile } = useSidebar()
