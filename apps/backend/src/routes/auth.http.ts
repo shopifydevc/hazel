@@ -69,6 +69,7 @@ export const HttpAuthLive = HttpApiBuilder.group(HazelApi, "auth", (handlers) =>
 				// Get required configuration
 				const clientId = yield* Config.string("WORKOS_CLIENT_ID").pipe(Effect.orDie)
 				const cookiePassword = yield* Config.string("WORKOS_COOKIE_PASSWORD").pipe(Effect.orDie)
+				const cookieDomain = yield* Config.string("WORKOS_COOKIE_DOMAIN").pipe(Effect.orDie)
 
 				// Exchange code for user information using WorkOS SDK
 				const authResponse = yield* workos
@@ -118,6 +119,7 @@ export const HttpAuthLive = HttpApiBuilder.group(HazelApi, "auth", (handlers) =>
 					{
 						secure: isSecure,
 						sameSite: "lax",
+						domain: cookieDomain,
 						path: "/",
 					},
 				)
