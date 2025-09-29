@@ -28,7 +28,7 @@ export class UnauthorizedError extends Schema.TaggedError<UnauthorizedError>("Un
 						CurrentUser.Context,
 						(actor) =>
 							new UnauthorizedError({
-								message: `Unauthorized action`,
+								message: `Unauthorized action ${action}`,
 								detail: `You are not authorized to perform ${action} on ${entity} for ${actor.id}`,
 							}),
 					),
