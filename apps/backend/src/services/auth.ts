@@ -65,7 +65,31 @@ export const AuthorizationLive = Layer.effect(
 						),
 					)
 
-					if (!session.authenticated) {
+					if (session.authenticated) {
+						const user = yield* userRepo.findByExternalId(session.user.id).pipe(Effect.orDie)
+
+						if (Option.isNone(user)) {
+							// TODO: Should create a new user tbh
+							return yield* Effect.fail(
+								new UnauthorizedError({
+									message: "User not found",
+									detail: `The user ${session.user.id} was not found`,
+								}),
+							)
+						}
+
+						return new CurrentUser.Schema({
+							id: user.value.id,
+							role: (session.role as "admin" | "member") || "member",
+							workosOrganizationId: session.organizationId,
+							avatarUrl: user.value.avatarUrl,
+							firstName: user.value.firstName,
+							lastName: user.value.lastName,
+							email: user.value.email,
+						})
+					}
+
+					if (!session.authenticated && session.reason === "no_session_cookie_provided") {
 						yield* clearInvalidCookie()
 						return yield* Effect.fail(
 							new UnauthorizedError({
@@ -75,22 +99,57 @@ export const AuthorizationLive = Layer.effect(
 						)
 					}
 
-					const user = yield* userRepo.findByExternalId(session.user.id).pipe(Effect.orDie)
+					const refreshedSession = yield* Effect.tryPromise(() => res.refresh()).pipe(
+						Effect.tapError((error) => Effect.log("refresh error", error)),
+						Effect.catchTag("UnknownException", (error) =>
+							Effect.gen(function* () {
+								yield* clearInvalidCookie()
+								return yield* Effect.fail(
+									new UnauthorizedError({
+										message: "Failed to call refresh on sealed session",
+										detail: String(error.cause),
+									}),
+								)
+							}),
+						),
+					)
+
+					if (!refreshedSession.authenticated) {
+						return yield* Effect.fail(
+							new UnauthorizedError({
+								message: "Failed to refresh session",
+								detail: "The session was not refreshed",
+							}),
+						)
+					}
+
+					yield* HttpApiBuilder.securitySetCookie(
+						CurrentUser.Cookie,
+						Redacted.make(refreshedSession.sealedSession!),
+						{
+							secure: Bun.env.NODE_ENV === "production",
+							sameSite: "lax",
+							domain: cookieDomain,
+							path: "/",
+						},
+					)
+
+					const user = yield* userRepo.findByExternalId(refreshedSession.user.id).pipe(Effect.orDie)
 
 					if (Option.isNone(user)) {
-						yield* clearInvalidCookie()
+						// TODO: Should create a new user tbh
 						return yield* Effect.fail(
 							new UnauthorizedError({
 								message: "User not found",
-								detail: `The user ${session.user.id} was not found`,
+								detail: `The user ${refreshedSession.user.id} was not found`,
 							}),
 						)
 					}
 
 					return new CurrentUser.Schema({
 						id: user.value.id,
-						role: (session.role as "admin" | "member") || "member",
-						workosOrganizationId: session.organizationId,
+						role: (refreshedSession.role as "admin" | "member") || "member",
+						workosOrganizationId: refreshedSession.organizationId,
 						avatarUrl: user.value.avatarUrl,
 						firstName: user.value.firstName,
 						lastName: user.value.lastName,
