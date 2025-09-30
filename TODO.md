@@ -22,7 +22,6 @@
   - Implement pinned message lookup (`apps/web/src/providers/chat-provider.tsx:180`)
 
 - [ ] **User Management**
-  - DM Channel Creation mutation (`apps/web/src/components/application/modals/create-dm-modal.tsx:56,123`)
   - Invite User mutation (`apps/web/src/components/application/modals/email-invite-modal.tsx:69`)
   - Fix webhook for invitation.created
 
