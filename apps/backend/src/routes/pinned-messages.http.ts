@@ -1,6 +1,6 @@
 import { HttpApiBuilder } from "@effect/platform"
 import { Database } from "@hazel/db"
-import { CurrentUser, InternalServerError, policyUse, withRemapDbErrors } from "@hazel/effect-lib"
+import { CurrentUser, policyUse, withRemapDbErrors } from "@hazel/effect-lib"
 import { Effect } from "effect"
 import { HazelApi } from "../api"
 import { generateTransactionId } from "../lib/create-transactionId"

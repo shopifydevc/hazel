@@ -84,7 +84,7 @@ export const MessageComposer = ({ placeholder = "Type a message..." }: MessageCo
 	}
 
 	const handleSubmit = async (content: string) => {
-		sendMessage({
+		const _tx = sendMessage({
 			content,
 			attachments: attachmentIds,
 		})

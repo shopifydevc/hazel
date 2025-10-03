@@ -137,8 +137,6 @@ export const HttpChannelLive = HttpApiBuilder.group(HazelApi, "channels", (handl
 											OrganizationId.make(payload.organizationId),
 										)
 
-									console.log("Existing channel", existingChannel)
-
 									if (Option.isSome(existingChannel)) {
 										return yield* Effect.fail(
 											new DmChannelAlreadyExistsError({

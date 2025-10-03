@@ -1,4 +1,4 @@
-import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "@effect/platform"
+import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema, OpenApi } from "@effect/platform"
 import { OrganizationMember } from "@hazel/db/models"
 import { OrganizationMemberId } from "@hazel/db/schema"
 import { CurrentUser, InternalServerError, UnauthorizedError } from "@hazel/effect-lib"
@@ -20,9 +20,9 @@ export class OrganizationMemberNotFoundError extends Schema.TaggedError<Organiza
 	{
 		organizationMemberId: Schema.UUID,
 	},
-	{
+	HttpApiSchema.annotations({
 		status: 404,
-	},
+	}),
 ) {}
 
 export class OrganizationMemberGroup extends HttpApiGroup.make("organizationMembers")

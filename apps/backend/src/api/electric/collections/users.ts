@@ -1,4 +1,4 @@
-import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "@effect/platform"
+import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema, OpenApi } from "@effect/platform"
 import { User } from "@hazel/db/models"
 import { UserId } from "@hazel/db/schema"
 import { CurrentUser, InternalServerError, UnauthorizedError } from "@hazel/effect-lib"
@@ -15,9 +15,9 @@ export class UserNotFoundError extends Schema.TaggedError<UserNotFoundError>("Us
 	{
 		userId: Schema.UUID,
 	},
-	{
+	HttpApiSchema.annotations({
 		status: 404,
-	},
+	}),
 ) {}
 
 export class UserGroup extends HttpApiGroup.make("users")

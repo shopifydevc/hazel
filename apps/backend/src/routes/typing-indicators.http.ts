@@ -1,6 +1,6 @@
 import { HttpApiBuilder } from "@effect/platform"
 import { Database } from "@hazel/db"
-import { CurrentUser, InternalServerError, policyUse, withRemapDbErrors } from "@hazel/effect-lib"
+import { policyUse, withRemapDbErrors } from "@hazel/effect-lib"
 import { Effect, Option } from "effect"
 import { HazelApi, TypingIndicatorNotFoundError } from "../api"
 import { generateTransactionId } from "../lib/create-transactionId"

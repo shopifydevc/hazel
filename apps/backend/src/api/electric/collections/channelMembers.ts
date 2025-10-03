@@ -1,4 +1,4 @@
-import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "@effect/platform"
+import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema, OpenApi } from "@effect/platform"
 import { ChannelMember } from "@hazel/db/models"
 import { ChannelMemberId } from "@hazel/db/schema"
 import { CurrentUser, InternalServerError, UnauthorizedError } from "@hazel/effect-lib"
@@ -18,9 +18,9 @@ export class ChannelMemberNotFoundError extends Schema.TaggedError<ChannelMember
 	{
 		channelMemberId: Schema.UUID,
 	},
-	{
+	HttpApiSchema.annotations({
 		status: 404,
-	},
+	}),
 ) {}
 
 export class ChannelMemberGroup extends HttpApiGroup.make("channelMembers")

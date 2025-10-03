@@ -1,4 +1,4 @@
-import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "@effect/platform"
+import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema, OpenApi } from "@effect/platform"
 import { Notification } from "@hazel/db/models"
 import { NotificationId } from "@hazel/db/schema"
 import { CurrentUser, InternalServerError, UnauthorizedError } from "@hazel/effect-lib"
@@ -17,9 +17,9 @@ export class NotificationNotFoundError extends Schema.TaggedError<NotificationNo
 	{
 		notificationId: Schema.UUID,
 	},
-	{
+	HttpApiSchema.annotations({
 		status: 404,
-	},
+	}),
 ) {}
 
 export class NotificationGroup extends HttpApiGroup.make("notifications")

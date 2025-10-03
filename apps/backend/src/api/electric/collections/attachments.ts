@@ -17,9 +17,9 @@ export class AttachmentNotFoundError extends Schema.TaggedError<AttachmentNotFou
 	{
 		attachmentId: Schema.UUID,
 	},
-	{
+	HttpApiSchema.annotations({
 		status: 404,
-	},
+	}),
 ) {}
 
 export class AttachmentGroup extends HttpApiGroup.make("attachments")

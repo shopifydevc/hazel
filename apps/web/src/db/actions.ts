@@ -101,7 +101,7 @@ export const sendMessage = createOptimisticAction<{
 		return { messageId }
 	},
 	mutationFn: async (props, _params) => {
-		const { transactionId } = await runtime.runPromise(
+		const { transactionId, data } = await runtime.runPromise(
 			Effect.gen(function* () {
 				const client = yield* ApiClient
 
@@ -120,9 +120,11 @@ export const sendMessage = createOptimisticAction<{
 			}),
 		)
 
+		localStorage.debug = "*"
+
 		await messageCollection.utils.awaitTxId(transactionId)
 
-		return { transactionId }
+		return { transactionId, data }
 	},
 })
 

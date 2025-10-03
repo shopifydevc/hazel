@@ -84,18 +84,13 @@ export const CreateDmModal = ({ isOpen, onOpenChange }: CreateDmModalProps) => {
 						: undefined
 
 				// Todo: We should navigate to the chat here
-				const test = createDmChannel({
+				const _test = createDmChannel({
 					organizationId: organizationId!,
 					participantIds: value.userIds as UserId[],
 					type,
 					name: type === "direct" ? selectedUserNames : undefined,
 					currentUserId: user.id as UserId,
 				})
-
-				test.isPersisted.promise.then((res) => {
-					console.log("res", res)
-				})
-				console.log("test", test)
 
 				// Show success message
 				if (type === "direct") {

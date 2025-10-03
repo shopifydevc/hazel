@@ -113,11 +113,17 @@ export function ChatProvider({ channelId, organizationId, children }: ChatProvid
 	)
 
 	// Message operations
-	const sendMessage = ({ content, attachments }: { content: string; attachments?: AttachmentId[] }) => {
+	const sendMessage = async ({
+		content,
+		attachments,
+	}: {
+		content: string
+		attachments?: AttachmentId[]
+	}) => {
 		if (!user?.id) return
 
 		// Use the sendMessage action which handles both message creation and attachment linking
-		sendMessageAction({
+		const _tx = sendMessageAction({
 			channelId,
 			authorId: UserId.make(user.id),
 			content,
@@ -195,7 +201,7 @@ export function ChatProvider({ channelId, organizationId, children }: ChatProvid
 		} else {
 			// Create new thread channel
 			const threadChannelId = ChannelId.make(uuid())
-			channelCollection.insert({
+			const tx = channelCollection.insert({
 				id: threadChannelId,
 				organizationId,
 				name: "Thread",
@@ -205,6 +211,8 @@ export function ChatProvider({ channelId, organizationId, children }: ChatProvid
 				updatedAt: null,
 				deletedAt: null,
 			})
+
+			await tx.isPersisted.promise
 
 			// Open the newly created thread
 			setActiveThreadChannelId(threadChannelId)

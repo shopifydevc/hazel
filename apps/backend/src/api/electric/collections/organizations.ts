@@ -1,4 +1,4 @@
-import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "@effect/platform"
+import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema, OpenApi } from "@effect/platform"
 import { Organization } from "@hazel/db/models"
 import { OrganizationId } from "@hazel/db/schema"
 import { CurrentUser, InternalServerError, UnauthorizedError } from "@hazel/effect-lib"
@@ -17,9 +17,9 @@ export class OrganizationNotFoundError extends Schema.TaggedError<OrganizationNo
 	{
 		organizationId: Schema.UUID,
 	},
-	{
+	HttpApiSchema.annotations({
 		status: 404,
-	},
+	}),
 ) {}
 
 export class OrganizationGroup extends HttpApiGroup.make("organizations")

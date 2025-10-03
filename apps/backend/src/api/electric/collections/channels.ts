@@ -1,4 +1,4 @@
-import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "@effect/platform"
+import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema, OpenApi } from "@effect/platform"
 import { Channel } from "@hazel/db/models"
 import { ChannelId, UserId } from "@hazel/db/schema"
 import {
@@ -27,9 +27,9 @@ export class ChannelNotFoundError extends Schema.TaggedError<ChannelNotFoundErro
 	{
 		channelId: Schema.UUID,
 	},
-	{
+	HttpApiSchema.annotations({
 		status: 404,
-	},
+	}),
 ) {}
 
 export class ChannelGroup extends HttpApiGroup.make("channels")

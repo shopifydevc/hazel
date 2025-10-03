@@ -1,4 +1,4 @@
-import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "@effect/platform"
+import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema, OpenApi } from "@effect/platform"
 import { DirectMessageParticipant } from "@hazel/db/models"
 import { DirectMessageParticipantId } from "@hazel/db/schema"
 import { CurrentUser, InternalServerError, UnauthorizedError } from "@hazel/effect-lib"
@@ -19,9 +19,9 @@ export class DirectMessageParticipantNotFoundError extends Schema.TaggedError<Di
 	{
 		directMessageParticipantId: Schema.UUID,
 	},
-	{
+	HttpApiSchema.annotations({
 		status: 404,
-	},
+	}),
 ) {}
 
 export class DirectMessageParticipantGroup extends HttpApiGroup.make("directMessageParticipants")

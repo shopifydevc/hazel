@@ -41,7 +41,7 @@ export class InternalServerError extends Schema.TaggedError<InternalServerError>
 	{
 		message: Schema.String,
 		detail: Schema.optional(Schema.String),
-		cause: Schema.Any,
+		cause: Schema.optional(Schema.Any),
 	},
 	HttpApiSchema.annotations({
 		status: 500,
@@ -80,7 +80,7 @@ export function withRemapDbErrors<R, E extends { _tag: string }, A>(
 								entityType,
 								entityId,
 							),
-							cause: err,
+							cause: String(err),
 						}),
 					),
 				ParseError: (err: any) =>
@@ -92,7 +92,7 @@ export function withRemapDbErrors<R, E extends { _tag: string }, A>(
 								entityType,
 								entityId,
 							),
-							cause: err,
+							cause: String(err),
 						}),
 					),
 			}),

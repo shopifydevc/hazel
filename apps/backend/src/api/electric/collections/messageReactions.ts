@@ -1,4 +1,4 @@
-import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "@effect/platform"
+import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema, OpenApi } from "@effect/platform"
 import { MessageReaction } from "@hazel/db/models"
 import { MessageReactionId } from "@hazel/db/schema"
 import { CurrentUser, InternalServerError, UnauthorizedError } from "@hazel/effect-lib"
@@ -20,9 +20,9 @@ export class MessageReactionNotFoundError extends Schema.TaggedError<MessageReac
 	{
 		messageReactionId: Schema.UUID,
 	},
-	{
+	HttpApiSchema.annotations({
 		status: 404,
-	},
+	}),
 ) {}
 
 export class MessageReactionGroup extends HttpApiGroup.make("messageReactions")

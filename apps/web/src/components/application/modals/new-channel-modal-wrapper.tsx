@@ -40,7 +40,7 @@ export const NewChannelModalWrapper = ({ isOpen, setIsOpen }: NewChannelModalWra
 		onSubmit: async ({ value }) => {
 			if (!user?.id) return
 			try {
-				channelCollection.insert({
+				const _tx = channelCollection.insert({
 					id: ChannelId.make(uuid()),
 					name: value.name,
 					type: value.type,
