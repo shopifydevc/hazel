@@ -1,4 +1,10 @@
-import { type OrganizationId, policy, UnauthorizedError, type UserId } from "@hazel/effect-lib"
+import {
+	type OrganizationId,
+	policy,
+	UnauthorizedError,
+	type UserId,
+	withSystemActor,
+} from "@hazel/effect-lib"
 import { Effect, Option } from "effect"
 import { OrganizationMemberRepo } from "../repositories/organization-member-repo"
 
@@ -23,7 +29,9 @@ export class OrganizationPolicy extends Effect.Service<OrganizationPolicy>()("Or
 					policyEntity,
 					"update",
 					Effect.fn(`${policyEntity}.update`)(function* (actor) {
-						const currentMember = yield* organziationMemberRepo.findByOrgAndUser(id, actor.id)
+						const currentMember = yield* organziationMemberRepo
+							.findByOrgAndUser(id, actor.id)
+							.pipe(withSystemActor)
 
 						if (Option.isNone(currentMember)) {
 							return yield* Effect.succeed(false)
@@ -45,7 +53,9 @@ export class OrganizationPolicy extends Effect.Service<OrganizationPolicy>()("Or
 					policyEntity,
 					"delete",
 					Effect.fn(`${policyEntity}.delete`)(function* (actor) {
-						const currentMember = yield* organziationMemberRepo.findByOrgAndUser(id, actor.id)
+						const currentMember = yield* organziationMemberRepo
+							.findByOrgAndUser(id, actor.id)
+							.pipe(withSystemActor)
 
 						if (Option.isNone(currentMember)) {
 							return yield* Effect.succeed(false)

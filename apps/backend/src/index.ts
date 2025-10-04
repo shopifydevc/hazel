@@ -128,7 +128,6 @@ const MainLive = Layer.mergeAll(
 	),
 )
 
-// Start the server
 HttpLayerRouter.serve(AllRoutes).pipe(
 	HttpMiddleware.withTracerDisabledWhen(
 		(request) => request.url === "/health" || request.method === "OPTIONS",
@@ -140,6 +139,3 @@ HttpLayerRouter.serve(AllRoutes).pipe(
 	Layer.launch,
 	BunRuntime.runMain,
 )
-
-// Note: The typing indicator cleanup will be started manually after server startup
-// to avoid complexity with the Layer system

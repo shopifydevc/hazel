@@ -1,4 +1,11 @@
-import { type ChannelId, type MessageId, policy, policyCompose, UnauthorizedError } from "@hazel/effect-lib"
+import {
+	type ChannelId,
+	type MessageId,
+	policy,
+	policyCompose,
+	UnauthorizedError,
+	withSystemActor,
+} from "@hazel/effect-lib"
 import { Effect, Option, pipe } from "effect"
 import { ChannelMemberRepo } from "../repositories/channel-member-repo"
 import { ChannelRepo } from "../repositories/channel-repo"
@@ -25,10 +32,9 @@ export class MessagePolicy extends Effect.Service<MessagePolicy>()("MessagePolic
 						"create",
 						Effect.fn(`${policyEntity}.create`)(function* (actor) {
 							// Check if user is a member of the organization (for public channels)
-							const orgMember = yield* organizationMemberRepo.findByOrgAndUser(
-								channel.organizationId,
-								actor.id,
-							)
+							const orgMember = yield* organizationMemberRepo
+								.findByOrgAndUser(channel.organizationId, actor.id)
+								.pipe(withSystemActor)
 
 							if (Option.isSome(orgMember)) {
 								// Org members can post in public channels
@@ -84,10 +90,9 @@ export class MessagePolicy extends Effect.Service<MessagePolicy>()("MessagePolic
 									}
 
 									// Organization admin can delete any message
-									const orgMember = yield* organizationMemberRepo.findByOrgAndUser(
-										channel.organizationId,
-										actor.id,
-									)
+									const orgMember = yield* organizationMemberRepo
+										.findByOrgAndUser(channel.organizationId, actor.id)
+										.pipe(withSystemActor)
 
 									if (Option.isSome(orgMember) && orgMember.value.role === "admin") {
 										return yield* Effect.succeed(true)

@@ -1,5 +1,5 @@
 import { Cookies, HttpApiBuilder, HttpServerRequest, HttpServerResponse } from "@effect/platform"
-import { CurrentUser, InternalServerError, UnauthorizedError } from "@hazel/effect-lib"
+import { CurrentUser, InternalServerError, UnauthorizedError, withSystemActor } from "@hazel/effect-lib"
 import { Config, Effect, Redacted } from "effect"
 import * as jose from "jose"
 import { HazelApi } from "../api"
@@ -94,7 +94,7 @@ export const HttpAuthLive = HttpApiBuilder.group(HazelApi, "auth", (handlers) =>
 						),
 					)
 
-				const { user: workosUser, organizationId } = authResponse
+				const { user: workosUser } = authResponse
 
 				// TODO: If user has organizatioNid also create a new organization membership
 				yield* userRepo
@@ -109,7 +109,7 @@ export const HttpAuthLive = HttpApiBuilder.group(HazelApi, "auth", (handlers) =>
 						settings: null,
 						deletedAt: null,
 					})
-					.pipe(Effect.orDie)
+					.pipe(Effect.orDie, withSystemActor)
 
 				const isSecure = Bun.env.NODE_ENV === "production"
 

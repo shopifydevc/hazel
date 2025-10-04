@@ -1,4 +1,5 @@
 import { ChannelId, ChannelMemberId, type OrganizationId } from "@hazel/db/schema"
+import { useNavigate } from "@tanstack/react-router"
 import { type } from "arktype"
 import { DialogTrigger as AriaDialogTrigger, Heading as AriaHeading } from "react-aria-components"
 import { toast } from "sonner"
@@ -27,7 +28,9 @@ interface NewChannelModalWrapperProps {
 
 export const NewChannelModalWrapper = ({ isOpen, setIsOpen }: NewChannelModalWrapperProps) => {
 	const { user } = useAuth()
-	const { organizationId } = useOrganization()
+	const { organizationId, slug } = useOrganization()
+
+	const navigate = useNavigate()
 
 	const form = useAppForm({
 		defaultValues: {
@@ -40,7 +43,7 @@ export const NewChannelModalWrapper = ({ isOpen, setIsOpen }: NewChannelModalWra
 		onSubmit: async ({ value }) => {
 			if (!user?.id) return
 			try {
-				const _tx = channelCollection.insert({
+				const tx = channelCollection.insert({
 					id: ChannelId.make(uuid()),
 					name: value.name,
 					type: value.type,
@@ -51,7 +54,21 @@ export const NewChannelModalWrapper = ({ isOpen, setIsOpen }: NewChannelModalWra
 					deletedAt: null,
 				})
 
-				await _tx.isPersisted.promise
+				await tx.isPersisted.promise
+
+				console.log(tx)
+
+				const channel = tx.mutations[0]?.changes
+
+				console.log(channel)
+
+				navigate({
+					to: "/$orgSlug/chat/$id",
+					params: {
+						orgSlug: slug!,
+						id: channel?.id! as string,
+					},
+				})
 
 				toast.success("Channel created successfully")
 				setIsOpen(false)

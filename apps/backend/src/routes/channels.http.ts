@@ -135,7 +135,7 @@ export const HttpChannelLive = HttpApiBuilder.group(HazelApi, "channels", (handl
 											user.id,
 											payload.participantIds[0],
 											OrganizationId.make(payload.organizationId),
-										)
+										).pipe(withSystemActor)
 
 									if (Option.isSome(existingChannel)) {
 										return yield* Effect.fail(

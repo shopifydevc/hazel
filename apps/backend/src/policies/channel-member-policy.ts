@@ -1,4 +1,10 @@
-import { type ChannelId, type ChannelMemberId, policy, UnauthorizedError } from "@hazel/effect-lib"
+import {
+	type ChannelId,
+	type ChannelMemberId,
+	policy,
+	UnauthorizedError,
+	withSystemActor,
+} from "@hazel/effect-lib"
 import { Effect, Option } from "effect"
 import { ChannelMemberRepo } from "../repositories/channel-member-repo"
 import { ChannelRepo } from "../repositories/channel-repo"
@@ -39,10 +45,9 @@ export class ChannelMemberPolicy extends Effect.Service<ChannelMemberPolicy>()("
 						"create",
 						Effect.fn(`${policyEntity}.create`)(function* (actor) {
 							// Check if user is an admin of the organization
-							const orgMember = yield* organizationMemberRepo.findByOrgAndUser(
-								channel.organizationId,
-								actor.id,
-							)
+							const orgMember = yield* organizationMemberRepo
+								.findByOrgAndUser(channel.organizationId, actor.id)
+								.pipe(withSystemActor)
 
 							if (Option.isSome(orgMember) && orgMember.value.role === "admin") {
 								return yield* Effect.succeed(true)
@@ -76,10 +81,9 @@ export class ChannelMemberPolicy extends Effect.Service<ChannelMemberPolicy>()("
 								}
 
 								// Organization admins can update any membership
-								const orgMember = yield* organizationMemberRepo.findByOrgAndUser(
-									channel.organizationId,
-									actor.id,
-								)
+								const orgMember = yield* organizationMemberRepo
+									.findByOrgAndUser(channel.organizationId, actor.id)
+									.pipe(withSystemActor)
 
 								if (Option.isSome(orgMember) && orgMember.value.role === "admin") {
 									return yield* Effect.succeed(true)
@@ -109,10 +113,9 @@ export class ChannelMemberPolicy extends Effect.Service<ChannelMemberPolicy>()("
 								}
 
 								// Organization admins can remove members
-								const orgMember = yield* organizationMemberRepo.findByOrgAndUser(
-									channel.organizationId,
-									actor.id,
-								)
+								const orgMember = yield* organizationMemberRepo
+									.findByOrgAndUser(channel.organizationId, actor.id)
+									.pipe(withSystemActor)
 
 								if (Option.isSome(orgMember) && orgMember.value.role === "admin") {
 									return yield* Effect.succeed(true)
