@@ -7,7 +7,6 @@ import { Mail01, MessageSquare02, Plus } from "@untitledui/icons"
 import { type } from "arktype"
 import { useMemo, useState } from "react"
 import { Heading as AriaHeading } from "react-aria-components"
-import { toast } from "sonner"
 import { Dialog, Modal, ModalFooter, ModalOverlay } from "~/components/application/modals/modal"
 import { Avatar } from "~/components/base/avatar/avatar"
 import { Button } from "~/components/base/buttons/button"
@@ -21,6 +20,7 @@ import { organizationMemberCollection, userCollection } from "~/db/collections"
 import { useAppForm } from "~/hooks/use-app-form"
 import { useOrganization } from "~/hooks/use-organization"
 import { HazelApiClient } from "~/lib/services/common/atom-client"
+import { toastExit } from "~/lib/toast-exit"
 import { useAuth } from "~/providers/auth-provider"
 import { cx } from "~/utils/cx"
 
@@ -43,7 +43,7 @@ export const CreateDmModal = ({ isOpen, onOpenChange }: CreateDmModalProps) => {
 	const { organizationId, slug } = useOrganization()
 
 	const createDmChannel = useAtomSet(HazelApiClient.mutation("channels", "createDm"), {
-		mode: "promise",
+		mode: "promiseExit",
 	})
 
 	// TODO: Implement
@@ -72,27 +72,40 @@ export const CreateDmModal = ({ isOpen, onOpenChange }: CreateDmModalProps) => {
 			onChange: dmFormSchema,
 		},
 		onSubmit: async ({ value }) => {
-			if (value.userIds.length === 0 || !user?.id || !organizationId) return
+			if (value.userIds.length === 0 || !user?.id || !organizationId || !slug) return
 
+			// Determine if it's a single DM or group
 			const type = value.userIds.length === 1 ? "single" : "direct"
+
+			// Get selected users for group name
+			const selectedUserNames =
+				value.userIds.length > 1
+					? organizationUsers
+							?.filter((u) => value.userIds.includes(u?.id || ""))
+							?.map((u) => u?.firstName || "")
+							?.slice(0, 3)
+							?.join(", ")
+					: undefined
 
 			const targetUser = organizationUsers?.find((u) => u?.id === value.userIds[0])
 
-			toast.promise(
+			const exit = await toastExit(
 				createDmChannel({
 					payload: {
 						organizationId,
 						participantIds: value.userIds as UserId[],
 						type,
+						name: type === "direct" ? selectedUserNames : undefined,
 					},
 				}),
 				{
 					loading: "Creating conversation...",
 					success: (result) => {
+						// Navigate to the created channel
 						if (result.data.id) {
 							navigate({
 								to: "/$orgSlug/chat/$id",
-								params: { orgSlug: slug!, id: result.data.id },
+								params: { orgSlug: slug, id: result.data.id },
 							})
 						}
 
@@ -108,9 +121,10 @@ export const CreateDmModal = ({ isOpen, onOpenChange }: CreateDmModalProps) => {
 						}
 						return `Created group conversation with ${value.userIds.length} people`
 					},
-					error: "Failed to start conversation",
 				},
 			)
+
+			return exit
 		},
 	})
 

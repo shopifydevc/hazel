@@ -1,16 +1,17 @@
-import { ChannelId } from "@hazel/db/schema"
+import { useAtomSet } from "@effect-atom/atom-react"
 import { useNavigate } from "@tanstack/react-router"
 import { type } from "arktype"
+import { Cause, Exit, Match } from "effect"
 import { DialogTrigger as AriaDialogTrigger, Heading as AriaHeading } from "react-aria-components"
-import { toast } from "sonner"
 import { Dialog, Modal, ModalOverlay } from "~/components/application/modals/modal"
 import { Button } from "~/components/base/buttons/button"
 import { CloseButton } from "~/components/base/buttons/close-button"
 import { Select } from "~/components/base/select/select"
 import IconHashtagStroke from "~/components/icons/IconHashtagStroke"
-import { channelCollection, channelMemberCollection } from "~/db/collections"
 import { useAppForm } from "~/hooks/use-app-form"
 import { useOrganization } from "~/hooks/use-organization"
+import { HazelApiClient } from "~/lib/services/common/atom-client"
+import { toastExit } from "~/lib/toast-exit"
 import { useAuth } from "~/providers/auth-provider"
 
 const channelSchema = type({
@@ -31,6 +32,10 @@ export const NewChannelModalWrapper = ({ isOpen, setIsOpen }: NewChannelModalWra
 
 	const navigate = useNavigate()
 
+	const createChannel = useAtomSet(HazelApiClient.mutation("channels", "create"), {
+		mode: "promiseExit",
+	})
+
 	const form = useAppForm({
 		defaultValues: {
 			name: "",
@@ -40,42 +45,42 @@ export const NewChannelModalWrapper = ({ isOpen, setIsOpen }: NewChannelModalWra
 			onChange: channelSchema,
 		},
 		onSubmit: async ({ value }) => {
-			if (!user?.id) return
-			try {
-				const tx = channelCollection.insert(
-					{
-						id: ChannelId.make(crypto.randomUUID()),
+			if (!user?.id || !organizationId || !slug) return
+
+			const exit = await toastExit(
+				createChannel({
+					payload: {
 						name: value.name,
 						type: value.type,
-						organizationId: organizationId!,
+						organizationId,
 						parentChannelId: null,
-						createdAt: new Date(),
-						updatedAt: null,
-						deletedAt: null,
 					},
-					{},
-				)
+				}),
+				{
+					loading: "Creating channel...",
+					success: (result) => {
+						// Navigate to the created channel
+						if (result.data.id) {
+							navigate({
+								to: "/$orgSlug/chat/$id",
+								params: {
+									orgSlug: slug,
+									id: result.data.id,
+								},
+							})
+						}
 
-				await tx.isPersisted.promise
+						// Close modal and reset form
+						setIsOpen(false)
+						form.reset()
 
-				const channel = tx.mutations[0]?.changes
-
-				console.log(channel)
-
-				navigate({
-					to: "/$orgSlug/chat/$id",
-					params: {
-						orgSlug: slug!,
-						id: channel?.id! as string,
+						return "Channel created successfully"
 					},
-				})
+				},
+			)
 
-				toast.success("Channel created successfully")
-				setIsOpen(false)
-				form.reset()
-			} catch {
-				toast.error("Failed to create channel")
-			}
+			// Return the exit for form handling
+			return exit
 		},
 	})
 

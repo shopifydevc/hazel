@@ -1,10 +1,10 @@
-import { type Cause, Exit } from "effect"
+import { Cause, Exit } from "effect"
 import { toast } from "sonner"
 
 export interface ToastExitOptions<A, E> {
 	loading: string
 	success: string | ((value: A) => string)
-	error: string | ((cause: Cause.Cause<E>) => string)
+	error?: string | ((cause: Cause.Cause<E>) => string)
 }
 
 /**
@@ -20,6 +20,7 @@ export interface ToastExitOptions<A, E> {
  *   {
  *     loading: "Creating channel...",
  *     success: (result) => `Channel created: ${result.data.name}`,
+ *     // error is optional - will extract from Cause if not provided
  *     error: "Failed to create channel"
  *   }
  * )
@@ -40,7 +41,11 @@ export async function toastExit<A, E>(
 			return exit
 		},
 		onFailure: (cause) => {
-			const message = typeof options.error === "function" ? options.error(cause) : options.error
+			const message = options.error
+				? typeof options.error === "function"
+					? options.error(cause)
+					: options.error
+				: Cause.pretty(cause)
 			toast.error(message, { id: loadingToast })
 			return exit
 		},
