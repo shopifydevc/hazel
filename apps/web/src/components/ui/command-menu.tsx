@@ -105,7 +105,7 @@ const CommandMenu = ({
 					isDismissable={isDismissable}
 					className={({ isExiting, isEntering }) =>
 						twJoin(
-							"fixed inset-0 z-50 h-(--visual-viewport-height,100vh) w-screen overflow-hidden bg-black/15",
+							"fixed inset-0 z-[100] h-(--visual-viewport-height,100vh) w-screen overflow-hidden bg-black/15",
 							"grid grid-rows-[1fr_auto] justify-items-center text-center sm:grid-rows-[1fr_auto_3fr]",
 							isEntering && "fade-in animate-in duration-300",
 							isExiting && "fade-out animate-out duration-200",
@@ -115,6 +115,7 @@ const CommandMenu = ({
 					{...props}
 				>
 					<Modal
+						isDismissable={isDismissable}
 						className={({ isExiting, isEntering }) =>
 							twMerge(
 								"row-start-2 bg-primary text-left text-primary shadow-lg outline-none ring ring-primary md:row-start-1",
@@ -134,7 +135,9 @@ const CommandMenu = ({
 						}
 					>
 						<Dialog
+							role="dialog"
 							aria-label={props["aria-label"] ?? "Command Menu"}
+							aria-modal="true"
 							className="flex max-h-[inherit] flex-col overflow-hidden outline-hidden"
 						>
 							<Autocomplete filter={filter} {...props} />

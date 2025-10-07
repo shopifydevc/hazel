@@ -131,7 +131,7 @@ export const HttpChannelLive = HttpApiBuilder.group(HazelApi, "channels", (handl
 
 								if (payload.type === "single") {
 									const existingChannel =
-										yield* DirectMessageParticipantRepo.findExistingDmChannel(
+										yield* ChannelMemberRepo.findExistingSingleDmChannel(
 											user.id,
 											payload.participantIds[0],
 											OrganizationId.make(payload.organizationId),

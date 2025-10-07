@@ -67,6 +67,9 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
 
 		const focusEditor = useCallback(() => {
 			requestAnimationFrame(() => {
+				// Don't steal focus if a modal is open
+				if (document.querySelector('[role="dialog"]')) return
+
 				editor.tf.focus({
 					edge: "end",
 				})
@@ -77,6 +80,9 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
 			(text: string) => {
 				// Use requestAnimationFrame to ensure DOM is ready
 				requestAnimationFrame(() => {
+					// Don't steal focus if a modal is open
+					if (document.querySelector('[role="dialog"]')) return
+
 					// First focus the editor
 					editor.tf.focus()
 
@@ -92,6 +98,9 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
 		const resetAndFocus = useCallback(() => {
 			editor.tf.reset()
 			setTimeout(() => {
+				// Don't steal focus if a modal is open
+				if (document.querySelector('[role="dialog"]')) return
+
 				editor.tf.focus({
 					at: {
 						anchor: { path: [0, 0], offset: 0 },

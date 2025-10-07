@@ -13,7 +13,7 @@ export class UnauthorizedError extends Schema.TaggedError<UnauthorizedError>("Un
 	}),
 ) {
 	static is(u: unknown): u is UnauthorizedError {
-		return Predicate.isTagged(u, "@superwall/schema/models/errors/Unauthorized")
+		return Predicate.isTagged(u, "UnauthorizedError")
 	}
 
 	static refail(entity: string, action: string) {
