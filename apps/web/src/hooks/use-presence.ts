@@ -11,8 +11,16 @@ import { router } from "~/main"
 type PresenceStatus = "online" | "away" | "busy" | "dnd" | "offline"
 
 const AFK_TIMEOUT = Duration.minutes(5)
-const OFFLINE_TIMEOUT = Duration.minutes(2)
 const UPDATE_INTERVAL = Duration.seconds(30)
+
+// TODO: Implement server-side offline detection
+// Server should mark users as offline if no heartbeat received within:
+// - UPDATE_INTERVAL * 2 (60 seconds) - consider user offline
+// This should be implemented as a background job that:
+// 1. Queries users with presence.updatedAt older than 60 seconds
+// 2. Updates their status to 'offline'
+// 3. Runs every 30 seconds
+// Backend file: apps/backend/src/jobs/presence-cleanup.ts
 
 // ============================================================================
 // Core Atoms
@@ -42,34 +50,6 @@ const lastActivityAtom = Atom.make((get) => {
 	})
 
 	return lastActivity
-}).pipe(Atom.keepAlive)
-
-/**
- * Atom that tracks window visibility state
- * Returns { hidden: boolean, hiddenSince: DateTime | null }
- */
-const windowVisibilityAtom = Atom.make((get) => {
-	let state = {
-		hidden: document.hidden,
-		hiddenSince: document.hidden ? DateTime.unsafeMake(new Date()) : null,
-	}
-
-	const handleVisibilityChange = () => {
-		const isHidden = document.hidden
-		state = {
-			hidden: isHidden,
-			hiddenSince: isHidden ? DateTime.unsafeMake(new Date()) : null,
-		}
-		get.setSelf(state)
-	}
-
-	document.addEventListener("visibilitychange", handleVisibilityChange)
-
-	get.addFinalizer(() => {
-		document.removeEventListener("visibilitychange", handleVisibilityChange)
-	})
-
-	return state
 }).pipe(Atom.keepAlive)
 
 /**
@@ -114,29 +94,20 @@ const afkStateAtom = Atom.make((get) =>
 
 /**
  * Derived atom that computes the final presence status
- * Combines manual status, AFK detection, and window visibility
+ * Combines manual status and AFK detection
+ * Note: Offline status is only set on tab close or via server-side heartbeat timeout
  */
 const computedPresenceStatusAtom = Atom.make((get) =>
 	Effect.gen(function* () {
 		const manualStatus = get(manualStatusAtom)
 		const afkState = yield* get.result(afkStateAtom)
-		const windowVisibility = get(windowVisibilityAtom)
 
 		// Manual status takes precedence
 		if (manualStatus.status !== null) {
 			return manualStatus.status
 		}
 
-		// Check if window has been hidden long enough to mark offline
-		if (windowVisibility.hidden && windowVisibility.hiddenSince) {
-			const now = DateTime.unsafeMake(new Date())
-			const hiddenDuration = DateTime.distance(windowVisibility.hiddenSince, now)
-			if (Duration.greaterThanOrEqualTo(hiddenDuration, OFFLINE_TIMEOUT)) {
-				return "offline" as PresenceStatus
-			}
-		}
-
-		// Mark as away if AFK
+		// Mark as away if AFK (works even when window is hidden)
 		if (afkState.shouldMarkAway) {
 			return "away" as PresenceStatus
 		}
@@ -276,6 +247,24 @@ export function usePresence() {
 
 		return () => clearInterval(interval)
 	}, [user?.id, currentPresence?.id, computedStatus, updateStatus])
+
+	// Mark user offline when tab closes
+	useEffect(() => {
+		if (!user?.id) return
+
+		const handleBeforeUnload = () => {
+			// Use sendBeacon for reliable delivery even as page unloads
+			const url = `${import.meta.env.VITE_BACKEND_URL}/presence/offline`
+			const data = JSON.stringify({ userId: user.id })
+			navigator.sendBeacon(url, data)
+		}
+
+		window.addEventListener("beforeunload", handleBeforeUnload)
+
+		return () => {
+			window.removeEventListener("beforeunload", handleBeforeUnload)
+		}
+	}, [user?.id])
 
 	// Ref to track previous status for manual updates
 	const previousManualStatusRef = useRef<PresenceStatus>("online")
