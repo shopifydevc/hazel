@@ -1,10 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router"
 
-import { useEffect, useState } from "react"
 import type { Color } from "react-aria-components"
 import { ColorSwatch, parseColor, Radio, RadioGroup } from "react-aria-components"
 import { Dark, Light, System } from "~/components/application/modals/appearances"
-import { generateRgbShades } from "~/components/application/modals/base-components/generate-shades"
 
 import { SectionHeader } from "~/components/application/section-headers/section-headers"
 import { SectionLabel } from "~/components/application/section-headers/section-label"
@@ -32,60 +30,15 @@ function AppearanceSettings() {
 		{ hex: "#E04F16", name: "orange" },
 	]
 
-	// Get saved color from localStorage or default
-	const getSavedColor = () => {
-		try {
-			const savedColorHex = localStorage.getItem("brand-color")
-			if (savedColorHex) {
-				return parseColor(savedColorHex)
-			}
-		} catch {
-			// localStorage not available or invalid color
-		}
-		return parseColor("#7F56D9") // Default color
-	}
+	const { theme, setTheme, brandColor, setBrandColor } = useTheme()
 
-	const [color, setColor] = useState<Color>(getSavedColor())
+	// Convert hex string to Color object for react-aria-components
+	const color = parseColor(brandColor)
 
-	const { theme, setTheme } = useTheme()
-
-	useEffect(() => {
-		// Save color to localStorage
-		try {
-			localStorage.setItem("brand-color", color.toString("hex"))
-		} catch {
-			// localStorage not available
-		}
-
-		const existingColorSwatch = colorSwatches.find((swatch) => swatch.hex === color.toString("hex"))
-		if (existingColorSwatch) {
-			const shades = ["25", "50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950"]
-
-			// Re-map the brand color variables to the existing primitive color variables.
-			shades.forEach((shade) =>
-				document.documentElement.style.setProperty(
-					`--color-brand-${shade}`,
-					`var(--color-${existingColorSwatch.name}-${shade})`,
-				),
-			)
-
-			return
-		}
-
-		const shades = generateRgbShades(color.toString("hex"))
-		if (!shades) return
-
-		// Set the brand color variables to the new custom color shades.
-		Object.entries(shades).forEach(([key, { r, g, b }]) =>
-			document.documentElement.style.setProperty(`--color-brand-${key}`, `rgb(${r} ${g} ${b})`),
-		)
-	}, [color])
-
-	const _handleCustomColorChange = (value: Color | null) => {
+	const handleColorChange = (value: Color | null) => {
 		if (!value) return
-
-		// Always update the selected color when custom color changes
-		setColor(value)
+		// Update brand color atom (automatically persists to localStorage)
+		setBrandColor(value.toString("hex"))
 	}
 
 	const themes = [
@@ -141,7 +94,7 @@ function AppearanceSettings() {
 							value={color?.toString("hex")}
 							onChange={(value) => {
 								const newColor = parseColor(value)
-								setColor(newColor)
+								handleColorChange(newColor)
 							}}
 							className="flex flex-col items-start gap-4 md:flex-row md:items-center"
 						>
@@ -154,7 +107,7 @@ function AppearanceSettings() {
 									>
 										{({ isSelected, isFocused }) => (
 											<ColorSwatch
-												id={"color-${swatch.hex}"}
+												id={`color-${swatch.hex}`}
 												color={swatch.hex}
 												className={cx(
 													"-outline-offset-1 size-7 cursor-pointer rounded-full outline-1 outline-black/10",

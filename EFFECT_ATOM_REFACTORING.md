@@ -49,37 +49,39 @@ The app currently uses effect-atom in these areas:
 
 ---
 
-### 🔥 Priority 1: High Impact (Remaining)
-
-#### 3. Chat Context State
+#### 3. Chat Context State ✅
 **File**: `apps/web/src/providers/chat-provider.tsx`
 
-**Current**: Context + useState (lines 79-82)
-```tsx
-const [replyToMessageId, setReplyToMessageId] = useState<MessageId | null>(null)
-const [activeThreadChannelId, setActiveThreadChannelId] = useState<ChannelId | null>(null)
-const [activeThreadMessageId, setActiveThreadMessageId] = useState<MessageId | null>(null)
-```
+**Status**: COMPLETED
+- Created `apps/web/src/atoms/chat-atoms.ts` with global atoms
+- Migrated reply state to `Atom.family` keyed by channelId (per-channel isolation)
+- Migrated thread state to global atoms (app-wide)
+- Removed useState hooks for chat state
+- Maintained same ChatProvider and useChat API (zero breaking changes)
+- Added all atom setters to useCallback dependency arrays
 
-**Target**: Global atoms with optional persistence
-```tsx
-// Create atoms that can be accessed anywhere
-const replyToMessageAtom = Atom.make<MessageId | null>(null).pipe(Atom.keepAlive)
-const activeThreadAtom = Atom.make<{ channelId: ChannelId; messageId: MessageId } | null>(null).pipe(Atom.keepAlive)
+**Results**:
+- Reply state now isolated per-channel via Atom.family
+- Thread state globally accessible (can open threads from anywhere)
+- Better composability - state accessible outside ChatProvider
+- Ready for future Reactivity integration
+- Improved testability
 
-// Or use Atom.family for per-channel state
-const channelReplyStateAtom = Atom.family((channelId: ChannelId) =>
-  Atom.make<MessageId | null>(null)
+**Implementation Details**:
+```tsx
+// Per-channel reply state
+const replyToMessageAtomFamily = Atom.family((_channelId: ChannelId) =>
+  Atom.make<MessageId | null>(null).pipe(Atom.keepAlive)
 )
-```
 
-**Benefits**:
-- Accessible outside ChatProvider
-- Can integrate with Reactivity for mutations
-- Easier to test
-- Better composition
+// Global thread state
+const activeThreadChannelIdAtom = Atom.make<ChannelId | null>(null).pipe(Atom.keepAlive)
+const activeThreadMessageIdAtom = Atom.make<MessageId | null>(null).pipe(Atom.keepAlive)
+```
 
 ---
+
+### 🔥 Priority 1: High Impact (Remaining)
 
 #### 4. File Upload State Management
 **File**: `apps/web/src/hooks/use-file-upload.tsx`
@@ -306,10 +308,10 @@ const messageToolbarStateAtom = Atom.family((messageId: MessageId) =>
 2. ✅ Notification sound settings → Atom.kvs
 3. ✅ Tested and validated localStorage integration
 
-### Phase 2: Critical User Features (Next)
-3. Chat context state → Global atoms
-4. File upload state → Atom.family
-5. Integration testing
+### Phase 2: Critical User Features (In Progress)
+3. ✅ Chat context state → Global atoms with Atom.family
+4. 🔜 File upload state → Atom.family (needs major rework)
+5. ⏸️ Integration testing
 
 ### Phase 3: UI Polish (Week 3)
 7. Command palette atoms
@@ -334,15 +336,21 @@ const messageToolbarStateAtom = Atom.family((messageId: MessageId) =>
 - ✅ Better type safety with Effect Schema
 - ✅ Enhanced DX with declarative atoms
 
+### Phase 2 Results (In Progress)
+- ✅ Migrated chat state to global atoms
+- ✅ Created first Atom.family for per-channel state
+- ✅ Zero breaking changes - ChatProvider API unchanged
+- ✅ Enhanced composability - state accessible globally
+- ✅ Ready for Reactivity integration
+
 ### Overall Progress
 - **Phase 1**: ✅ 2/2 completed (100%)
-- **Phase 2**: 🔜 0/2 completed (0%)
+- **Phase 2**: 🔄 1/2 completed (50%)
 - **Phase 3**: ⏸️ 0/3 completed (0%)
 - **Phase 4**: ⏸️ 0/3 completed (0%)
 
 ### Remaining Targets
-- 🎯 Migrate chat context state to global atoms
-- 🎯 Implement file upload atoms with Atom.family
+- 🎯 Implement file upload atoms with Atom.family (needs major rework)
 - 🎯 Complete remaining UI state refactorings
 
 ---
