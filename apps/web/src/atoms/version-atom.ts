@@ -42,14 +42,10 @@ const currentVersionAtom = Atom.kvs({
 })
 
 /**
- * Atom that tracks if the update toast has been shown this session
+ * Atom that tracks if the update toast has been shown (in-memory only, resets on page load)
+ * This ensures the toast shows on each page load when an update is available
  */
-const updateToastShownAtom = Atom.kvs({
-	runtime: sessionStorageRuntime,
-	key: "app-update-toast-shown",
-	schema: Schema.Boolean,
-	defaultValue: () => false,
-})
+const updateToastShownAtom = Atom.make(false).pipe(Atom.keepAlive)
 
 /**
  * Atom that periodically checks for new app versions
