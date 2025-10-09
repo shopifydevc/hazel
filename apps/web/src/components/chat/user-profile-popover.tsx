@@ -193,15 +193,6 @@ export function UserProfilePopover({ userId }: UserProfilePopoverProps) {
 									<div className="mt-3 flex flex-col">
 										<span className="font-semibold">{user ? fullName : "Unknown"}</span>
 										<span className="text-secondary text-xs">{user?.email}</span>
-										{presence?.status && (
-											<span className="mt-1 text-tertiary text-xs">
-												{presence.status === "online" && "🟢 Online"}
-												{presence.status === "away" && "🟡 Away"}
-												{presence.status === "busy" && "🟠 Busy"}
-												{presence.status === "dnd" && "🔴 Do not disturb"}
-												{presence.status === "offline" && "⚪ Offline"}
-											</span>
-										)}
 										{presence?.customMessage && (
 											<span className="mt-1 text-tertiary text-xs italic">
 												"{presence.customMessage}"

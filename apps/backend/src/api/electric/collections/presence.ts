@@ -1,6 +1,6 @@
 import { HttpApiEndpoint, HttpApiGroup, OpenApi } from "@effect/platform"
 import { UserPresenceStatus } from "@hazel/db/models"
-import { ChannelId } from "@hazel/db/schema"
+import { ChannelId, UserId } from "@hazel/db/schema"
 import { CurrentUser, InternalServerError, UnauthorizedError } from "@hazel/effect-lib"
 import { Schema } from "effect"
 import { TransactionId } from "../../../lib/schema"
@@ -23,6 +23,16 @@ export class UpdateActiveChannelPayload extends Schema.Class<UpdateActiveChannel
 	"UpdateActiveChannelPayload",
 )({
 	activeChannelId: Schema.NullOr(ChannelId),
+}) {}
+
+// Payload for marking user offline
+export class MarkOfflinePayload extends Schema.Class<MarkOfflinePayload>("MarkOfflinePayload")({
+	userId: UserId,
+}) {}
+
+// Response for marking user offline
+export class MarkOfflineResponse extends Schema.Class<MarkOfflineResponse>("MarkOfflineResponse")({
+	success: Schema.Boolean,
 }) {}
 
 export class PresenceGroup extends HttpApiGroup.make("presence")
@@ -56,3 +66,19 @@ export class PresenceGroup extends HttpApiGroup.make("presence")
 	)
 	.prefix("/presence")
 	.middleware(CurrentUser.Authorization) {}
+
+export class PresencePublicGroup extends HttpApiGroup.make("presencePublic")
+	.add(
+		HttpApiEndpoint.post("markOffline")`/offline`
+			.setPayload(MarkOfflinePayload)
+			.addSuccess(MarkOfflineResponse)
+			.addError(InternalServerError)
+			.annotateContext(
+				OpenApi.annotations({
+					title: "Mark User Offline",
+					description: "Mark a user as offline when they close their tab (no auth required)",
+					summary: "Mark offline",
+				}),
+			),
+	)
+	.prefix("/presence") {}

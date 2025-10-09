@@ -1,6 +1,7 @@
 import { HttpApiBuilder } from "@effect/platform"
 import { Database } from "@hazel/db"
-import { CurrentUser, policyUse, withRemapDbErrors } from "@hazel/effect-lib"
+import { UserId } from "@hazel/db/schema"
+import { CurrentUser, policyRequire, policyUse, withRemapDbErrors, withSystemActor } from "@hazel/effect-lib"
 import { Effect, Option } from "effect"
 import { HazelApi } from "../api"
 import { generateTransactionId } from "../lib/create-transactionId"
@@ -78,5 +79,33 @@ export const HttpPresenceLive = HttpApiBuilder.group(HazelApi, "presence", (hand
 					}
 				}),
 			)
+	}),
+)
+
+export const HttpPresencePublicLive = HttpApiBuilder.group(HazelApi, "presencePublic", (handlers) =>
+	Effect.gen(function* () {
+		const db = yield* Database.Database
+
+		return handlers.handle(
+			"markOffline",
+			Effect.fn(function* ({ payload }) {
+				// No auth or policy check since this is a public endpoint called by sendBeacon
+				yield* db
+					.transaction(
+						Effect.asVoid(
+							UserPresenceStatusRepo.updateStatus({
+								userId: payload.userId,
+								status: "offline",
+								customMessage: null,
+							}),
+						),
+					)
+					.pipe(withSystemActor, withRemapDbErrors("UserPresenceStatus", "update"))
+
+				return {
+					success: true,
+				}
+			}),
+		)
 	}),
 )

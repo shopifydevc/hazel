@@ -40,8 +40,6 @@ function RouteComponent() {
 	if (organizations && organizations.length > 0) {
 		const org = organizations[0]!
 
-		console.log("org", org)
-
 		// If organization doesn't have a slug, redirect to setup
 		if (!org.slug) {
 			return <Navigate to="/onboarding/setup-organization" search={{ orgId: org.id }} />

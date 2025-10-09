@@ -255,8 +255,8 @@ export function usePresence() {
 		const handleBeforeUnload = () => {
 			// Use sendBeacon for reliable delivery even as page unloads
 			const url = `${import.meta.env.VITE_BACKEND_URL}/presence/offline`
-			const data = JSON.stringify({ userId: user.id })
-			navigator.sendBeacon(url, data)
+			const blob = new Blob([JSON.stringify({ userId: user.id })], { type: "application/json" })
+			navigator.sendBeacon(url, blob)
 		}
 
 		window.addEventListener("beforeunload", handleBeforeUnload)
