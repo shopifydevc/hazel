@@ -12,7 +12,6 @@ import {
  * All usage data is automatically persisted to localStorage
  */
 export function useEmojiStats() {
-	// Read atom values
 	const topEmojis = useAtomValue(topEmojisAtom)
 	const emojiUsage = useAtomValue(emojiUsageAtom) ?? ({} as EmojiUsage)
 

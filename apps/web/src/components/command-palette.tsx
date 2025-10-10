@@ -1,10 +1,11 @@
 "use client"
 
-import { useAtomSet } from "@effect-atom/atom-react"
+import { useAtomSet, useAtomValue } from "@effect-atom/atom-react"
 import type { UserId } from "@hazel/db/schema"
 import { and, eq, or, useLiveQuery } from "@tanstack/react-db"
 import { useNavigate } from "@tanstack/react-router"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo } from "react"
+import { commandPaletteAtom, type CommandPalettePage } from "~/atoms/command-palette-atoms"
 import {
 	CommandMenu,
 	CommandMenuItem,
@@ -42,41 +43,61 @@ import IconUsersPlus from "./icons/icon-users-plus"
 type Page = "home" | "channels" | "members"
 
 export function CommandPalette(props: Pick<CommandMenuProps, "isOpen" | "onOpenChange">) {
-	const [currentPage, setCurrentPage] = useState<Page>("home")
-	const [pageHistory, setPageHistory] = useState<Page[]>([])
-	const [inputValue, setInputValue] = useState("")
+	// Use atoms for state management with hook-based updates
+	const { currentPage, inputValue } = useAtomValue(commandPaletteAtom)
+	const setCommandPaletteState = useAtomSet(commandPaletteAtom)
 
 	const navigateToPage = useCallback(
 		(page: Page) => {
-			setPageHistory((prev) => [...prev, currentPage])
-			setCurrentPage(page)
-			setInputValue("") // Reset search when navigating
+			setCommandPaletteState((state) => ({
+				...state,
+				currentPage: page,
+				pageHistory: [...state.pageHistory, state.currentPage],
+				inputValue: "",
+			}))
 		},
-		[currentPage],
+		[setCommandPaletteState],
 	)
 
 	const goBack = useCallback(() => {
-		if (pageHistory.length > 0) {
-			const previousPage = pageHistory[pageHistory.length - 1]
-			setPageHistory((prev) => prev.slice(0, -1))
-			if (previousPage) {
-				setCurrentPage(previousPage)
-				setInputValue("") // Reset search when going back
+		setCommandPaletteState((state) => {
+			if (state.pageHistory.length === 0) return state
+
+			const previousPage = state.pageHistory[state.pageHistory.length - 1]
+			return {
+				...state,
+				currentPage: previousPage || "home",
+				pageHistory: state.pageHistory.slice(0, -1),
+				inputValue: "",
 			}
-		}
-	}, [pageHistory])
+		})
+	}, [setCommandPaletteState])
+
+	const updateSearchInput = useCallback(
+		(value: string) => {
+			setCommandPaletteState((state) => ({
+				...state,
+				inputValue: value,
+			}))
+		},
+		[setCommandPaletteState],
+	)
 
 	const closePalette = useCallback(() => {
 		props.onOpenChange?.(false)
 	}, [props])
 
-	// Reset to home when modal closes/opens
+	// Reset navigation to home page when modal opens
+	// Keep state when closing so it's preserved if reopened quickly
 	useEffect(() => {
-		if (!props.isOpen) {
-			setCurrentPage("home")
-			setPageHistory([])
-			setInputValue("")
-		} else {
+		if (props.isOpen) {
+			// Reset to home page when opening
+			setCommandPaletteState({
+				currentPage: "home",
+				pageHistory: [],
+				inputValue: "",
+			})
+
 			// Ensure search input gets focus when modal opens
 			setTimeout(() => {
 				const searchInput = document.querySelector('[role="dialog"] input') as HTMLInputElement
@@ -85,7 +106,7 @@ export function CommandPalette(props: Pick<CommandMenuProps, "isOpen" | "onOpenC
 				}
 			}, 100)
 		}
-	}, [props.isOpen])
+	}, [props.isOpen, setCommandPaletteState])
 
 	// Handle ESC key to go back
 	useEffect(() => {
@@ -117,7 +138,7 @@ export function CommandPalette(props: Pick<CommandMenuProps, "isOpen" | "onOpenC
 			key={currentPage}
 			shortcut="k"
 			inputValue={inputValue}
-			onInputChange={setInputValue}
+			onInputChange={updateSearchInput}
 			{...props}
 		>
 			<CommandMenuSearch placeholder={searchPlaceholder} />

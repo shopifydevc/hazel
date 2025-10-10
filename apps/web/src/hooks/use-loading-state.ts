@@ -1,6 +1,15 @@
-import { useCallback, useRef, useState } from "react"
-
-type LoadingState = "idle" | "loading-top" | "loading-bottom" | "cooldown"
+import { useAtomValue } from "@effect-atom/atom-react"
+import { useCallback, useMemo } from "react"
+import {
+	canLoadBottomAtomFamily,
+	canLoadTopAtomFamily,
+	finishLoading as finishLoadingAtom,
+	isLoadingAtomFamily,
+	type LoadingState,
+	loadingStateAtomFamily,
+	startLoadingBottom as startLoadingBottomAtom,
+	startLoadingTop as startLoadingTopAtom,
+} from "~/atoms/loading-state-atoms"
 
 interface UseLoadingStateReturn {
 	canLoadTop: boolean
@@ -12,43 +21,62 @@ interface UseLoadingStateReturn {
 	loadingState: LoadingState
 }
 
-const COOLDOWN_MS = 300
+interface UseLoadingStateOptions {
+	/**
+	 * Unique identifier for this loading state instance
+	 * Allows multiple components to have isolated loading states
+	 * @default "default"
+	 */
+	id?: string
+}
 
-export function useLoadingState(): UseLoadingStateReturn {
-	const [loadingState, setLoadingState] = useState<LoadingState>("idle")
-	const cooldownTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
+/**
+ * Hook for managing loading states with cooldown period
+ * Uses effect-atom for state management
+ *
+ * @example
+ * ```tsx
+ * const { startLoadingTop, finishLoading, isLoading } = useLoadingState({ id: 'message-list' })
+ *
+ * const loadMore = async () => {
+ *   if (!startLoadingTop()) return
+ *   await fetchMessages()
+ *   finishLoading()
+ * }
+ * ```
+ */
+export function useLoadingState(options: UseLoadingStateOptions = {}): UseLoadingStateReturn {
+	const id = options.id ?? "default"
 
-	const canLoadTop = loadingState === "idle"
-	const canLoadBottom = loadingState === "idle"
-	const isLoading = loadingState === "loading-top" || loadingState === "loading-bottom"
+	// Read state from atoms
+	const loadingState = useAtomValue(loadingStateAtomFamily(id))
+	const canLoadTop = useAtomValue(canLoadTopAtomFamily(id))
+	const canLoadBottom = useAtomValue(canLoadBottomAtomFamily(id))
+	const isLoading = useAtomValue(isLoadingAtomFamily(id))
 
+	// Create stable callbacks that use the id
 	const startLoadingTop = useCallback(() => {
-		if (loadingState !== "idle") return false
-		setLoadingState("loading-top")
-		return true
-	}, [loadingState])
+		return startLoadingTopAtom(id)
+	}, [id])
 
 	const startLoadingBottom = useCallback(() => {
-		if (loadingState !== "idle") return false
-		setLoadingState("loading-bottom")
-		return true
-	}, [loadingState])
+		return startLoadingBottomAtom(id)
+	}, [id])
 
 	const finishLoading = useCallback(() => {
-		setLoadingState("cooldown")
-		clearTimeout(cooldownTimeoutRef.current)
-		cooldownTimeoutRef.current = setTimeout(() => {
-			setLoadingState("idle")
-		}, COOLDOWN_MS)
-	}, [])
+		finishLoadingAtom(id)
+	}, [id])
 
-	return {
-		canLoadTop,
-		canLoadBottom,
-		startLoadingTop,
-		startLoadingBottom,
-		finishLoading,
-		isLoading,
-		loadingState,
-	}
+	return useMemo(
+		() => ({
+			canLoadTop,
+			canLoadBottom,
+			startLoadingTop,
+			startLoadingBottom,
+			finishLoading,
+			isLoading,
+			loadingState,
+		}),
+		[canLoadTop, canLoadBottom, startLoadingTop, startLoadingBottom, finishLoading, isLoading, loadingState],
+	)
 }

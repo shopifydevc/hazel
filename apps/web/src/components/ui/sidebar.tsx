@@ -1,8 +1,18 @@
 import { Slot } from "@radix-ui/react-slot"
+import { useAtomValue } from "@effect-atom/atom-react"
 import { LeftIndent01 } from "@untitledui/icons"
 import { cva, type VariantProps } from "class-variance-authority"
 import * as React from "react"
 import { Button as PrimitiveButton } from "react-aria-components"
+import {
+	setMobileSidebarOpen,
+	setSidebarOpen,
+	sidebarOpenAtom,
+	sidebarOpenMobileAtom,
+	sidebarStateAtom,
+	toggleMobileSidebar,
+	toggleSidebar as toggleSidebarAtom,
+} from "~/atoms/sidebar-atoms"
 import { Separator } from "~/components/ui/separator"
 import { Sheet, SheetBody, SheetContent } from "~/components/ui/sheet"
 import { Skeleton } from "~/components/ui/skeleton"
@@ -12,8 +22,6 @@ import { cn } from "~/lib/utils"
 import { Button } from "../base/buttons/button"
 import { Input } from "../base/input/input"
 
-const SIDEBAR_COOKIE_NAME = "sidebar_state"
-const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 const SIDEBAR_WIDTH = "21rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
@@ -29,58 +37,48 @@ type SidebarContextProps = {
 	toggleSidebar: () => void
 }
 
-const SidebarContext = React.createContext<SidebarContextProps | null>(null)
-
+/**
+ * Hook to access sidebar state from atoms
+ */
 function useSidebar() {
-	const context = React.useContext(SidebarContext)
-	if (!context) {
-		throw new Error("useSidebar must be used within a SidebarProvider.")
-	}
+	const isMobile = useIsMobile()
+	const open = useAtomValue(sidebarOpenAtom) ?? true
+	const openMobile = useAtomValue(sidebarOpenMobileAtom)
+	const state = useAtomValue(sidebarStateAtom)
 
-	return context
+	const toggleSidebar = React.useCallback(() => {
+		return isMobile ? toggleMobileSidebar() : toggleSidebarAtom()
+	}, [isMobile])
+
+	return {
+		state,
+		open,
+		setOpen: setSidebarOpen,
+		openMobile,
+		setOpenMobile: setMobileSidebarOpen,
+		isMobile,
+		toggleSidebar,
+	}
 }
 
+/**
+ * SidebarProvider wraps the app and sets up global sidebar keyboard shortcuts
+ * State is now managed via atoms instead of Context
+ */
 function SidebarProvider({
-	defaultOpen = true,
-	open: openProp,
-	onOpenChange: setOpenProp,
 	className,
 	style,
 	children,
 	...props
-}: React.ComponentProps<"div"> & {
-	defaultOpen?: boolean
-	open?: boolean
-	onOpenChange?: (open: boolean) => void
-}) {
+}: React.ComponentProps<"div">) {
 	const isMobile = useIsMobile()
-	const [openMobile, setOpenMobile] = React.useState(false)
 
-	// This is the internal state of the sidebar.
-	// We use openProp and setOpenProp for control from outside the component.
-	const [_open, _setOpen] = React.useState(defaultOpen)
-	const open = openProp ?? _open
-	const setOpen = React.useCallback(
-		(value: boolean | ((value: boolean) => boolean)) => {
-			const openState = typeof value === "function" ? value(open) : value
-			if (setOpenProp) {
-				setOpenProp(openState)
-			} else {
-				_setOpen(openState)
-			}
-
-			// This sets the cookie to keep the sidebar state.
-			document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
-		},
-		[setOpenProp, open],
-	)
-
-	// Helper to toggle the sidebar.
+	// Helper to toggle the sidebar (mobile or desktop depending on screen size)
 	const toggleSidebar = React.useCallback(() => {
-		return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)
-	}, [isMobile, setOpen])
+		return isMobile ? toggleMobileSidebar() : toggleSidebarAtom()
+	}, [isMobile])
 
-	// Adds a keyboard shortcut to toggle the sidebar.
+	// Adds a keyboard shortcut to toggle the sidebar
 	React.useEffect(() => {
 		const handleKeyDown = (event: KeyboardEvent) => {
 			if (event.key === SIDEBAR_KEYBOARD_SHORTCUT && (event.metaKey || event.ctrlKey)) {
@@ -93,43 +91,24 @@ function SidebarProvider({
 		return () => window.removeEventListener("keydown", handleKeyDown)
 	}, [toggleSidebar])
 
-	// We add a state so that we can do data-state="expanded" or "collapsed".
-	// This makes it easier to style the sidebar with Tailwind classes.
-	const state = open ? "expanded" : "collapsed"
-
-	const contextValue = React.useMemo<SidebarContextProps>(
-		() => ({
-			state,
-			open,
-			setOpen,
-			isMobile,
-			openMobile,
-			setOpenMobile,
-			toggleSidebar,
-		}),
-		[state, open, setOpen, isMobile, openMobile, toggleSidebar],
-	)
-
 	return (
-		<SidebarContext.Provider value={contextValue}>
-			<div
-				data-slot="sidebar-wrapper"
-				style={
-					{
-						"--sidebar-width": SIDEBAR_WIDTH,
-						"--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
-						...style,
-					} as React.CSSProperties
-				}
-				className={cn(
-					"group/sidebar-wrapper flex min-h-svh w-full has-data-[variant=inset]:bg-sidebar",
-					className,
-				)}
-				{...props}
-			>
-				{children}
-			</div>
-		</SidebarContext.Provider>
+		<div
+			data-slot="sidebar-wrapper"
+			style={
+				{
+					"--sidebar-width": SIDEBAR_WIDTH,
+					"--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
+					...style,
+				} as React.CSSProperties
+			}
+			className={cn(
+				"group/sidebar-wrapper flex min-h-svh w-full has-data-[variant=inset]:bg-sidebar",
+				className,
+			)}
+			{...props}
+		>
+			{children}
+		</div>
 	)
 }
 
