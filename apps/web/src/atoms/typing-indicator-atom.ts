@@ -17,7 +17,7 @@ interface TypingIndicatorState {
  * Atom family for per-channel-member typing state
  * Key format: "channelId:memberId"
  */
-export const typingIndicatorAtomFamily = Atom.family((key: string) =>
+export const typingIndicatorAtomFamily = Atom.family((_key: string) =>
 	Atom.make<TypingIndicatorState | null>(null).pipe(Atom.keepAlive),
 )
 

@@ -5,7 +5,7 @@ import type { UserId } from "@hazel/db/schema"
 import { and, eq, or, useLiveQuery } from "@tanstack/react-db"
 import { useNavigate } from "@tanstack/react-router"
 import { useCallback, useEffect, useMemo } from "react"
-import { commandPaletteAtom, type CommandPalettePage } from "~/atoms/command-palette-atoms"
+import { type CommandPalettePage, commandPaletteAtom } from "~/atoms/command-palette-atoms"
 import {
 	CommandMenu,
 	CommandMenuItem,

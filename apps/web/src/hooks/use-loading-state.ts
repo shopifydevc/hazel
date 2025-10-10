@@ -77,6 +77,14 @@ export function useLoadingState(options: UseLoadingStateOptions = {}): UseLoadin
 			isLoading,
 			loadingState,
 		}),
-		[canLoadTop, canLoadBottom, startLoadingTop, startLoadingBottom, finishLoading, isLoading, loadingState],
+		[
+			canLoadTop,
+			canLoadBottom,
+			startLoadingTop,
+			startLoadingBottom,
+			finishLoading,
+			isLoading,
+			loadingState,
+		],
 	)
 }
