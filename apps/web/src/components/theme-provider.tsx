@@ -1,7 +1,6 @@
 import { BrowserKeyValueStore } from "@effect/platform-browser"
-import { Atom, useAtomSet, useAtomValue } from "@effect-atom/atom-react"
+import { Atom, useAtomMount, useAtomSet, useAtomValue } from "@effect-atom/atom-react"
 import { Schema } from "effect"
-import { useEffect } from "react"
 import { generateRgbShades } from "./application/modals/base-components/generate-shades"
 
 export type Theme = "dark" | "light" | "system"
@@ -12,7 +11,6 @@ type ThemeProviderProps = {
 	storageKey?: string
 }
 
-// Predefined color swatches for brand color
 const colorSwatches = [
 	{ hex: "#535862", name: "gray" },
 	{ hex: "#099250", name: "green" },
@@ -24,10 +22,8 @@ const colorSwatches = [
 	{ hex: "#E04F16", name: "orange" },
 ]
 
-// Schema for theme validation
 const ThemeSchema = Schema.Literal("dark", "light", "system")
 
-// Schema for brand color hex string validation
 const HexColorSchema = Schema.String.pipe(
 	Schema.pattern(/^#[0-9A-Fa-f]{6}$/),
 	Schema.annotations({ message: () => "Must be a valid hex color (#RRGGBB)" }),
@@ -44,7 +40,6 @@ export const themeAtom = Atom.kvs({
 	defaultValue: () => "system" as const,
 })
 
-// Brand color atom with automatic localStorage persistence
 export const brandColorAtom = Atom.kvs({
 	runtime: localStorageRuntime,
 	key: "brand-color",
@@ -52,61 +47,66 @@ export const brandColorAtom = Atom.kvs({
 	defaultValue: () => "#7F56D9" as const,
 })
 
-// Derived atom that resolves "system" to actual theme
-export const resolvedThemeAtom = Atom.make((get) => {
+export const resolvedThemeAtom = Atom.transform(themeAtom, (get) => {
 	const theme = get(themeAtom)
-	if (theme === "system") {
-		// Check system preference
-		if (typeof window !== "undefined") {
-			return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
-		}
-		return "light"
+	if (theme !== "system" && theme !== null) return theme
+
+	if (typeof window === "undefined") return "light"
+
+	// Listen to system theme changes
+	const matcher = window.matchMedia("(prefers-color-scheme: dark)")
+
+	matcher.addEventListener("change", onChange)
+	get.addFinalizer(() => matcher.removeEventListener("change", onChange))
+
+	return matcher.matches ? "dark" : "light"
+
+	function onChange() {
+		get.setSelf(matcher.matches ? "dark" : "light")
 	}
-	return theme || "system"
+})
+
+export const applyThemeAtom = Atom.make((get) => {
+	const theme = get(resolvedThemeAtom)
+	if (typeof document === "undefined") return
+
+	const root = document.documentElement
+	root.classList.remove("light", "dark")
+	root.classList.add(theme)
+})
+
+export const applyBrandColorAtom = Atom.make((get) => {
+	const brandColor = get(brandColorAtom)
+	if (typeof document === "undefined") return
+
+	const hexColor = brandColor || "#7F56D9"
+
+	const existingColorSwatch = colorSwatches.find((swatch) => swatch.hex === hexColor)
+
+	if (existingColorSwatch) {
+		const shades = ["25", "50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950"]
+
+		shades.forEach((shade) => {
+			document.documentElement.style.setProperty(
+				`--color-brand-${shade}`,
+				`var(--color-${existingColorSwatch.name}-${shade})`,
+			)
+		})
+
+		return
+	}
+
+	const shades = generateRgbShades(hexColor)
+	if (!shades) return
+
+	Object.entries(shades).forEach(([key, { r, g, b }]) => {
+		document.documentElement.style.setProperty(`--color-brand-${key}`, `rgb(${r} ${g} ${b})`)
+	})
 })
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-	const resolvedTheme = useAtomValue(resolvedThemeAtom)
-	const brandColor = useAtomValue(brandColorAtom)
-
-	// Apply theme class to document root
-	useEffect(() => {
-		const root = window.document.documentElement
-
-		root.classList.remove("light", "dark")
-		root.classList.add(resolvedTheme)
-	}, [resolvedTheme])
-
-	// Apply brand color CSS variables to document root
-	useEffect(() => {
-		const hexColor = brandColor || "#7F56D9"
-
-		// Check if color matches a predefined swatch
-		const existingColorSwatch = colorSwatches.find((swatch) => swatch.hex === hexColor)
-
-		if (existingColorSwatch) {
-			const shades = ["25", "50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950"]
-
-			// Re-map the brand color variables to the existing primitive color variables
-			shades.forEach((shade) => {
-				document.documentElement.style.setProperty(
-					`--color-brand-${shade}`,
-					`var(--color-${existingColorSwatch.name}-${shade})`,
-				)
-			})
-
-			return
-		}
-
-		// Generate custom color shades for non-swatch colors
-		const shades = generateRgbShades(hexColor)
-		if (!shades) return
-
-		// Set the brand color variables to the new custom color shades
-		Object.entries(shades).forEach(([key, { r, g, b }]) => {
-			document.documentElement.style.setProperty(`--color-brand-${key}`, `rgb(${r} ${g} ${b})`)
-		})
-	}, [brandColor])
+	useAtomMount(applyThemeAtom)
+	useAtomMount(applyBrandColorAtom)
 
 	return <>{children}</>
 }
