@@ -1,5 +1,5 @@
 import { useAtomSet } from "@effect-atom/atom-react"
-import type { OrganizationId, OrganizationMemberId, UserId } from "@hazel/db/schema"
+import type { UserId } from "@hazel/db/schema"
 import { eq, useLiveQuery } from "@tanstack/react-db"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { AlertTriangle } from "@untitledui/icons"
@@ -7,6 +7,7 @@ import { useState } from "react"
 import type { SortDescriptor } from "react-aria-components"
 import { DialogTrigger as AriaDialogTrigger, Heading as AriaHeading } from "react-aria-components"
 import { toast } from "sonner"
+import { openModal } from "~/atoms/modal-atoms"
 import { ChangeRoleModal } from "~/components/application/modals/change-role-modal"
 import { EmailInviteModal } from "~/components/application/modals/email-invite-modal"
 import { Dialog, Modal, ModalOverlay } from "~/components/application/modals/modal"
@@ -39,12 +40,6 @@ function RouteComponent() {
 		direction: "ascending",
 	})
 	const [showInviteModal, setShowInviteModal] = useState(false)
-	const [changeRoleUser, setChangeRoleUser] = useState<{
-		id: UserId
-		memberId: OrganizationMemberId
-		name: string
-		role: string
-	} | null>(null)
 	const [removeUserId, setRemoveUserId] = useState<UserId | null>(null)
 
 	const { organizationId, slug: orgSlug } = useOrganization()
@@ -268,11 +263,13 @@ function RouteComponent() {
 																	`${member.user.firstName} ${member.user.lastName}`,
 																)
 															} else if (action === "change-role") {
-																setChangeRoleUser({
-																	id: member.userId,
+																const currentUserMember = teamMembers.find((m) => m.userId === user?.id)
+																openModal("change-role", {
+																	userId: member.userId,
 																	name: `${member.user.firstName} ${member.user.lastName}`,
 																	memberId: member.id,
 																	role: member.role,
+																	currentUserRole: currentUserMember?.role || "member",
 																})
 															} else if (action === "remove") {
 																setRemoveUserId(member.userId)
@@ -311,14 +308,7 @@ function RouteComponent() {
 
 			<EmailInviteModal isOpen={showInviteModal} onOpenChange={setShowInviteModal} />
 
-			{changeRoleUser && user && (
-				<ChangeRoleModal
-					isOpen={!!changeRoleUser}
-					onOpenChange={(open) => !open && setChangeRoleUser(null)}
-					user={changeRoleUser}
-					currentUserRole={teamMembers.find((m) => m.userId === user.id)?.role || "member"}
-				/>
-			)}
+			<ChangeRoleModal />
 
 			{removeUserId && (
 				<AriaDialogTrigger

@@ -1,8 +1,10 @@
+import { useAtomValue } from "@effect-atom/atom-react"
 import type { OrganizationMemberId, UserId } from "@hazel/db/schema"
 import { User02 } from "@untitledui/icons"
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { DialogTrigger as AriaDialogTrigger, Heading as AriaHeading } from "react-aria-components"
 import { toast } from "sonner"
+import { closeModal, modalAtomFamily } from "~/atoms/modal-atoms"
 import { Button } from "~/components/base/buttons/button"
 import { CloseButton } from "~/components/base/buttons/close-button"
 import { Label } from "~/components/base/input/label"
@@ -11,45 +13,59 @@ import { FeaturedIcon } from "~/components/foundations/featured-icon/featured-ic
 import { organizationMemberCollection } from "~/db/collections"
 import { Dialog, Modal, ModalOverlay } from "./modal"
 
-interface ChangeRoleModalProps {
-	isOpen: boolean
-	onOpenChange: (open: boolean) => void
-	user: {
-		memberId: OrganizationMemberId
-		id: UserId
-		name: string
-		role: string
-	}
+interface ChangeRoleMetadata {
+	userId: UserId
+	memberId: OrganizationMemberId
+	name: string
+	role: string
 	currentUserRole: string
 }
 
-export function ChangeRoleModal({ isOpen, onOpenChange, user, currentUserRole }: ChangeRoleModalProps) {
-	const [selectedRole, setSelectedRole] = useState(user.role)
+export function ChangeRoleModal() {
+	const modalState = useAtomValue(modalAtomFamily("change-role"))
+	const metadata = modalState.metadata as ChangeRoleMetadata | undefined
+
+	const [selectedRole, setSelectedRole] = useState(metadata?.role ?? "member")
 	const [isSubmitting, setIsSubmitting] = useState(false)
 
+	// Reset selected role when modal opens with new metadata
+	useEffect(() => {
+		if (modalState.isOpen && metadata?.role) {
+			setSelectedRole(metadata.role)
+		}
+	}, [modalState.isOpen, metadata?.role])
+
+	const handleClose = useCallback(() => {
+		closeModal("change-role")
+	}, [])
+
 	const handleSubmit = useCallback(async () => {
-		if (selectedRole === user.role) {
-			onOpenChange(false)
+		if (!metadata) return
+
+		if (selectedRole === metadata.role) {
+			handleClose()
 			return
 		}
 
 		setIsSubmitting(true)
 		try {
-			const tx = organizationMemberCollection.update(user.memberId, (draft) => {
+			const tx = organizationMemberCollection.update(metadata.memberId, (draft) => {
 				draft.role = selectedRole as "member" | "admin" | "owner"
 			})
 
-			await toast.promise(tx.isPersisted.promise, {
-				loading: "Updating role...",
-				success: `${user.name}'s role has been updated to ${selectedRole}`,
-				error: "Failed to update role",
-			})
+			await toast
+				.promise(tx.isPersisted.promise, {
+					loading: "Updating role...",
+					success: `${metadata.name}'s role has been updated to ${selectedRole}`,
+					error: "Failed to update role",
+				})
+				.unwrap()
 
-			onOpenChange(false)
+			handleClose()
 		} finally {
 			setIsSubmitting(false)
 		}
-	}, [selectedRole, user, onOpenChange])
+	}, [selectedRole, metadata, handleClose])
 
 	const roleOptions = [
 		{ value: "member", label: "Member", description: "Can view and participate in channels" },
@@ -58,18 +74,20 @@ export function ChangeRoleModal({ isOpen, onOpenChange, user, currentUserRole }:
 			value: "owner",
 			label: "Owner",
 			description: "Full control over the organization",
-			disabled: currentUserRole !== "owner",
+			disabled: metadata?.currentUserRole !== "owner",
 		},
 	]
 
+	if (!metadata) return null
+
 	return (
-		<AriaDialogTrigger isOpen={isOpen} onOpenChange={onOpenChange}>
+		<AriaDialogTrigger isOpen={modalState.isOpen} onOpenChange={(open) => !open && handleClose()}>
 			<ModalOverlay isDismissable>
 				<Modal>
 					<Dialog>
 						<div className="relative w-full overflow-hidden rounded-2xl bg-primary shadow-xl transition-all sm:max-w-md">
 							<CloseButton
-								onClick={() => onOpenChange(false)}
+								onClick={handleClose}
 								theme="light"
 								size="lg"
 								className="absolute top-3 right-3"
@@ -80,7 +98,7 @@ export function ChangeRoleModal({ isOpen, onOpenChange, user, currentUserRole }:
 								</div>
 								<div className="z-10 flex flex-col gap-0.5">
 									<AriaHeading slot="title" className="font-semibold text-md text-primary">
-										Change role for {user.name}
+										Change role for {metadata.name}
 									</AriaHeading>
 									<p className="text-sm text-tertiary">
 										Select a new role for this team member
@@ -111,7 +129,7 @@ export function ChangeRoleModal({ isOpen, onOpenChange, user, currentUserRole }:
 								<Button
 									color="secondary"
 									size="lg"
-									onClick={() => onOpenChange(false)}
+									onClick={handleClose}
 									isDisabled={isSubmitting}
 								>
 									Cancel
@@ -120,7 +138,7 @@ export function ChangeRoleModal({ isOpen, onOpenChange, user, currentUserRole }:
 									color="primary"
 									size="lg"
 									onClick={handleSubmit}
-									isDisabled={isSubmitting || selectedRole === user.role}
+									isDisabled={isSubmitting || selectedRole === metadata.role}
 								>
 									{isSubmitting ? "Updating..." : "Update role"}
 								</Button>
