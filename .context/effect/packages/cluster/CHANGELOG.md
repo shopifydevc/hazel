@@ -1,5 +1,24 @@
 # @effect/cluster
 
+## 0.50.6
+
+### Patch Changes
+
+- [#5642](https://github.com/Effect-TS/effect/pull/5642) [`b8e3c6d`](https://github.com/Effect-TS/effect/commit/b8e3c6d510aec858ac34bfe5eb2b8fc5506fd669) Thanks @tim-smart! - fix ReferenceError in NodeSocket.fromNet
+
+- Updated dependencies [[`b8e3c6d`](https://github.com/Effect-TS/effect/commit/b8e3c6d510aec858ac34bfe5eb2b8fc5506fd669)]:
+  - @effect/rpc@0.71.1
+  - @effect/workflow@0.11.5
+
+## 0.50.5
+
+### Patch Changes
+
+- [#5640](https://github.com/Effect-TS/effect/pull/5640) [`85ea731`](https://github.com/Effect-TS/effect/commit/85ea731c8305c040fc50b82c204f3e20371c50a4) Thanks @tim-smart! - use external interruption for workflow suspend
+
+- Updated dependencies [[`85ea731`](https://github.com/Effect-TS/effect/commit/85ea731c8305c040fc50b82c204f3e20371c50a4)]:
+  - @effect/workflow@0.11.4
+
 ## 0.50.4
 
 ### Patch Changes
