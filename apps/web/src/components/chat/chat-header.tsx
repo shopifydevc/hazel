@@ -1,3 +1,4 @@
+import type { UserId } from "@hazel/db/schema"
 import { Avatar } from "~/components/base/avatar/avatar"
 import { Tooltip, TooltipTrigger } from "~/components/base/tooltip/tooltip"
 import IconHashtag from "~/components/icons/icon-hashtag"
@@ -8,6 +9,30 @@ import { useAuth } from "~/lib/auth"
 import { ButtonUtility } from "../base/buttons/button-utility"
 import IconPhone from "../icons/icon-phone"
 import { PinnedMessagesModal } from "./pinned-messages-modal"
+
+interface OtherMemberAvatarProps {
+	member: {
+		userId: UserId
+		user: {
+			avatarUrl?: string | null
+			firstName: string
+			lastName: string
+		}
+	}
+}
+
+function OtherMemberAvatar({ member }: OtherMemberAvatarProps) {
+	const { isOnline } = useUserPresence(member.userId)
+
+	return (
+		<Avatar
+			size="sm"
+			src={member.user.avatarUrl}
+			alt={`${member.user.firstName} ${member.user.lastName}`}
+			status={isOnline ? "online" : "offline"}
+		/>
+	)
+}
 
 export function ChatHeader() {
 	const { channelId } = useChat()
@@ -25,21 +50,14 @@ export function ChatHeader() {
 
 	const isDirectMessage = channel.type === "direct" || channel.type === "single"
 	const otherMembers = channel.members.filter((member) => member.userId !== user?.id)
-	const firstMemberId = otherMembers[0]?.userId!
-	const { isOnline } = useUserPresence(firstMemberId)
 
 	return (
 		<div className="flex h-14 flex-shrink-0 items-center justify-between border-sidebar-border border-b bg-sidebar px-4">
 			<div className="flex items-center gap-3">
 				{isDirectMessage ? (
 					<>
-						{otherMembers && otherMembers.length > 0 && (
-							<Avatar
-								size="sm"
-								src={otherMembers[0]?.user.avatarUrl}
-								alt={`${otherMembers[0]?.user.firstName} ${otherMembers[0]?.user.lastName}`}
-								status={isOnline ? "online" : "offline"}
-							/>
+						{otherMembers && otherMembers.length > 0 && otherMembers[0] && (
+							<OtherMemberAvatar member={otherMembers[0]} />
 						)}
 						<div>
 							<h2 className="font-semibold text-sm">

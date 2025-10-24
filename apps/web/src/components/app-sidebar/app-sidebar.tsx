@@ -230,8 +230,7 @@ const DmChannelGroup = (props: { organizationId: OrganizationId }) => {
 			<SidebarGroupContent>
 				<SidebarMenu>
 					{dmChannelIds.map((channelId) => (
-						// TODO: Add presence
-						<DmChannelLink key={channelId} channelId={channelId} userPresence={[]} />
+						<DmChannelLink key={channelId} channelId={channelId} />
 					))}
 				</SidebarMenu>
 			</SidebarGroupContent>

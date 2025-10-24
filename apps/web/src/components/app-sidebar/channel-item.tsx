@@ -1,4 +1,4 @@
-import type { ChannelId } from "@hazel/db/schema"
+import type { ChannelId, UserId } from "@hazel/db/schema"
 import { Link, useNavigate, useParams, useRouter } from "@tanstack/react-router"
 import { useCallback, useState } from "react"
 import { toast } from "sonner"
@@ -7,6 +7,7 @@ import IconTrash from "~/components/icons/icon-trash"
 import { channelCollection, channelMemberCollection, messageCollection } from "~/db/collections"
 import { useChannelWithCurrentUser } from "~/db/hooks"
 import { useOrganization } from "~/hooks/use-organization"
+import { useUserPresence } from "~/hooks/use-presence"
 import { useAuth } from "~/lib/auth"
 import { cx } from "~/utils/cx"
 import { DeleteChannelModal } from "../application/modals/delete-channel-modal"
@@ -21,6 +22,30 @@ import IconStar from "../icons/icon-star"
 import IconVolume from "../icons/icon-volume"
 import IconVolumeMute from "../icons/icon-volume-mute"
 import { SidebarMenuAction, SidebarMenuButton, SidebarMenuItem } from "../ui/sidebar"
+
+interface DmAvatarProps {
+	member: {
+		userId: UserId
+		user: {
+			avatarUrl?: string | null
+			firstName: string
+			lastName: string
+		}
+	}
+}
+
+function DmAvatar({ member }: DmAvatarProps) {
+	const { isOnline } = useUserPresence(member.userId)
+
+	return (
+		<Avatar
+			size="xs"
+			src={member.user.avatarUrl}
+			alt={`${member.user.firstName} ${member.user.lastName}`}
+			status={isOnline ? "online" : "offline"}
+		/>
+	)
+}
 
 export interface ChannelItemProps {
 	channelId: ChannelId
@@ -214,14 +239,9 @@ export const ChannelItem = ({ channelId }: ChannelItemProps) => {
 
 interface DmChannelLinkProps {
 	channelId: ChannelId
-	userPresence: {
-		userId: string
-		online: boolean
-		lastDisconnected: number
-	}[]
 }
 
-export const DmChannelLink = ({ channelId, userPresence }: DmChannelLinkProps) => {
+export const DmChannelLink = ({ channelId }: DmChannelLinkProps) => {
 	const { slug: orgSlug } = useOrganization()
 	const router = useRouter()
 
@@ -271,19 +291,9 @@ export const DmChannelLink = ({ channelId, userPresence }: DmChannelLinkProps) =
 					onMouseEnter={handleMouseEnter}
 				>
 					<div className="-space-x-4 flex items-center justify-center">
-						{channel.type === "single" && filteredMembers.length === 1 ? (
+						{channel.type === "single" && filteredMembers.length === 1 && filteredMembers[0] ? (
 							<div className="flex items-center justify-center gap-3">
-								<Avatar
-									size="xs"
-									src={filteredMembers[0]?.user.avatarUrl}
-									alt={`${filteredMembers[0]?.user.firstName} ${filteredMembers[0]?.user.lastName}`}
-									status={
-										userPresence.find((p) => p.userId === filteredMembers[0]?.user.id)
-											?.online
-											? "online"
-											: "offline"
-									}
-								/>
+								<DmAvatar member={filteredMembers[0]} />
 
 								<p
 									className={cx(

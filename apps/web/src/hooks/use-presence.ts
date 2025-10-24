@@ -1,5 +1,5 @@
 import { Atom, Result, useAtomMount, useAtomSet, useAtomValue } from "@effect-atom/atom-react"
-import { type ChannelId, UserId } from "@hazel/db/schema"
+import type { ChannelId, UserId } from "@hazel/db/schema"
 import { makeQuery } from "@hazel/tanstack-db-atom"
 import { eq } from "@tanstack/db"
 import { DateTime, Duration, Effect, Schedule, Stream } from "effect"
@@ -175,11 +175,11 @@ const beforeUnloadAtom = Atom.make((get) => {
  * Atom family that queries the current user's presence status from TanStack DB
  * Returns Result<PresenceData[]> that automatically updates when data changes
  */
-const currentUserPresenceAtomFamily = Atom.family((userId: string) =>
+const currentUserPresenceAtomFamily = Atom.family((userId: UserId) =>
 	makeQuery((q) =>
 		q
 			.from({ presence: userPresenceStatusCollection })
-			.where(({ presence }) => eq(presence.userId, UserId.make(userId)))
+			.where(({ presence }) => eq(presence.userId, userId))
 			.orderBy(({ presence }) => presence.updatedAt, "desc")
 			.limit(1),
 	),
@@ -340,7 +340,7 @@ export function usePresence() {
 /**
  * Hook to get another user's presence
  */
-export function useUserPresence(userId: string) {
+export function useUserPresence(userId: UserId) {
 	// Use the atom family to query this user's presence
 	const presenceResult = useAtomValue(currentUserPresenceAtomFamily(userId))
 	const presenceData = Result.getOrElse(presenceResult, () => [])
