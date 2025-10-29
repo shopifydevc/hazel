@@ -70,7 +70,7 @@ const DocsRoute = HttpApiScalar.layerHttpLayerRouter({
 const RpcRoute = RpcServer.layerHttpRouter({
 	group: AllRpcs,
 	path: "/rpc",
-	protocol: "websocket",
+	protocol: "http",
 }).pipe(Layer.provide(RpcSerialization.layerNdjson), Layer.provide(RpcServerLive))
 
 const AllRoutes = Layer.mergeAll(HttpApiRoutes, HealthRouter, DocsRoute, RpcRoute).pipe(

@@ -12,7 +12,7 @@ export const AuthMiddlewareLive = Layer.scoped(
 	AuthMiddleware,
 	Effect.gen(function* () {
 		const userRepo = yield* UserRepo
-		const presenceRepo = yield* UserPresenceStatusRepo
+		const _presenceRepo = yield* UserPresenceStatusRepo
 		const workos = yield* WorkOS
 		const workOsCookiePassword = yield* Config.string("WORKOS_COOKIE_PASSWORD").pipe(Effect.orDie)
 
@@ -20,27 +20,27 @@ export const AuthMiddlewareLive = Layer.scoped(
 		const currentUserRef = yield* FiberRef.make<Option.Option<CurrentUser.Schema>>(Option.none())
 
 		// Add finalizer that runs when the WebSocket scope closes
-		yield* Effect.addFinalizer(() =>
-			Effect.gen(function* () {
-				const userOption = yield* FiberRef.get(currentUserRef)
-				if (Option.isSome(userOption)) {
-					yield* Effect.logInfo("Closing WebSocket connection")
-					const user = userOption.value
-					yield* presenceRepo
-						.updateStatus({
-							userId: user.id,
-							status: "offline",
-							customMessage: null,
-						})
-						.pipe(
-							withSystemActor,
-							Effect.catchAll((error) =>
-								Effect.logError("Failed to mark user offline on disconnect", error),
-							),
-						)
-				}
-			}),
-		)
+		// yield* Effect.addFinalizer(() =>
+		// 	Effect.gen(function* () {
+		// 		const userOption = yield* FiberRef.get(currentUserRef)
+		// 		if (Option.isSome(userOption)) {
+		// 			yield* Effect.logInfo("Closing WebSocket connection")
+		// 			const user = userOption.value
+		// 			yield* presenceRepo
+		// 				.updateStatus({
+		// 					userId: user.id,
+		// 					status: "offline",
+		// 					customMessage: null,
+		// 				})
+		// 				.pipe(
+		// 					withSystemActor,
+		// 					Effect.catchAll((error) =>
+		// 						Effect.logError("Failed to mark user offline on disconnect", error),
+		// 					),
+		// 				)
+		// 		}
+		// 	}),
+		// )
 
 		return AuthMiddleware.of(({ headers }) =>
 			Effect.gen(function* () {
