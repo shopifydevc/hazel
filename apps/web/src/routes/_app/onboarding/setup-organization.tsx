@@ -1,15 +1,18 @@
 import type { OrganizationId } from "@hazel/db/schema"
+import { useAtomSet } from "@effect-atom/atom-react"
 import { eq, useLiveQuery } from "@tanstack/react-db"
 import { createFileRoute, Navigate, useNavigate, useSearch } from "@tanstack/react-router"
 import { Building02 } from "@untitledui/icons"
 import { type } from "arktype"
+import { Cause, Chunk, Exit, Option } from "effect"
 import { useCallback, useEffect } from "react"
-import { toast } from "sonner"
+import { setOrganizationSlugMutation } from "~/atoms/organization-atoms"
 import { Button } from "~/components/base/buttons/button"
 import { FeaturedIcon } from "~/components/foundations/featured-icon/featured-icons"
 import { BackgroundPattern } from "~/components/shared-assets/background-patterns"
 import { organizationCollection } from "~/db/collections"
 import { useAppForm } from "~/hooks/use-app-form"
+import { toastExit } from "~/lib/toast-exit"
 
 const setupSchema = type({
 	slug: "3 <= string < 50",
@@ -44,6 +47,10 @@ function RouteComponent() {
 
 	const organization = organizations?.[0]
 
+	const setOrganizationSlug = useAtomSet(setOrganizationSlugMutation, {
+		mode: "promiseExit",
+	})
+
 	const generateSlug = useCallback((name: string) => {
 		let slug = name
 			.normalize("NFD")
@@ -70,40 +77,44 @@ function RouteComponent() {
 		onSubmit: async ({ value }) => {
 			if (!organization) return
 
-			const tx = organizationCollection.update(
-				organization.id,
+			const exit = await toastExit(
+				setOrganizationSlug({
+					payload: {
+						id: organization.id,
+						slug: value.slug.trim(),
+					},
+				}),
 				{
-					optimistic: false,
-				},
-				(org) => {
-					org.slug = value.slug.trim()
-					org.updatedAt = new Date()
+					loading: "Setting up organization...",
+					success: () => {
+						// Navigate on success
+						navigate({ to: "/$orgSlug", params: { orgSlug: value.slug.trim() } })
+						return "Organization setup complete!"
+					},
 				},
 			)
 
-			try {
-				const res = await tx.isPersisted.promise
+			// Handle errors by setting field-level errors
+			if (Exit.isFailure(exit)) {
+				const failures = Cause.failures(exit.cause)
+				const firstFailureOption = Chunk.head(failures)
 
-				console.log("res", res)
-
-				if (res.error) {
-					form.setFieldMeta("slug", (meta) => ({
-						...meta,
-						errors: [{ message: res.error?.message }],
-					}))
+				// Extract error message from the first failure
+				let errorMessage = "Failed to update organization"
+				if (Option.isSome(firstFailureOption)) {
+					const firstFailure = firstFailureOption.value
+					if (typeof firstFailure === "object" && firstFailure !== null && "message" in firstFailure) {
+						errorMessage = String(firstFailure.message)
+					}
 				}
 
-				toast.success("Organization setup complete!")
-
-				await navigate({ to: "/$orgSlug", params: { orgSlug: value.slug.trim() } })
-			} catch (error: any) {
 				form.setFieldMeta("slug", (meta) => ({
 					...meta,
-					errors: [{ message: error.message || "This slug is already taken" }],
+					errors: [{ message: errorMessage }],
 				}))
-
-				toast.error(error.message || "This slug is already taken")
 			}
+
+			return exit
 		},
 	})
 

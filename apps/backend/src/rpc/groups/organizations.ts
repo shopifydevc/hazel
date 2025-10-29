@@ -38,37 +38,12 @@ export class OrganizationSlugAlreadyExistsError extends Schema.TaggedError<Organ
 ) {}
 
 export class OrganizationRpcs extends RpcGroup.make(
-	/**
-	 * OrganizationCreate
-	 *
-	 * Creates a new organization.
-	 * Requires appropriate permissions to create organizations.
-	 *
-	 * @param payload - Organization data (workosId, name, slug, etc.)
-	 * @returns Organization data and transaction ID
-	 * @throws OrganizationSlugAlreadyExistsError if slug is already taken
-	 * @throws UnauthorizedError if user lacks permission
-	 * @throws InternalServerError for unexpected errors
-	 */
 	Rpc.make("organization.create", {
 		payload: Organization.Model.jsonCreate,
 		success: OrganizationResponse,
 		error: Schema.Union(OrganizationSlugAlreadyExistsError, UnauthorizedError, InternalServerError),
 	}).middleware(AuthMiddleware),
 
-	/**
-	 * OrganizationUpdate
-	 *
-	 * Updates an existing organization.
-	 * Only users with appropriate permissions can update an organization.
-	 *
-	 * @param payload - Organization ID and fields to update
-	 * @returns Updated organization data and transaction ID
-	 * @throws OrganizationNotFoundError if organization doesn't exist
-	 * @throws OrganizationSlugAlreadyExistsError if new slug is already taken
-	 * @throws UnauthorizedError if user lacks permission
-	 * @throws InternalServerError for unexpected errors
-	 */
 	Rpc.make("organization.update", {
 		payload: Schema.Struct({
 			id: OrganizationId,
@@ -83,21 +58,23 @@ export class OrganizationRpcs extends RpcGroup.make(
 		),
 	}).middleware(AuthMiddleware),
 
-	/**
-	 * OrganizationDelete
-	 *
-	 * Deletes an organization (soft delete).
-	 * Only users with appropriate permissions can delete an organization.
-	 *
-	 * @param payload - Organization ID to delete
-	 * @returns Transaction ID
-	 * @throws OrganizationNotFoundError if organization doesn't exist
-	 * @throws UnauthorizedError if user lacks permission
-	 * @throws InternalServerError for unexpected errors
-	 */
 	Rpc.make("organization.delete", {
 		payload: Schema.Struct({ id: OrganizationId }),
 		success: Schema.Struct({ transactionId: TransactionId }),
 		error: Schema.Union(OrganizationNotFoundError, UnauthorizedError, InternalServerError),
+	}).middleware(AuthMiddleware),
+
+	Rpc.make("organization.setSlug", {
+		payload: Schema.Struct({
+			id: OrganizationId,
+			slug: Schema.String,
+		}),
+		success: OrganizationResponse,
+		error: Schema.Union(
+			OrganizationNotFoundError,
+			OrganizationSlugAlreadyExistsError,
+			UnauthorizedError,
+			InternalServerError,
+		),
 	}).middleware(AuthMiddleware),
 ) {}

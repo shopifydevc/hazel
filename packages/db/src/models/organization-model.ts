@@ -12,7 +12,7 @@ export class Model extends M.Class<Model>("Organization")({
 	settings: Schema.NullOr(
 		Schema.Record({
 			key: Schema.String,
-			value: Schema.Any,
+			value: Schema.Unknown,
 		}),
 	),
 	...baseFields,

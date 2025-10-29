@@ -16,7 +16,7 @@ import {
 } from "@hazel/db/models"
 import { effectElectricCollectionOptions } from "@hazel/effect-electric-db-collection"
 import { createCollection } from "@tanstack/react-db"
-import { Effect, Layer, Logger, ManagedRuntime, Schema } from "effect"
+import { Effect, Schema } from "effect"
 import { RpcClient } from "~/lib/services/common/rpc-client"
 import { runtime } from "~/lib/services/common/runtime"
 
@@ -49,6 +49,9 @@ export const organizationCollection = createCollection(
 		onUpdate: ({ transaction }) =>
 			Effect.gen(function* () {
 				const { modified: newOrganization } = transaction.mutations[0]
+
+				console.log(newOrganization)
+
 				const client = yield* RpcClient
 
 				const results = yield* client.organization.update(newOrganization)

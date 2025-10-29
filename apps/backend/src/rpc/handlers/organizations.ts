@@ -110,6 +110,7 @@ export const OrganizationRpcLive = OrganizationRpcs.toLayer(
 				db
 					.transaction(
 						Effect.gen(function* () {
+							yield* Effect.logInfo("OrganizationRepo.update", payload)
 							const updatedOrganization = yield* OrganizationRepo.update({
 								id,
 								...payload,
@@ -142,6 +143,31 @@ export const OrganizationRpcLive = OrganizationRpcs.toLayer(
 						}),
 					)
 					.pipe(withRemapDbErrors("Organization", "delete")),
+
+			"organization.setSlug": ({ id, slug }) =>
+				db
+					.transaction(
+						Effect.gen(function* () {
+							console.log("setSlug", id, slug)
+							const updatedOrganization = yield* OrganizationRepo.update({
+								id,
+								slug,
+							}).pipe(policyUse(OrganizationPolicy.canUpdate(id)))
+
+							console.log("updatedOrganization", updatedOrganization)
+
+							const txid = yield* generateTransactionId()
+
+							return {
+								data: {
+									...updatedOrganization,
+									settings: updatedOrganization.settings as any,
+								},
+								transactionId: txid,
+							}
+						}),
+					)
+					.pipe(handleOrganizationDbErrors("Organization", "update")),
 		}
 	}),
 )

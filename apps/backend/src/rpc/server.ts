@@ -29,6 +29,8 @@ import { TypingIndicatorRpcLive } from "./handlers/typing-indicators"
 import { UserPresenceStatusRpcLive } from "./handlers/user-presence-status"
 import { UserRpcLive } from "./handlers/users"
 import { AuthMiddlewareLive } from "./middleware/auth"
+import { RpcLoggingMiddleware } from "./middleware/logging-class"
+import { RpcLoggingMiddlewareLive } from "./middleware/logging"
 
 /**
  * RPC Server Configuration
@@ -57,7 +59,7 @@ export const AllRpcs = MessageRpcs.merge(
 	ChannelMemberRpcs,
 	AttachmentRpcs,
 	DirectMessageParticipantRpcs,
-)
+).middleware(RpcLoggingMiddleware)
 
 export const RpcServerLive = Layer.empty.pipe(
 	Layer.provideMerge(MessageRpcLive),
@@ -75,4 +77,5 @@ export const RpcServerLive = Layer.empty.pipe(
 	Layer.provideMerge(AttachmentRpcLive),
 	Layer.provideMerge(DirectMessageParticipantRpcLive),
 	Layer.provideMerge(AuthMiddlewareLive),
+	Layer.provideMerge(RpcLoggingMiddlewareLive),
 )
