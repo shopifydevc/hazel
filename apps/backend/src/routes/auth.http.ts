@@ -1,7 +1,6 @@
-import { Cookies, HttpApiBuilder, HttpServerRequest, HttpServerResponse } from "@effect/platform"
+import { HttpApiBuilder, HttpServerResponse } from "@effect/platform"
 import { CurrentUser, InternalServerError, UnauthorizedError, withSystemActor } from "@hazel/effect-lib"
 import { Config, Effect, Redacted } from "effect"
-import * as jose from "jose"
 import { HazelApi } from "../api"
 import { AuthState } from "../lib/schema"
 import { UserRepo } from "../repositories/user-repo"
@@ -44,9 +43,14 @@ export const HttpAuthLive = HttpApiBuilder.group(HazelApi, "auth", (handlers) =>
 						),
 					)
 
-				return {
-					authorizationUrl,
-				} as const
+				// Return HTTP 302 redirect to WorkOS instead of JSON
+				// This eliminates the "Redirecting to login..." intermediate page
+				return HttpServerResponse.empty({
+					status: 302,
+					headers: {
+						Location: authorizationUrl,
+					},
+				})
 			}),
 		)
 		.handle("callback", ({ urlParams }) =>
