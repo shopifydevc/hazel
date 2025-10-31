@@ -4,7 +4,7 @@ import {
 	type AttachmentId,
 	ChannelId,
 	type MessageId,
-	MessageReactionId,
+	type MessageReactionId,
 	type OrganizationId,
 	PinnedMessageId,
 	UserId,
@@ -22,7 +22,7 @@ import {
 	uploadingFilesAtomFamily,
 } from "~/atoms/chat-atoms"
 import { channelByIdAtomFamily } from "~/atoms/chat-query-atoms"
-import { sendMessageEffect as sendMessageAction } from "~/db/actions"
+import { sendMessageEffect as sendMessageAction, toggleReactionEffect } from "~/db/actions"
 import {
 	channelCollection,
 	messageCollection,
@@ -80,6 +80,7 @@ export function ChatProvider({ channelId, organizationId, children }: ChatProvid
 	const { user } = useAuth()
 
 	const sendMessageMutation = useAtomSet(sendMessageAction, { mode: "promiseExit" })
+	const toggleReactionMutation = useAtomSet(toggleReactionEffect, { mode: "promiseExit" })
 
 	const replyToMessageId = useAtomValue(replyToMessageAtomFamily(channelId))
 	const setReplyToMessageId = useAtomSet(replyToMessageAtomFamily(channelId))
@@ -183,18 +184,27 @@ export function ChatProvider({ channelId, organizationId, children }: ChatProvid
 	}, [])
 
 	const addReaction = useCallback(
-		(messageId: MessageId, emoji: string) => {
+		async (messageId: MessageId, emoji: string) => {
 			if (!user?.id) return
 
-			messageReactionCollection.insert({
-				id: MessageReactionId.make(crypto.randomUUID()),
+			const tx = await toggleReactionMutation({
 				messageId,
-				userId: UserId.make(user.id),
 				emoji,
-				createdAt: new Date(),
+				userId: UserId.make(user.id),
+			})
+
+			Exit.match(tx, {
+				onSuccess: () => {
+					// Reaction toggled successfully
+				},
+				onFailure: (error) => {
+					toast.error("Failed to toggle reaction", {
+						description: Cause.pretty(error),
+					})
+				},
 			})
 		},
-		[user?.id],
+		[user?.id, toggleReactionMutation],
 	)
 
 	const removeReaction = useCallback(

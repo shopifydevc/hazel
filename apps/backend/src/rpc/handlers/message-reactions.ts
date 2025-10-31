@@ -1,6 +1,6 @@
 import { Database } from "@hazel/db"
 import { CurrentUser, policyUse, withRemapDbErrors } from "@hazel/effect-lib"
-import { Effect } from "effect"
+import { Effect, Option } from "effect"
 import { generateTransactionId } from "../../lib/create-transactionId"
 import { MessageReactionPolicy } from "../../policies/message-reaction-policy"
 import { MessageReactionRepo } from "../../repositories/message-reaction-repo"
@@ -24,6 +24,54 @@ export const MessageReactionRpcLive = MessageReactionRpcs.toLayer(
 		const db = yield* Database.Database
 
 		return {
+			"messageReaction.toggle": (payload) =>
+				db
+					.transaction(
+						Effect.gen(function* () {
+							const user = yield* CurrentUser.Context
+							const { messageId, emoji } = payload
+
+							// Check if reaction already exists
+							const existingReaction = yield* MessageReactionRepo.findByMessageUserEmoji(
+								messageId,
+								user.id,
+								emoji,
+							)
+
+							const txid = yield* generateTransactionId()
+
+							// If reaction exists, delete it
+							if (Option.isSome(existingReaction)) {
+								yield* MessageReactionRepo.deleteById(existingReaction.value.id).pipe(
+									policyUse(MessageReactionPolicy.canDelete(existingReaction.value.id)),
+								)
+
+								return {
+									wasCreated: false,
+									data: undefined,
+									transactionId: txid,
+								}
+							}
+
+							// Otherwise, create a new reaction
+							const createdMessageReaction = yield* MessageReactionRepo.insert({
+								messageId,
+								emoji,
+								userId: user.id,
+							}).pipe(
+								Effect.map((res) => res[0]!),
+								policyUse(MessageReactionPolicy.canCreate(messageId)),
+							)
+
+							return {
+								wasCreated: true,
+								data: createdMessageReaction,
+								transactionId: txid,
+							}
+						}),
+					)
+					.pipe(withRemapDbErrors("MessageReaction", "create")),
+
 			"messageReaction.create": (payload) =>
 				db
 					.transaction(

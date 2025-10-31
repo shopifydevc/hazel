@@ -1,6 +1,7 @@
-import { ModelRepository, schema } from "@hazel/db"
+import { and, Database, eq, ModelRepository, schema } from "@hazel/db"
 import { MessageReaction } from "@hazel/db/models"
-import { Effect } from "effect"
+import { type MessageId, policyRequire, type UserId } from "@hazel/db/schema"
+import { Effect, Option } from "effect"
 import { DatabaseLive } from "../services/database"
 
 export class MessageReactionRepo extends Effect.Service<MessageReactionRepo>()("MessageReactionRepo", {
@@ -15,7 +16,33 @@ export class MessageReactionRepo extends Effect.Service<MessageReactionRepo>()("
 			},
 		)
 
-		return baseRepo
+		const db = yield* Database.Database
+
+		const findByMessageUserEmoji = (messageId: MessageId, userId: UserId, emoji: string) =>
+			db
+				.makeQuery(
+					(execute, data: { messageId: MessageId; userId: UserId; emoji: string }) =>
+						execute((client) =>
+							client
+								.select()
+								.from(schema.messageReactionsTable)
+								.where(
+									and(
+										eq(schema.messageReactionsTable.messageId, data.messageId),
+										eq(schema.messageReactionsTable.userId, data.userId),
+										eq(schema.messageReactionsTable.emoji, data.emoji),
+									),
+								)
+								.limit(1),
+						),
+					policyRequire("MessageReaction", "select"),
+				)({ messageId, userId, emoji })
+				.pipe(Effect.map((results) => Option.fromNullable(results[0])))
+
+		return {
+			...baseRepo,
+			findByMessageUserEmoji,
+		}
 	}),
 	dependencies: [DatabaseLive],
 }) {}

@@ -4,6 +4,7 @@ import {
 	ChannelMemberId,
 	DirectMessageParticipantId,
 	MessageId,
+	MessageReactionId,
 	OrganizationId,
 	type UserId,
 } from "@hazel/db/schema"
@@ -16,6 +17,7 @@ import {
 	channelMemberCollection,
 	directMessageParticipantCollection,
 	messageCollection,
+	messageReactionCollection,
 	organizationCollection,
 } from "./collections"
 
@@ -238,6 +240,51 @@ export const createOrganization = createEffectOptimisticAction({
 				organizationId: result.data.id,
 				slug: result.data.slug,
 			}
+		}),
+	runtime: runtime,
+})
+
+export const toggleReactionEffect = createEffectOptimisticAction({
+	onMutate: (props: { messageId: MessageId; emoji: string; userId: UserId }) => {
+		// Check if reaction already exists in the collection
+		const reactionsMap = messageReactionCollection.state
+		const existingReaction = Array.from(reactionsMap.values()).find(
+			(r) =>
+				r.messageId === props.messageId && r.userId === props.userId && r.emoji === props.emoji,
+		)
+
+		if (existingReaction) {
+			// Toggle off: delete the existing reaction
+			messageReactionCollection.delete(existingReaction.id)
+			return { wasCreated: false, reactionId: existingReaction.id }
+		}
+
+		// Toggle on: insert a new reaction
+		const reactionId = MessageReactionId.make(crypto.randomUUID())
+		messageReactionCollection.insert({
+			id: reactionId,
+			messageId: props.messageId,
+			userId: props.userId,
+			emoji: props.emoji,
+			createdAt: new Date(),
+		})
+
+		return { wasCreated: true, reactionId }
+	},
+	mutationFn: (props: { messageId: MessageId; emoji: string; userId: UserId }, _params) =>
+		Effect.gen(function* () {
+			const client = yield* HazelRpcClient
+
+			// Call the toggle RPC endpoint
+			const result = yield* client("messageReaction.toggle", {
+				messageId: props.messageId,
+				emoji: props.emoji,
+			})
+
+			// Wait for the transaction to sync
+			yield* Effect.promise(() => messageReactionCollection.utils.awaitTxId(result.transactionId))
+
+			return result
 		}),
 	runtime: runtime,
 })

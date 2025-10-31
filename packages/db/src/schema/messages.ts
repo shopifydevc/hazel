@@ -1,5 +1,5 @@
 import type { ChannelId, MessageId, MessageReactionId, UserId } from "@hazel/effect-lib"
-import { index, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core"
+import { index, pgTable, text, timestamp, unique, uuid, varchar } from "drizzle-orm/pg-core"
 
 // Messages table
 export const messagesTable = pgTable(
@@ -41,6 +41,7 @@ export const messageReactionsTable = pgTable(
 		index("reactions_message_id_idx").on(table.messageId),
 		index("reactions_user_id_idx").on(table.userId),
 		index("reactions_message_user_emoji_idx").on(table.messageId, table.userId, table.emoji),
+		unique("reactions_message_user_emoji_unique").on(table.messageId, table.userId, table.emoji),
 	],
 )
 

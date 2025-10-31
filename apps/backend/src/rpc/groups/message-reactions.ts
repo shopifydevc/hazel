@@ -31,6 +31,32 @@ export class MessageReactionNotFoundError extends Schema.TaggedError<MessageReac
 
 export class MessageReactionRpcs extends RpcGroup.make(
 	/**
+	 * MessageReactionToggle
+	 *
+	 * Toggles a reaction on a message. If the user has already reacted with this emoji,
+	 * the reaction will be removed. If not, a new reaction will be created.
+	 * The userId is automatically set from the authenticated user (CurrentUser).
+	 *
+	 * @param payload - Message reaction data (messageId, emoji)
+	 * @returns Object with wasCreated boolean, optional data, and transaction ID
+	 * @throws MessageNotFoundError if message doesn't exist
+	 * @throws UnauthorizedError if user lacks permission
+	 * @throws InternalServerError for unexpected errors
+	 */
+	Rpc.make("messageReaction.toggle", {
+		payload: Schema.Struct({
+			messageId: MessageReaction.Insert.fields.messageId,
+			emoji: MessageReaction.Insert.fields.emoji,
+		}),
+		success: Schema.Struct({
+			wasCreated: Schema.Boolean,
+			data: Schema.optional(MessageReaction.Model.json),
+			transactionId: TransactionId,
+		}),
+		error: Schema.Union(MessageNotFoundError, UnauthorizedError, InternalServerError),
+	}).middleware(AuthMiddleware),
+
+	/**
 	 * MessageReactionCreate
 	 *
 	 * Creates a new reaction on a message.

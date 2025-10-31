@@ -1,4 +1,4 @@
-import { Result, useAtomValue } from "@effect-atom/atom-react"
+import { useAtomValue } from "@effect-atom/atom-react"
 import type { PinnedMessageId } from "@hazel/db/schema"
 import { format } from "date-fns"
 import { useRef, useState } from "react"
@@ -6,7 +6,7 @@ import { useHover } from "react-aria"
 import { Button } from "react-aria-components"
 import { toast } from "sonner"
 import type { MessageWithPinned } from "~/atoms/chat-query-atoms"
-import { messageReactionsAtomFamily, processedReactionsAtomFamily } from "~/atoms/message-atoms"
+import { processedReactionsAtomFamily } from "~/atoms/message-atoms"
 import { messageCollection } from "~/db/collections"
 import { useChat } from "~/hooks/use-chat"
 import { useAuth } from "~/lib/auth"
@@ -37,7 +37,7 @@ export function MessageItem({
 	isPinned = false,
 	onHoverChange,
 }: MessageItemProps) {
-	const { addReaction, removeReaction } = useChat()
+	const { addReaction } = useChat()
 
 	const [isEditing, _setIsEditing] = useState(false)
 	const messageRef = useRef<HTMLDivElement>(null)
@@ -51,9 +51,6 @@ export function MessageItem({
 	const aggregatedReactions = useAtomValue(
 		processedReactionsAtomFamily({ messageId: message.id, currentUserId: currentUser?.id || "" }),
 	)
-	// Also get raw reactions for handleReaction function
-	const rawReactionsResult = useAtomValue(messageReactionsAtomFamily(message.id))
-	const rawReactions = Result.getOrElse(rawReactionsResult, () => [])
 
 	const { hoverProps } = useHover({
 		onHoverStart: () => {
@@ -66,13 +63,8 @@ export function MessageItem({
 
 	const handleReaction = (emoji: string) => {
 		if (!message) return
-
-		const existingReaction = rawReactions.find((r) => r.emoji === emoji && r.userId === currentUser?.id)
-		if (existingReaction) {
-			removeReaction(existingReaction.id)
-		} else {
-			addReaction(message.id, emoji)
-		}
+		// addReaction now handles the toggle logic internally
+		addReaction(message.id, emoji)
 	}
 
 	if (!message) return null
