@@ -1,9 +1,4 @@
-import {
-	type OrganizationId,
-	policy,
-	UnauthorizedError,
-	withSystemActor,
-} from "@hazel/effect-lib"
+import { type OrganizationId, policy, UnauthorizedError, withSystemActor } from "@hazel/effect-lib"
 import { Effect, Option } from "effect"
 import { OrganizationMemberRepo } from "../repositories/organization-member-repo"
 
@@ -38,7 +33,9 @@ export class OrganizationPolicy extends Effect.Service<OrganizationPolicy>()("Or
 
 						const currentMemberValue = currentMember.value
 
-						return yield* Effect.succeed(currentMemberValue.role === "admin")
+						return yield* Effect.succeed(
+							currentMemberValue.role === "admin" || currentMemberValue.role === "owner",
+						)
 					}),
 				),
 			)

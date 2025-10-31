@@ -23,7 +23,6 @@ export class ChannelPolicy extends Effect.Service<ChannelPolicy>()("ChannelPolic
 				"create",
 			)(
 				pipe(
-					// TODO: Later maybe make it smarter with roles? not sure :D
 					organizationPolicy.isMember(organizationId),
 					policyCompose(policy(policyEntity, "create", (_actor) => Effect.succeed(true))),
 				),
@@ -36,8 +35,7 @@ export class ChannelPolicy extends Effect.Service<ChannelPolicy>()("ChannelPolic
 			)(
 				channelRepo.with(id, (channel) =>
 					pipe(
-						// TODO: Later maybe make it smarter with roles? not sure :D
-						organizationPolicy.isMember(channel.organizationId),
+						organizationPolicy.canUpdate(channel.organizationId),
 						policyCompose(policy(policyEntity, "update", (_actor) => Effect.succeed(true))),
 					),
 				),
@@ -50,8 +48,7 @@ export class ChannelPolicy extends Effect.Service<ChannelPolicy>()("ChannelPolic
 			)(
 				channelRepo.with(id, (channel) =>
 					pipe(
-						// TODO: Later maybe make it smarter with roles? not sure :D
-						organizationPolicy.isMember(channel.organizationId),
+						organizationPolicy.canUpdate(channel.organizationId),
 						policyCompose(policy(policyEntity, "delete", (_actor) => Effect.succeed(true))),
 					),
 				),
