@@ -27,7 +27,7 @@ export class UnauthorizedError extends Schema.TaggedError<UnauthorizedError>("Un
 					Effect.flatMap(CurrentUser.Context, (actor) =>
 						Effect.fail(
 							new UnauthorizedError({
-								message: `Unauthorized action ${action}`,
+								message: `You can't ${action} this ${entity}`,
 								detail: `You are not authorized to perform ${action} on ${entity} for ${actor.id}`,
 							}),
 						),

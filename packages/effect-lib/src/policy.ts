@@ -28,7 +28,7 @@ export const policy = <Entity extends string, Action extends string, E, R>(
 						? Effect.succeed(authorizedActor(actor))
 						: Effect.fail(
 								new UnauthorizedError({
-									message: `Unauthorized action`,
+									message: `You can't ${action} this ${entity}`,
 									detail: `You are not authorized to perform ${action} on ${entity} for ${actor.id}`,
 								}),
 							),
