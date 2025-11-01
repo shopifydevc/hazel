@@ -3,9 +3,7 @@
 import type { OrganizationId } from "@hazel/db/schema"
 import {
 	AdjustmentsHorizontalIcon,
-	ArrowRightEndOnRectangleIcon,
 	CalendarDaysIcon,
-	ChatBubbleOvalLeftEllipsisIcon,
 	ChevronUpDownIcon,
 	Cog6ToothIcon,
 	FaceSmileIcon,
@@ -20,16 +18,22 @@ import {
 	WrenchScrewdriverIcon,
 } from "@heroicons/react/20/solid"
 import { and, eq, or, useLiveQuery } from "@tanstack/react-db"
-import { useMemo, useState } from "react"
-import type { Selection } from "react-aria-components"
+import { useMemo } from "react"
 import { Button as PrimitiveButton } from "react-aria-components"
-import { NavUser } from "~/components/nav-user"
-import { servers } from "~/components/sidebar/nav-sidebar"
+import { SwitchServerMenu } from "~/components/sidebar/switch-server-menu"
+import { UserMenu } from "~/components/sidebar/user-menu"
 import { Avatar } from "~/components/ui/avatar"
 import { Button } from "~/components/ui/button"
 import { Keyboard } from "~/components/ui/keyboard"
-import { Menu, MenuContent, MenuItem, MenuLabel, MenuSection, MenuSeparator } from "~/components/ui/menu"
-import { Modal, ModalBody, ModalClose, ModalContent, ModalFooter, ModalHeader } from "~/components/ui/modal"
+import {
+	Menu,
+	MenuContent,
+	MenuItem,
+	MenuLabel,
+	MenuSection,
+	MenuSeparator,
+	MenuSubMenu,
+} from "~/components/ui/menu"
 import {
 	Sidebar,
 	SidebarContent,
@@ -49,6 +53,7 @@ import IconHashtag from "../icons/icon-hashtag"
 
 const ChannelGroup = (props: { organizationId: OrganizationId }) => {
 	const { user } = useAuth()
+	const { slug } = useOrganization()
 
 	const { data: userChannels } = useLiveQuery(
 		(q) =>
@@ -75,6 +80,8 @@ const ChannelGroup = (props: { organizationId: OrganizationId }) => {
 		return userChannels.map((row) => row.channel)
 	}, [userChannels])
 
+	if (!slug) return null
+
 	return (
 		<SidebarSection>
 			<div className="col-span-full flex items-center justify-between gap-x-2 pl-2.5 text-muted-fg text-xs/5">
@@ -84,7 +91,11 @@ const ChannelGroup = (props: { organizationId: OrganizationId }) => {
 				</Button>
 			</div>
 			{channels.map((channel) => (
-				<SidebarItem key={channel.id} href={`//chat/${channel.id}`} tooltip={channel.name}>
+				<SidebarItem
+					key={channel.id}
+					href={`/${slug}/chat/${channel.id}` as "/"}
+					tooltip={channel.name}
+				>
 					<IconHashtag />
 					<SidebarLabel>{channel.name}</SidebarLabel>
 				</SidebarItem>
@@ -140,9 +151,7 @@ const DmChannelGroup = (props: { organizationId: OrganizationId }) => {
 }
 
 export function ChannelsSidebar() {
-	const [isSelected, setIsSelected] = useState<Selection>(new Set([servers[1].id]))
 	const { isMobile } = useSidebar()
-	const _currentServer = [...isSelected][0]
 	const { organizationId, organization } = useOrganization()
 
 	return (
@@ -166,20 +175,7 @@ export function ChannelsSidebar() {
 					</PrimitiveButton>
 					<MenuContent className="min-w-(--trigger-width)">
 						{isMobile ? (
-							<MenuSection
-								items={servers}
-								disallowEmptySelection
-								selectionMode="single"
-								selectedKeys={isSelected}
-								onSelectionChange={setIsSelected}
-							>
-								{(server) => (
-									<MenuItem id={server.id} textValue={server.name}>
-										<Avatar src={server.avatar} alt={server.name} />
-										<SidebarLabel>{server.name}</SidebarLabel>
-									</MenuItem>
-								)}
-							</MenuSection>
+							<SwitchServerMenu />
 						) : (
 							<>
 								<MenuSection>
@@ -192,6 +188,16 @@ export function ChannelsSidebar() {
 										<MenuLabel>Manage members</MenuLabel>
 									</MenuItem>
 								</MenuSection>
+
+								<MenuSubMenu>
+									<MenuItem>
+										<UserGroupIcon />
+										<MenuLabel>Switch Server</MenuLabel>
+									</MenuItem>
+									<MenuContent>
+										<SwitchServerMenu />
+									</MenuContent>
+								</MenuSubMenu>
 
 								<MenuSeparator />
 
@@ -268,7 +274,7 @@ export function ChannelsSidebar() {
 				</SidebarSectionGroup>
 			</SidebarContent>
 			<SidebarFooter className="flex flex-row justify-between gap-4 group-data-[state=collapsed]:flex-col">
-				<NavUser />
+				<UserMenu />
 			</SidebarFooter>
 		</Sidebar>
 	)

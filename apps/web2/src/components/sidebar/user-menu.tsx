@@ -7,7 +7,6 @@ import {
 	ShieldCheckIcon,
 } from "@heroicons/react/20/solid"
 import { twJoin } from "tailwind-merge"
-import { useAuth } from "~/lib/auth"
 import { Avatar } from "~/components/ui/avatar"
 import {
 	Menu,
@@ -20,14 +19,14 @@ import {
 	MenuTrigger,
 } from "~/components/ui/menu"
 import { SidebarLabel } from "~/components/ui/sidebar"
+import { useAuth } from "~/lib/auth"
 
-export function NavUser() {
+export function UserMenu() {
 	const { user, logout } = useAuth()
 
 	// Fallbacks for missing user data
-	const displayName = user?.firstName && user?.lastName
-		? `${user.firstName} ${user.lastName}`
-		: user?.email || "User"
+	const displayName =
+		user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.email || "User"
 	const avatarUrl = user?.avatarUrl || undefined
 
 	return (
@@ -48,9 +47,7 @@ export function NavUser() {
 
 					<div className="in-data-[collapsible=dock]:hidden text-sm">
 						<SidebarLabel>{displayName}</SidebarLabel>
-						{user?.email && (
-							<span className="-mt-0.5 block text-muted-fg">{user.email}</span>
-						)}
+						{user?.email && <span className="-mt-0.5 block text-muted-fg">{user.email}</span>}
 					</div>
 				</div>
 				<ChevronUpDownIcon data-slot="chevron" className="size-4" />
@@ -62,9 +59,7 @@ export function NavUser() {
 				<MenuSection>
 					<MenuHeader separator>
 						<span className="block">{displayName}</span>
-						{user?.email && (
-							<span className="font-normal text-muted-fg">{user.email}</span>
-						)}
+						{user?.email && <span className="font-normal text-muted-fg">{user.email}</span>}
 					</MenuHeader>
 				</MenuSection>
 

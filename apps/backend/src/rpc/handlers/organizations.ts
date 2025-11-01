@@ -13,7 +13,11 @@ import { OrganizationMemberRepo } from "../../repositories/organization-member-r
 import { OrganizationRepo } from "../../repositories/organization-repo"
 import { UserRepo } from "../../repositories/user-repo"
 import { WorkOS } from "../../services/workos"
-import { OrganizationRpcs, OrganizationSlugAlreadyExistsError } from "../groups/organizations"
+import {
+	NotOrganizationMemberError,
+	OrganizationRpcs,
+	OrganizationSlugAlreadyExistsError,
+} from "../groups/organizations"
 
 /**
  * Custom error handler for organization database operations that provides
@@ -248,6 +252,37 @@ export const OrganizationRpcLive = OrganizationRpcs.toLayer(
 						}),
 					)
 					.pipe(handleOrganizationDbErrors("Organization", "update")),
+
+			"organization.switch": ({ organizationId }) =>
+				Effect.gen(function* () {
+					const currentUser = yield* CurrentUser.Context
+
+					// Verify user is a member of the target organization
+					const membership = yield* OrganizationMemberRepo.findByOrgAndUser(
+						organizationId,
+						currentUser.id,
+					).pipe(
+						withSystemActor,
+						Effect.mapError(
+							(error) =>
+								new InternalServerError({
+									message: "Failed to verify organization membership",
+									detail: String(error),
+								}),
+						),
+					)
+
+					if (membership._tag === "None") {
+						return yield* Effect.fail(
+							new NotOrganizationMemberError({
+								message: "User is not a member of this organization",
+								organizationId,
+							}),
+						)
+					}
+
+					return { success: true }
+				}),
 		}
 	}),
 )
