@@ -21,6 +21,7 @@ import { and, eq, or, useLiveQuery } from "@tanstack/react-db"
 import { useMemo, useState } from "react"
 import { Button as PrimitiveButton } from "react-aria-components"
 import { CreateChannelModal } from "~/components/modals/create-channel-modal"
+import { JoinChannelModal } from "~/components/modals/join-channel-modal"
 import { SwitchServerMenu } from "~/components/sidebar/switch-server-menu"
 import { UserMenu } from "~/components/sidebar/user-menu"
 import { Avatar } from "~/components/ui/avatar"
@@ -52,7 +53,11 @@ import { useOrganization } from "~/hooks/use-organization"
 import { useAuth } from "~/lib/auth"
 import IconHashtag from "../icons/icon-hashtag"
 
-const ChannelGroup = (props: { organizationId: OrganizationId; onCreateChannel: () => void }) => {
+const ChannelGroup = (props: {
+	organizationId: OrganizationId
+	onCreateChannel: () => void
+	onJoinChannel: () => void
+}) => {
 	const { user } = useAuth()
 	const { slug } = useOrganization()
 
@@ -87,9 +92,21 @@ const ChannelGroup = (props: { organizationId: OrganizationId; onCreateChannel: 
 		<SidebarSection>
 			<div className="col-span-full flex items-center justify-between gap-x-2 pl-2.5 text-muted-fg text-xs/5">
 				<Strong>Channels</Strong>
-				<Button intent="plain" isCircle size="sq-sm" onPress={props.onCreateChannel}>
-					<PlusIcon />
-				</Button>
+				<Menu>
+					<Button intent="plain" isCircle size="sq-sm">
+						<PlusIcon />
+					</Button>
+					<MenuContent>
+						<MenuItem onAction={props.onCreateChannel}>
+							<PlusCircleIcon />
+							<MenuLabel>Create new channel</MenuLabel>
+						</MenuItem>
+						<MenuItem onAction={props.onJoinChannel}>
+							<IconHashtag />
+							<MenuLabel>Join existing channel</MenuLabel>
+						</MenuItem>
+					</MenuContent>
+				</Menu>
 			</div>
 			{channels.map((channel) => (
 				<SidebarItem
@@ -154,7 +171,7 @@ const DmChannelGroup = (props: { organizationId: OrganizationId }) => {
 export function ChannelsSidebar() {
 	const { isMobile } = useSidebar()
 	const { organizationId, organization } = useOrganization()
-	const [showCreateChannelModal, setShowCreateChannelModal] = useState(false)
+	const [modalType, setModalType] = useState<"create" | "join" | null>(null)
 
 	return (
 		<>
@@ -205,7 +222,7 @@ export function ChannelsSidebar() {
 									<MenuSeparator />
 
 									<MenuSection>
-										<MenuItem onAction={() => setShowCreateChannelModal(true)}>
+										<MenuItem onAction={() => setModalType("create")}>
 											<PlusCircleIcon />
 											<MenuLabel>Create channel</MenuLabel>
 										</MenuItem>
@@ -272,7 +289,8 @@ export function ChannelsSidebar() {
 							<>
 								<ChannelGroup
 									organizationId={organizationId}
-									onCreateChannel={() => setShowCreateChannelModal(true)}
+									onCreateChannel={() => setModalType("create")}
+									onJoinChannel={() => setModalType("join")}
 								/>
 								<DmChannelGroup organizationId={organizationId} />
 							</>
@@ -284,10 +302,13 @@ export function ChannelsSidebar() {
 				</SidebarFooter>
 			</Sidebar>
 
-			<CreateChannelModal
-				isOpen={showCreateChannelModal}
-				onOpenChange={setShowCreateChannelModal}
-			/>
+			{modalType === "create" && (
+				<CreateChannelModal isOpen={true} onOpenChange={(isOpen) => !isOpen && setModalType(null)} />
+			)}
+
+			{modalType === "join" && (
+				<JoinChannelModal isOpen={true} onOpenChange={(isOpen) => !isOpen && setModalType(null)} />
+			)}
 		</>
 	)
 }
