@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 import type { Color } from "react-aria-components"
 import { ColorSwatch, parseColor, Radio, RadioGroup } from "react-aria-components"
+import { Dark, Light, System } from "~/components/modals/appearances"
 import { type Theme, useTheme } from "~/components/theme-provider"
 import { SectionHeader } from "~/components/ui/section-header"
 import { SectionLabel } from "~/components/ui/section-label"
@@ -37,14 +38,17 @@ function AppearanceSettings() {
 		{
 			value: "system",
 			label: "System preference",
+			component: System,
 		},
 		{
 			value: "light",
 			label: "Light mode",
+			component: Light,
 		},
 		{
 			value: "dark",
 			label: "Dark mode",
+			component: Dark,
 		},
 	]
 
@@ -136,7 +140,7 @@ function AppearanceSettings() {
 									aria-label={themeOption.label}
 									className="flex cursor-pointer flex-col gap-3"
 								>
-									{({ isSelected }) => (
+									{({ isSelected, isFocusVisible }) => (
 										<>
 											<section
 												className={cn(
@@ -144,10 +148,18 @@ function AppearanceSettings() {
 													isSelected && "outline-2 outline-ring outline-offset-2",
 												)}
 											>
-												{/* Placeholder for theme preview */}
-												<div className="flex size-full items-center justify-center text-muted-fg text-xs">
-													{themeOption.label}
-												</div>
+												<themeOption.component className="size-full" />
+
+												{isSelected && (
+													<div
+														className={cn(
+															"absolute bottom-2 left-2 flex size-5 items-center justify-center rounded-full border-2 border-fg bg-primary",
+															isFocusVisible && "ring-2 ring-ring ring-offset-2",
+														)}
+													>
+														<div className="size-2.5 rounded-full bg-fg" />
+													</div>
+												)}
 											</section>
 											<section className="w-full">
 												<p className="font-semibold text-fg text-sm">

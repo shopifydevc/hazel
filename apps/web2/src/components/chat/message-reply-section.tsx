@@ -49,11 +49,12 @@ export function MessageReplySection({ replyToMessageId, onClick }: MessageReplyS
 				) : data ? (
 					<>
 						<Avatar
+							size="xs"
 							src={data.author.avatarUrl}
-							initials={`${data.author.firstName} ${data.author.lastName}`}
-							className="size-4"
+							initials={`${data.author.firstName[0]}${data.author.lastName[0]}`}
+							alt={`${data.author.firstName} ${data.author.lastName}`}
 						/>
-						<span className="text-fg text-sm hover:underline">
+						<span className="font-medium text-fg text-sm hover:underline">
 							{data.author.firstName} {data.author.lastName}
 						</span>
 						<span className="max-w-xs truncate text-ellipsis text-muted-fg text-xs">

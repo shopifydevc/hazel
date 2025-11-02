@@ -5,7 +5,6 @@
 - Settings Pages
 - Commandbar
 - Onboarding
-- Chat
 
 ## High Priority Features
 

@@ -6,6 +6,7 @@ import { createInvitationMutation } from "~/atoms/invitation-atoms"
 import IconClose from "~/components/icons/icon-close"
 import IconEnvelope from "~/components/icons/icon-envelope"
 import IconPlus from "~/components/icons/icon-plus"
+import IconUsersPlus from "~/components/icons/icon-users-plus"
 import { Button } from "~/components/ui/button"
 import {
 	Dialog,
@@ -18,21 +19,30 @@ import {
 import { Label } from "~/components/ui/field"
 import { Input, InputGroup } from "~/components/ui/input"
 import { Modal, ModalContent } from "~/components/ui/modal"
+import { Select, SelectItem } from "~/components/ui/select"
+import { useOrganization } from "~/hooks/use-organization"
 import { toastExit } from "~/lib/toast-exit"
 
 interface EmailInviteModalProps {
 	isOpen: boolean
 	onOpenChange: (open: boolean) => void
-	organizationId: OrganizationId
+	organizationId?: OrganizationId
 }
 
 interface InviteEntry {
 	id: string
 	email: string
+	role: "member" | "admin"
 }
 
-export const EmailInviteModal = ({ isOpen, onOpenChange, organizationId }: EmailInviteModalProps) => {
-	const [invites, setInvites] = useState<InviteEntry[]>([{ id: "1", email: "" }])
+export const EmailInviteModal = ({
+	isOpen,
+	onOpenChange,
+	organizationId: propOrgId,
+}: EmailInviteModalProps) => {
+	const { organizationId: hookOrgId } = useOrganization()
+	const organizationId = propOrgId || hookOrgId
+	const [invites, setInvites] = useState<InviteEntry[]>([{ id: "1", email: "", role: "member" }])
 
 	const createInvitation = useAtomSet(createInvitationMutation, {
 		mode: "promiseExit",
@@ -45,6 +55,7 @@ export const EmailInviteModal = ({ isOpen, onOpenChange, organizationId }: Email
 			{
 				id: Date.now().toString(),
 				email: "",
+				role: "member",
 			},
 		])
 	}
@@ -78,8 +89,9 @@ export const EmailInviteModal = ({ isOpen, onOpenChange, organizationId }: Email
 				await toastExit(
 					createInvitation({
 						payload: {
-							organizationId,
+							organizationId: organizationId!,
 							email: invite.email,
+							role: invite.role,
 						},
 					}),
 					{
@@ -98,7 +110,7 @@ export const EmailInviteModal = ({ isOpen, onOpenChange, organizationId }: Email
 		if (successCount > 0 && errorCount === 0) {
 			toast.success(`Successfully sent ${successCount} invitation${successCount > 1 ? "s" : ""}`)
 			onOpenChange(false)
-			setInvites([{ id: "1", email: "" }])
+			setInvites([{ id: "1", email: "", role: "member" }])
 		} else if (successCount > 0 && errorCount > 0) {
 			toast.warning(
 				`Sent ${successCount} invitation${successCount > 1 ? "s" : ""}, ${errorCount} failed`,
@@ -115,6 +127,9 @@ export const EmailInviteModal = ({ isOpen, onOpenChange, organizationId }: Email
 			<ModalContent isOpen={isOpen} onOpenChange={onOpenChange} size="lg">
 				<Dialog>
 					<DialogHeader>
+						<div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-primary/50">
+							<IconUsersPlus className="size-6 text-primary" />
+						</div>
 						<DialogTitle>Invite team members</DialogTitle>
 						<DialogDescription>
 							Invite colleagues to join your organization. They'll receive an email invitation.
@@ -136,6 +151,18 @@ export const EmailInviteModal = ({ isOpen, onOpenChange, organizationId }: Email
 											}
 										/>
 									</InputGroup>
+								</div>
+								<div className="w-28 space-y-1.5">
+									{index === 0 && <Label>Role</Label>}
+									<Select
+										selectedKey={invite.role}
+										onSelectionChange={(key) =>
+											updateInviteEntry(invite.id, "role", key as string)
+										}
+									>
+										<SelectItem id="member">Member</SelectItem>
+										<SelectItem id="admin">Admin</SelectItem>
+									</Select>
 								</div>
 								{invites.length > 1 && index > 0 && (
 									<Button

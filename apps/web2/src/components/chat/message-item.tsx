@@ -126,13 +126,13 @@ export function MessageItem({
 							{/* Edit mode - simplified for now */}
 							<div className="rounded-lg border border-border bg-bg p-2">
 								<textarea
-									className="w-full resize-none border-0 bg-transparent text-fg text-sm outline-none"
+									className="w-full resize-none border-0 bg-transparent text-base text-fg outline-none"
 									defaultValue={message.content}
 								/>
 							</div>
 						</div>
 					) : (
-						<div className="text-fg text-sm">{message.content}</div>
+						<div className="text-base text-fg">{message.content}</div>
 					)}
 
 					{/* Attachments */}

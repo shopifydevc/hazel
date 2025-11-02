@@ -23,6 +23,7 @@ import { Button as PrimitiveButton } from "react-aria-components"
 import IconHashtag from "~/components/icons/icon-hashtag"
 import { CreateChannelModal } from "~/components/modals/create-channel-modal"
 import { CreateDmModal } from "~/components/modals/create-dm-modal"
+import { EmailInviteModal } from "~/components/modals/email-invite-modal"
 import { JoinChannelModal } from "~/components/modals/join-channel-modal"
 import { ChannelItem } from "~/components/sidebar/channel-item"
 import { FavoriteSection } from "~/components/sidebar/favorite-section"
@@ -35,6 +36,7 @@ import {
 	Menu,
 	MenuContent,
 	MenuItem,
+	MenuItemLink,
 	MenuLabel,
 	MenuSection,
 	MenuSeparator,
@@ -55,6 +57,7 @@ import { Strong } from "~/components/ui/text"
 import { channelCollection, channelMemberCollection } from "~/db/collections"
 import { useOrganization } from "~/hooks/use-organization"
 import { useAuth } from "~/lib/auth"
+import IconUsersPlus from "../icons/icon-users-plus"
 
 const ChannelGroup = (props: {
 	organizationId: OrganizationId
@@ -166,8 +169,8 @@ const DmChannelGroup = (props: { organizationId: OrganizationId; onCreateDm: () 
 
 export function ChannelsSidebar() {
 	const { isMobile } = useSidebar()
-	const { organizationId, organization } = useOrganization()
-	const [modalType, setModalType] = useState<"create" | "join" | "dm" | null>(null)
+	const { organizationId, organization, slug } = useOrganization()
+	const [modalType, setModalType] = useState<"create" | "join" | "dm" | "invite" | null>(null)
 
 	return (
 		<>
@@ -196,8 +199,8 @@ export function ChannelsSidebar() {
 							) : (
 								<>
 									<MenuSection>
-										<MenuItem href="/">
-											<UserPlusIcon />
+										<MenuItem onAction={() => setModalType("invite")}>
+											<IconUsersPlus />
 											<MenuLabel>Invite people</MenuLabel>
 										</MenuItem>
 										<MenuItem href="/">
@@ -227,19 +230,15 @@ export function ChannelsSidebar() {
 											<FolderPlusIcon />
 											<MenuLabel>Create category</MenuLabel>
 										</MenuItem>
-										<MenuItem href="/">
-											<CalendarDaysIcon />
-											<MenuLabel>Create event</MenuLabel>
-										</MenuItem>
 									</MenuSection>
 
 									<MenuSeparator />
 
 									<MenuSection>
-										<MenuItem href="/">
+										<MenuItemLink to="/$orgSlug/settings" params={{ orgSlug: slug }}>
 											<Cog6ToothIcon />
 											<MenuLabel>Server settings</MenuLabel>
-										</MenuItem>
+										</MenuItemLink>
 										<MenuItem href="/">
 											<ShieldCheckIcon />
 											<MenuLabel>Roles & permissions</MenuLabel>
@@ -313,6 +312,10 @@ export function ChannelsSidebar() {
 
 			{modalType === "dm" && (
 				<CreateDmModal isOpen={true} onOpenChange={(isOpen) => !isOpen && setModalType(null)} />
+			)}
+
+			{modalType === "invite" && (
+				<EmailInviteModal isOpen={true} onOpenChange={(isOpen) => !isOpen && setModalType(null)} />
 			)}
 		</>
 	)

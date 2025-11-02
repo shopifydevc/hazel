@@ -42,11 +42,8 @@ const MessageVirtualList = memo(
 				stickyIndices={stickyIndices}
 				renderItem={(props) =>
 					props.item.type === "header" ? (
-						<div
-							className="sticky top-0 z-10 my-4 flex items-center justify-center"
-							style={{ background: "var(--color-bg)" }}
-						>
-							<span className="rounded-full bg-secondary px-3 py-1 font-mono text-muted-fg text-xs">
+						<div className="sticky top-0 z-10 my-4 flex items-center justify-center">
+							<span className="rounded-full bg-secondary px-3 py-1 font-mono text-muted-fg text-xs shadow-sm">
 								{props.item.date}
 							</span>
 						</div>
