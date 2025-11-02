@@ -1,5 +1,3 @@
-"use client"
-
 import { CheckIcon, MinusIcon } from "@heroicons/react/20/solid"
 import type { CheckboxGroupProps, CheckboxProps } from "react-aria-components"
 import {
@@ -63,11 +61,11 @@ export function Checkbox({ className, children, ...props }: CheckboxProps) {
                   "sm:size-4 sm:*:data-[slot=check-indicator]:size-3.5",
                   "size-4.5 *:data-[slot=check-indicator]:size-4",
                   (isSelected || isIndeterminate) && [
-                    "inset-ring-(--checkbox-ring,var(--color-ring)) bg-(--checkbox-bg,var(--color-primary)) text-(--checkbox-fg,var(--color-primary-fg))",
-                    "group-invalid:inset-ring/70 group-invalid:bg-danger group-invalid:text-danger-fg dark:group-invalid:inset-ring-danger-subtle-fg/70",
+                    "inset-ring-primary bg-primary text-primary-fg",
+                    "group-invalid:inset-ring-danger-subtle-fg/70 group-invalid:bg-danger group-invalid:text-danger-subtle-fg dark:group-invalid:inset-ring-danger-subtle-fg/70",
                   ],
                   isFocusVisible && [
-                    "inset-ring-(--checkbox-ring,var(--color-ring)) ring-(--checkbox-ring,var(--color-ring))/20 ring-3",
+                    "inset-ring-primary ring-3 ring-ring/20",
                     "group-invalid:inset-ring-danger-subtle-fg/70 group-invalid:text-danger-fg group-invalid:ring-danger-subtle-fg/20",
                   ],
                   isInvalid &&

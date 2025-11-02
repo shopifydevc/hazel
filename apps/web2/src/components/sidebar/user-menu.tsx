@@ -13,16 +13,20 @@ import {
 	MenuContent,
 	MenuHeader,
 	MenuItem,
+	MenuItemLink,
 	MenuLabel,
 	MenuSection,
 	MenuSeparator,
 	MenuTrigger,
 } from "~/components/ui/menu"
 import { SidebarLabel } from "~/components/ui/sidebar"
+import { useOrganization } from "~/hooks/use-organization"
 import { useAuth } from "~/lib/auth"
 
 export function UserMenu() {
 	const { user, logout } = useAuth()
+
+	const { slug: orgSlug } = useOrganization()
 
 	// Fallbacks for missing user data
 	const displayName =
@@ -63,21 +67,26 @@ export function UserMenu() {
 					</MenuHeader>
 				</MenuSection>
 
-				<MenuItem href="#dashboard">
+				<MenuItem>
 					<ChartPieIcon />
 					<MenuLabel>Dashboard</MenuLabel>
 				</MenuItem>
-				<MenuItem href="/settings">
+				<MenuItemLink
+					to="/$orgSlug/settings"
+					params={{
+						orgSlug: orgSlug,
+					}}
+				>
 					<Cog6ToothIcon />
 					<MenuLabel>Settings</MenuLabel>
-				</MenuItem>
-				<MenuItem href="#security">
+				</MenuItemLink>
+				<MenuItem>
 					<ShieldCheckIcon />
 					<MenuLabel>Security</MenuLabel>
 				</MenuItem>
 				<MenuSeparator />
 
-				<MenuItem href="#contact">
+				<MenuItem>
 					<ChatBubbleLeftRightIcon />
 					<MenuLabel>Customer support</MenuLabel>
 				</MenuItem>
