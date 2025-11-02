@@ -142,7 +142,7 @@ function ProfileSettings() {
 				<div className="flex justify-end">
 					<form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
 						{([canSubmit, isSubmitting]) => (
-							<Button type="submit" intent="primary" disabled={!canSubmit || isSubmitting}>
+							<Button type="submit" intent="primary" isDisabled={!canSubmit || isSubmitting}>
 								{isSubmitting ? "Saving..." : "Save"}
 							</Button>
 						)}

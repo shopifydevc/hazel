@@ -26,6 +26,7 @@ import { CreateDmModal } from "~/components/modals/create-dm-modal"
 import { EmailInviteModal } from "~/components/modals/email-invite-modal"
 import { JoinChannelModal } from "~/components/modals/join-channel-modal"
 import { ChannelItem } from "~/components/sidebar/channel-item"
+import { DmChannelItem } from "~/components/sidebar/dm-channel-item"
 import { FavoriteSection } from "~/components/sidebar/favorite-section"
 import { SwitchServerMenu } from "~/components/sidebar/switch-server-menu"
 import { UserMenu } from "~/components/sidebar/user-menu"
@@ -158,10 +159,7 @@ const DmChannelGroup = (props: { organizationId: OrganizationId; onCreateDm: () 
 				</Button>
 			</div>
 			{dmChannels.map((channel) => (
-				<SidebarItem key={channel.id} href={`/`} tooltip={channel.name}>
-					<IconHashtag />
-					<SidebarLabel>{channel.name}</SidebarLabel>
-				</SidebarItem>
+				<DmChannelItem key={channel.id} channelId={channel.id} />
 			))}
 		</SidebarSection>
 	)

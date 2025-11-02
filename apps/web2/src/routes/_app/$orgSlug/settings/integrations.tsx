@@ -151,7 +151,7 @@ function IntegrationsSettings() {
 										{integration.name}
 									</p>
 								</div>
-								<Switch isSelected={integration.active} size="sm" />
+								<Switch isSelected={integration.active} />
 							</div>
 							<p className="text-muted-fg text-sm">{integration.description}</p>
 						</div>

@@ -191,7 +191,7 @@ function DebugSettings() {
 						</DialogBody>
 
 						<DialogFooter>
-							<DialogClose intent="secondary" disabled={isGeneratingMockData}>
+							<DialogClose intent="secondary" isDisabled={isGeneratingMockData}>
 								Cancel
 							</DialogClose>
 							<Button intent="primary" onPress={handleGenerateMockData} isPending={isGeneratingMockData}>

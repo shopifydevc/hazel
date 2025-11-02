@@ -29,8 +29,9 @@ type EmojiItemShape = {
 	tags?: string[]
 }
 
-type EmojiPickerProps = React.ComponentProps<typeof Select> & {
+type EmojiPickerProps = Omit<React.ComponentProps<typeof Select>, "defaultValue" | "selectionMode"> & {
 	onPick?: (unicode: string) => void
+	defaultValue?: Key | null
 }
 
 function useEmojis(url: string) {

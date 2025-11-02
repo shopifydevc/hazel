@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { Link } from "~/components/ui/link"
 
 interface Microlink {
   status: string
@@ -17,7 +16,8 @@ interface Microlink {
 
 export function RichMessage({ text }: { text: string }) {
   const urls = useMemo(() => extractUrls(text), [text])
-  const previewUrl = urls.length ? normalizeUrl(urls[urls.length - 1]) : null
+  const lastUrl = urls[urls.length - 1]
+  const previewUrl = lastUrl ? normalizeUrl(lastUrl) : null
 
   return (
     <div className="max-w-xl">
@@ -62,7 +62,7 @@ function LinkPreview({ url }: { url: string }) {
   }, [og, url])
 
   return (
-    <Link
+    <a
       href={og?.url || url}
       target="_blank"
       rel="noopener noreferrer"
@@ -83,7 +83,7 @@ function LinkPreview({ url }: { url: string }) {
         </div>
       </div>
       {loading && <div className="px-3 pb-3 text-[11px] text-muted-fg">Loading preview…</div>}
-    </Link>
+    </a>
   )
 }
 

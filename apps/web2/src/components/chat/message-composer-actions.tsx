@@ -14,6 +14,7 @@ export interface MessageComposerActionsRef {
 
 interface MessageComposerActionsProps {
 	onEmojiSelect?: (emoji: string) => void
+	onSubmit?: () => void
 }
 
 export const MessageComposerActions = forwardRef<MessageComposerActionsRef, MessageComposerActionsProps>(

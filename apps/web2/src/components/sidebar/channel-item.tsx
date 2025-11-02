@@ -18,7 +18,7 @@ import { channelCollection, channelMemberCollection } from "~/db/collections"
 import { useOrganization } from "~/hooks/use-organization"
 
 interface ChannelItemProps {
-	channel: Channel
+	channel: Omit<Channel, "updatedAt"> & { updatedAt: Date | null }
 	member: ChannelMember
 }
 
