@@ -1,23 +1,17 @@
+import { useAtomSet } from "@effect-atom/atom-react"
 import type { InvitationId } from "@hazel/db/schema"
 import { ArrowPathIcon, XMarkIcon } from "@heroicons/react/20/solid"
 import { eq, useLiveQuery } from "@tanstack/react-db"
 import { createFileRoute } from "@tanstack/react-router"
 import { useState } from "react"
 import { toast } from "sonner"
+import { resendInvitationMutation, revokeInvitationMutation } from "~/atoms/invitation-atoms"
 import IconPlus from "~/components/icons/icon-plus"
+import { EmailInviteModal } from "~/components/modals/email-invite-modal"
 import { Button } from "~/components/ui/button"
-import {
-	Dialog,
-	DialogBody,
-	DialogClose,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "~/components/ui/dialog"
-import { Modal, ModalContent } from "~/components/ui/modal"
 import { invitationCollection, userCollection } from "~/db/collections"
 import { useOrganization } from "~/hooks/use-organization"
+import { toastExit } from "~/lib/toast-exit"
 import { cn } from "~/lib/utils"
 
 export const Route = createFileRoute("/_app/$orgSlug/settings/invitations")({
@@ -28,6 +22,14 @@ function InvitationsSettings() {
 	const [showInviteModal, setShowInviteModal] = useState(false)
 
 	const { organizationId } = useOrganization()
+
+	const resendInvitation = useAtomSet(resendInvitationMutation, {
+		mode: "promiseExit",
+	})
+
+	const revokeInvitation = useAtomSet(revokeInvitationMutation, {
+		mode: "promiseExit",
+	})
 
 	const { data: invitations } = useLiveQuery(
 		(q) =>
@@ -66,30 +68,34 @@ function InvitationsSettings() {
 		return "Expires soon"
 	}
 
-	const handleResendInvitation = async (_invitationId: InvitationId) => {
-		try {
-			// TODO: Resend mutation
-			toast.info("Invitation resent", {
-				description: "The invitation has been resent successfully.",
-			})
-		} catch (error) {
-			toast.error("Failed to resend invitation", {
-				description: error instanceof Error ? error.message : "An error occurred",
-			})
-		}
+	const handleResendInvitation = async (invitationId: InvitationId) => {
+		await toastExit(
+			resendInvitation({
+				payload: {
+					invitationId,
+				},
+			}),
+			{
+				loading: "Resending invitation...",
+				success: "Invitation resent successfully",
+				error: "Failed to resend invitation",
+			},
+		)
 	}
 
-	const handleRevokeInvitation = async (_invitationId: InvitationId) => {
-		try {
-			// TODO: Revoke mutation
-			toast.info("Invitation revoked", {
-				description: "The invitation has been revoked successfully.",
-			})
-		} catch (error) {
-			toast.error("Failed to revoke invitation", {
-				description: error instanceof Error ? error.message : "An error occurred",
-			})
-		}
+	const handleRevokeInvitation = async (invitationId: InvitationId) => {
+		await toastExit(
+			revokeInvitation({
+				payload: {
+					invitationId,
+				},
+			}),
+			{
+				loading: "Revoking invitation...",
+				success: "Invitation revoked successfully",
+				error: "Failed to revoke invitation",
+			},
+		)
 	}
 
 	return (
@@ -150,7 +156,9 @@ function InvitationsSettings() {
 									{pendingInvitations.map((invitation) => (
 										<tr key={invitation.id} className="hover:bg-secondary/50">
 											<td className="px-4 py-4">
-												<p className="font-medium text-fg text-sm">{invitation.email}</p>
+												<p className="font-medium text-fg text-sm">
+													{invitation.email}
+												</p>
 											</td>
 											<td className="px-4 py-4">
 												<p className="text-muted-fg text-sm">
@@ -167,7 +175,9 @@ function InvitationsSettings() {
 											</td>
 											<td className="px-4 py-4">
 												<p className="text-muted-fg text-sm">
-													{formatTimeRemaining(invitation.expiresAt.getTime() - Date.now())}
+													{formatTimeRemaining(
+														invitation.expiresAt.getTime() - Date.now(),
+													)}
 												</p>
 											</td>
 											<td className="px-4 py-4">
@@ -199,30 +209,14 @@ function InvitationsSettings() {
 				</div>
 			</div>
 
-			{/* Invite Modal Placeholder */}
-			<Modal>
-				<ModalContent isOpen={showInviteModal} onOpenChange={setShowInviteModal} size="lg">
-					<Dialog>
-						<DialogHeader>
-							<DialogTitle>Invite team member</DialogTitle>
-							<DialogDescription>
-								Invite a new member to join your organization.
-							</DialogDescription>
-						</DialogHeader>
-
-						<DialogBody>
-							<p className="text-muted-fg text-sm">
-								Email invitation functionality will be implemented here.
-							</p>
-						</DialogBody>
-
-						<DialogFooter>
-							<DialogClose intent="secondary">Cancel</DialogClose>
-							<Button intent="primary">Send invite</Button>
-						</DialogFooter>
-					</Dialog>
-				</ModalContent>
-			</Modal>
+			{/* Email Invite Modal */}
+			{organizationId && (
+				<EmailInviteModal
+					isOpen={showInviteModal}
+					onOpenChange={setShowInviteModal}
+					organizationId={organizationId}
+				/>
+			)}
 		</>
 	)
 }

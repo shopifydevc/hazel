@@ -6,14 +6,7 @@ import IconHashtag from "~/components/icons/icon-hashtag"
 import { Button } from "~/components/ui/button"
 import { Description } from "~/components/ui/field"
 import { Input } from "~/components/ui/input"
-import {
-	Modal,
-	ModalBody,
-	ModalContent,
-	ModalFooter,
-	ModalHeader,
-	ModalTitle,
-} from "~/components/ui/modal"
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "~/components/ui/modal"
 import { channelCollection, channelMemberCollection } from "~/db/collections"
 import { useOrganization } from "~/hooks/use-organization"
 import { useAuth } from "~/lib/auth"
@@ -47,9 +40,7 @@ export function JoinChannelModal({ isOpen, onOpenChange }: JoinChannelModalProps
 				// If user has no channels, return all public channels
 				return q
 					.from({ channel: channelCollection })
-					.where(({ channel }) =>
-						or(eq(channel.type, "public"), eq(channel.type, "private")),
-					)
+					.where(({ channel }) => or(eq(channel.type, "public"), eq(channel.type, "private")))
 					.where(({ channel }) => eq(channel.organizationId, organizationId || ""))
 					.select(({ channel }) => ({ ...channel }))
 			}
@@ -57,9 +48,7 @@ export function JoinChannelModal({ isOpen, onOpenChange }: JoinChannelModalProps
 			return q
 				.from({ channel: channelCollection })
 				.where(({ channel }) => not(inArray(channel.id, userChannelIds)))
-				.where(({ channel }) =>
-					or(eq(channel.type, "public"), eq(channel.type, "private")),
-				)
+				.where(({ channel }) => or(eq(channel.type, "public"), eq(channel.type, "private")))
 				.where(({ channel }) => eq(channel.organizationId, organizationId || ""))
 				.select(({ channel }) => ({ ...channel }))
 		},

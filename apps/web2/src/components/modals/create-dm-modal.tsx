@@ -11,19 +11,8 @@ import { Avatar } from "~/components/ui/avatar"
 import { Button } from "~/components/ui/button"
 import { Description } from "~/components/ui/field"
 import { Input, InputGroup } from "~/components/ui/input"
-import {
-	Modal,
-	ModalBody,
-	ModalContent,
-	ModalFooter,
-	ModalHeader,
-	ModalTitle,
-} from "~/components/ui/modal"
-import {
-	organizationMemberCollection,
-	userCollection,
-	userPresenceStatusCollection,
-} from "~/db/collections"
+import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "~/components/ui/modal"
+import { organizationMemberCollection, userCollection, userPresenceStatusCollection } from "~/db/collections"
 import { useAppForm } from "~/hooks/use-app-form"
 import { useOrganization } from "~/hooks/use-organization"
 import { useAuth } from "~/lib/auth"
@@ -243,7 +232,9 @@ export function CreateDmModal({ isOpen, onOpenChange }: CreateDmModalProps) {
 											type="button"
 											onClick={() => user && toggleUserSelection(user)}
 											className={`flex w-full items-center justify-between rounded-lg p-3 text-left transition-colors hover:bg-secondary ${
-												isSelected ? "bg-secondary ring-2 ring-primary ring-inset" : ""
+												isSelected
+													? "bg-secondary ring-2 ring-primary ring-inset"
+													: ""
 											}`}
 										>
 											<div className="flex items-center gap-3">
@@ -257,7 +248,9 @@ export function CreateDmModal({ isOpen, onOpenChange }: CreateDmModalProps) {
 														{user?.firstName || ""} {user?.lastName || ""}
 													</p>
 													{user?.presence?.status === "online" && (
-														<span className="text-success text-xs">Active now</span>
+														<span className="text-success text-xs">
+															Active now
+														</span>
 													)}
 													{user?.presence?.customMessage && (
 														<span className="truncate text-muted-fg text-xs">

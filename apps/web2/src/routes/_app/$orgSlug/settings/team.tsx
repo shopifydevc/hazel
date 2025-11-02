@@ -1,25 +1,39 @@
+import { useAtomSet } from "@effect-atom/atom-react"
 import type { UserId } from "@hazel/db/schema"
-import { ExclamationTriangleIcon } from "@heroicons/react/20/solid"
+import {
+	ChatBubbleLeftIcon,
+	EllipsisVerticalIcon,
+	ExclamationTriangleIcon,
+	TrashIcon,
+	UserIcon,
+} from "@heroicons/react/20/solid"
 import { eq, useLiveQuery } from "@tanstack/react-db"
 import { createFileRoute } from "@tanstack/react-router"
 import { useState } from "react"
 import { toast } from "sonner"
+import { createDmChannelMutation } from "~/atoms/channel-atoms"
+import { openModal } from "~/atoms/modal-atoms"
 import IconPlus from "~/components/icons/icon-plus"
+import { ChangeRoleModal } from "~/components/modals/change-role-modal"
+import { EmailInviteModal } from "~/components/modals/email-invite-modal"
 import { Avatar } from "~/components/ui/avatar"
 import { Button } from "~/components/ui/button"
 import {
 	Dialog,
-	DialogBody,
 	DialogClose,
 	DialogDescription,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 } from "~/components/ui/dialog"
+import { DropdownLabel, DropdownSeparator } from "~/components/ui/dropdown"
+import { Menu, MenuContent, MenuItem, MenuTrigger } from "~/components/ui/menu"
 import { Modal, ModalContent } from "~/components/ui/modal"
 import { organizationMemberCollection, userCollection, userPresenceStatusCollection } from "~/db/collections"
 import { useOrganization } from "~/hooks/use-organization"
 import { useAuth } from "~/lib/auth"
+import { findExistingDmChannel } from "~/lib/channels"
+import { toastExit } from "~/lib/toast-exit"
 import { cn } from "~/lib/utils"
 
 export const Route = createFileRoute("/_app/$orgSlug/settings/team")({
@@ -30,7 +44,12 @@ function TeamSettings() {
 	const [removeUserId, setRemoveUserId] = useState<UserId | null>(null)
 	const [showInviteModal, setShowInviteModal] = useState(false)
 
-	const { organizationId } = useOrganization()
+	const { organizationId, slug: orgSlug } = useOrganization()
+	const { user } = useAuth()
+
+	const createDmChannel = useAtomSet(createDmChannelMutation, {
+		mode: "promiseExit",
+	})
 
 	const { data: teamMembers } = useLiveQuery(
 		(q) =>
@@ -44,8 +63,6 @@ function TeamSettings() {
 				.select(({ members, user, presence }) => ({ ...members, user, presence })),
 		[organizationId],
 	)
-
-	const { user } = useAuth()
 
 	const roleToBadgeColors = {
 		owner: "bg-primary text-primary-fg",
@@ -101,6 +118,40 @@ function TeamSettings() {
 				return "text-danger"
 			default:
 				return "text-muted-fg"
+		}
+	}
+
+	const handleMessageUser = async (targetUserId: UserId, targetUserName: string) => {
+		if (!user?.id || !organizationId || !orgSlug) return
+
+		const existingChannel = findExistingDmChannel(user.id, targetUserId)
+
+		if (existingChannel) {
+			// TODO: Navigate to chat when chat route is available
+			// navigate({
+			// 	to: "/$orgSlug/chat/$id",
+			// 	params: { orgSlug, id: existingChannel.id },
+			// })
+			toast.info("Opening chat", {
+				description: `Chat with ${targetUserName}`,
+			})
+		} else {
+			await toastExit(
+				createDmChannel({
+					payload: {
+						organizationId,
+						participantIds: [targetUserId],
+						type: "single",
+					},
+				}),
+				{
+					loading: `Starting conversation with ${targetUserName}...`,
+					success: () => {
+						// TODO: Navigate to chat when chat route is available
+						return `Started conversation with ${targetUserName}`
+					},
+				},
+			)
 		}
 	}
 
@@ -200,13 +251,64 @@ function TeamSettings() {
 											{user &&
 												member.userId !== user.id &&
 												canManageUser(member.role) && (
-													<Button
-														intent="outline"
-														size="xs"
-														onPress={() => setRemoveUserId(member.userId)}
-													>
-														Remove
-													</Button>
+													<div className="flex justify-end">
+														<Menu>
+															<MenuTrigger
+																aria-label="Actions"
+																className="inline-flex size-8 items-center justify-center rounded-lg hover:bg-secondary"
+															>
+																<EllipsisVerticalIcon className="size-5 text-muted-fg" />
+															</MenuTrigger>
+															<MenuContent placement="bottom end">
+																<MenuItem
+																	onAction={() =>
+																		handleMessageUser(
+																			member.userId,
+																			`${member.user.firstName} ${member.user.lastName}`,
+																		)
+																	}
+																>
+																	<ChatBubbleLeftIcon data-slot="icon" />
+																	<DropdownLabel>
+																		Send message
+																	</DropdownLabel>
+																</MenuItem>
+																<DropdownSeparator />
+																<MenuItem
+																	onAction={() => {
+																		const currentUserMember =
+																			teamMembers?.find(
+																				(m) => m.userId === user?.id,
+																			)
+																		openModal("change-role", {
+																			userId: member.userId,
+																			name: `${member.user.firstName} ${member.user.lastName}`,
+																			memberId: member.id,
+																			role: member.role,
+																			currentUserRole:
+																				currentUserMember?.role ||
+																				"member",
+																		})
+																	}}
+																>
+																	<UserIcon data-slot="icon" />
+																	<DropdownLabel>Change role</DropdownLabel>
+																</MenuItem>
+																<DropdownSeparator />
+																<MenuItem
+																	intent="danger"
+																	onAction={() =>
+																		setRemoveUserId(member.userId)
+																	}
+																>
+																	<TrashIcon data-slot="icon" />
+																	<DropdownLabel>
+																		Remove from team
+																	</DropdownLabel>
+																</MenuItem>
+															</MenuContent>
+														</Menu>
+													</div>
 												)}
 										</td>
 									</tr>
@@ -249,30 +351,17 @@ function TeamSettings() {
 				</ModalContent>
 			</Modal>
 
-			{/* Invite Modal Placeholder */}
-			<Modal>
-				<ModalContent isOpen={showInviteModal} onOpenChange={setShowInviteModal} size="lg">
-					<Dialog>
-						<DialogHeader>
-							<DialogTitle>Invite team member</DialogTitle>
-							<DialogDescription>
-								Invite a new member to join your organization.
-							</DialogDescription>
-						</DialogHeader>
+			{/* Email Invite Modal */}
+			{organizationId && (
+				<EmailInviteModal
+					isOpen={showInviteModal}
+					onOpenChange={setShowInviteModal}
+					organizationId={organizationId}
+				/>
+			)}
 
-						<DialogBody>
-							<p className="text-muted-fg text-sm">
-								Email invitation functionality will be implemented here.
-							</p>
-						</DialogBody>
-
-						<DialogFooter>
-							<DialogClose intent="secondary">Cancel</DialogClose>
-							<Button intent="primary">Send invite</Button>
-						</DialogFooter>
-					</Dialog>
-				</ModalContent>
-			</Modal>
+			{/* Change Role Modal */}
+			<ChangeRoleModal />
 		</>
 	)
 }
