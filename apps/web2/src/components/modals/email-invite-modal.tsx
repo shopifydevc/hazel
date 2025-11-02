@@ -19,7 +19,7 @@ import {
 import { Label } from "~/components/ui/field"
 import { Input, InputGroup } from "~/components/ui/input"
 import { Modal, ModalContent } from "~/components/ui/modal"
-import { Select, SelectItem } from "~/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger } from "~/components/ui/select"
 import { useOrganization } from "~/hooks/use-organization"
 import { toastExit } from "~/lib/toast-exit"
 
@@ -160,8 +160,11 @@ export const EmailInviteModal = ({
 											updateInviteEntry(invite.id, "role", key as string)
 										}
 									>
-										<SelectItem id="member">Member</SelectItem>
-										<SelectItem id="admin">Admin</SelectItem>
+										<SelectTrigger />
+										<SelectContent>
+											<SelectItem id="member">Member</SelectItem>
+											<SelectItem id="admin">Admin</SelectItem>
+										</SelectContent>
 									</Select>
 								</div>
 								{invites.length > 1 && index > 0 && (

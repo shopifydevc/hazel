@@ -1,7 +1,6 @@
-import { PaperAirplaneIcon, PaperClipIcon } from "@heroicons/react/20/solid"
+import { PaperClipIcon } from "@heroicons/react/20/solid"
 import { ItalicSquare } from "@untitledui/icons"
 import { forwardRef, useRef } from "react"
-import { Button } from "~/components/ui/button"
 import IconEmoji1 from "~/components/icons/icon-emoji-1"
 import { useEmojiStats } from "~/hooks/use-emoji-stats"
 import { useFileUpload } from "~/hooks/use-file-upload"
@@ -14,12 +13,11 @@ export interface MessageComposerActionsRef {
 }
 
 interface MessageComposerActionsProps {
-	onSubmit?: () => Promise<void>
 	onEmojiSelect?: (emoji: string) => void
 }
 
 export const MessageComposerActions = forwardRef<MessageComposerActionsRef, MessageComposerActionsProps>(
-	({ onSubmit, onEmojiSelect }, _ref) => {
+	({ onEmojiSelect }, _ref) => {
 		const { organizationId } = useOrganization()
 		const fileInputRef = useRef<HTMLInputElement>(null)
 		const { trackEmojiUsage } = useEmojiStats()
@@ -93,43 +91,38 @@ export const MessageComposerActions = forwardRef<MessageComposerActionsRef, Mess
 				/>
 
 				{/* Bottom action bar */}
-				<div className="flex w-full items-center justify-between gap-3 border-border border-t bg-bg px-3 py-2">
-					<div className="flex items-center gap-2">
+				<div className="flex w-full items-center justify-between gap-3 px-3 py-2">
+					<div className="flex items-center gap-3">
 						{/* Shortcuts button */}
-						<Button intent="plain" size="xs">
-							<ItalicSquare data-slot="icon" />
-							<span className="font-semibold">Shortcuts</span>
-						</Button>
+						<button
+							type="button"
+							className="inline-flex items-center gap-1.5 rounded-xs p-0 font-semibold text-muted-fg text-xs transition-colors hover:text-fg"
+						>
+							<ItalicSquare className="size-4 text-muted-fg" />
+							Shortcuts
+						</button>
 
 						{/* Attach button */}
-						<Button
-							intent="plain"
-							size="xs"
-							onPress={() => fileInputRef.current?.click()}
-							isDisabled={isUploading}
+						<button
+							type="button"
+							onClick={() => fileInputRef.current?.click()}
+							disabled={isUploading}
+							className="inline-flex items-center gap-1.5 rounded-xs p-0 font-semibold text-muted-fg text-xs transition-colors hover:text-fg disabled:opacity-50"
 						>
-							<PaperClipIcon data-slot="icon" />
-							<span className="font-semibold">Attach</span>
-						</Button>
+							<PaperClipIcon className="size-4 text-muted-fg" />
+							Attach
+						</button>
 
 						{/* Emoji picker */}
 						<EmojiPicker onPick={handleEmojiSelect}>
-							<IconEmoji1 data-slot="icon" />
+							<button
+								type="button"
+								className="inline-flex items-center gap-1.5 rounded-xs p-0 font-semibold text-muted-fg text-xs transition-colors hover:text-fg"
+							>
+								<IconEmoji1 className="size-4 text-muted-fg" />
+								Emoji
+							</button>
 						</EmojiPicker>
-					</div>
-
-					<div className="flex items-center gap-2">
-						{/* Send button */}
-						<Button
-							intent="primary"
-							size="sm"
-							onPress={onSubmit}
-							isDisabled={isUploading}
-							aria-label="Send message"
-						>
-							<PaperAirplaneIcon data-slot="icon" />
-							<span className="font-semibold">Send</span>
-						</Button>
 					</div>
 				</div>
 			</>
