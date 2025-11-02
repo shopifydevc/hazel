@@ -19,7 +19,9 @@ import { Route as AppOnboardingSetupOrganizationRouteImport } from './routes/_ap
 import { Route as AppOrgSlugNotificationsRouteImport } from './routes/_app/$orgSlug/notifications'
 import { Route as AppOrgSlugSettingsLayoutRouteImport } from './routes/_app/$orgSlug/settings/layout'
 import { Route as AppOrgSlugSettingsIndexRouteImport } from './routes/_app/$orgSlug/settings/index'
+import { Route as AppOrgSlugSettingsTeamRouteImport } from './routes/_app/$orgSlug/settings/team'
 import { Route as AppOrgSlugSettingsProfileRouteImport } from './routes/_app/$orgSlug/settings/profile'
+import { Route as AppOrgSlugSettingsInvitationsRouteImport } from './routes/_app/$orgSlug/settings/invitations'
 import { Route as AppOrgSlugSettingsIntegrationsRouteImport } from './routes/_app/$orgSlug/settings/integrations'
 import { Route as AppOrgSlugSettingsDebugRouteImport } from './routes/_app/$orgSlug/settings/debug'
 
@@ -74,10 +76,21 @@ const AppOrgSlugSettingsIndexRoute = AppOrgSlugSettingsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppOrgSlugSettingsLayoutRoute,
 } as any)
+const AppOrgSlugSettingsTeamRoute = AppOrgSlugSettingsTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => AppOrgSlugSettingsLayoutRoute,
+} as any)
 const AppOrgSlugSettingsProfileRoute =
   AppOrgSlugSettingsProfileRouteImport.update({
     id: '/profile',
     path: '/profile',
+    getParentRoute: () => AppOrgSlugSettingsLayoutRoute,
+  } as any)
+const AppOrgSlugSettingsInvitationsRoute =
+  AppOrgSlugSettingsInvitationsRouteImport.update({
+    id: '/invitations',
+    path: '/invitations',
     getParentRoute: () => AppOrgSlugSettingsLayoutRoute,
   } as any)
 const AppOrgSlugSettingsIntegrationsRoute =
@@ -103,7 +116,9 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof AppOnboardingIndexRoute
   '/$orgSlug/settings/debug': typeof AppOrgSlugSettingsDebugRoute
   '/$orgSlug/settings/integrations': typeof AppOrgSlugSettingsIntegrationsRoute
+  '/$orgSlug/settings/invitations': typeof AppOrgSlugSettingsInvitationsRoute
   '/$orgSlug/settings/profile': typeof AppOrgSlugSettingsProfileRoute
+  '/$orgSlug/settings/team': typeof AppOrgSlugSettingsTeamRoute
   '/$orgSlug/settings/': typeof AppOrgSlugSettingsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -115,7 +130,9 @@ export interface FileRoutesByTo {
   '/onboarding': typeof AppOnboardingIndexRoute
   '/$orgSlug/settings/debug': typeof AppOrgSlugSettingsDebugRoute
   '/$orgSlug/settings/integrations': typeof AppOrgSlugSettingsIntegrationsRoute
+  '/$orgSlug/settings/invitations': typeof AppOrgSlugSettingsInvitationsRoute
   '/$orgSlug/settings/profile': typeof AppOrgSlugSettingsProfileRoute
+  '/$orgSlug/settings/team': typeof AppOrgSlugSettingsTeamRoute
   '/$orgSlug/settings': typeof AppOrgSlugSettingsIndexRoute
 }
 export interface FileRoutesById {
@@ -131,7 +148,9 @@ export interface FileRoutesById {
   '/_app/onboarding/': typeof AppOnboardingIndexRoute
   '/_app/$orgSlug/settings/debug': typeof AppOrgSlugSettingsDebugRoute
   '/_app/$orgSlug/settings/integrations': typeof AppOrgSlugSettingsIntegrationsRoute
+  '/_app/$orgSlug/settings/invitations': typeof AppOrgSlugSettingsInvitationsRoute
   '/_app/$orgSlug/settings/profile': typeof AppOrgSlugSettingsProfileRoute
+  '/_app/$orgSlug/settings/team': typeof AppOrgSlugSettingsTeamRoute
   '/_app/$orgSlug/settings/': typeof AppOrgSlugSettingsIndexRoute
 }
 export interface FileRouteTypes {
@@ -147,7 +166,9 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/$orgSlug/settings/debug'
     | '/$orgSlug/settings/integrations'
+    | '/$orgSlug/settings/invitations'
     | '/$orgSlug/settings/profile'
+    | '/$orgSlug/settings/team'
     | '/$orgSlug/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -159,7 +180,9 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/$orgSlug/settings/debug'
     | '/$orgSlug/settings/integrations'
+    | '/$orgSlug/settings/invitations'
     | '/$orgSlug/settings/profile'
+    | '/$orgSlug/settings/team'
     | '/$orgSlug/settings'
   id:
     | '__root__'
@@ -174,7 +197,9 @@ export interface FileRouteTypes {
     | '/_app/onboarding/'
     | '/_app/$orgSlug/settings/debug'
     | '/_app/$orgSlug/settings/integrations'
+    | '/_app/$orgSlug/settings/invitations'
     | '/_app/$orgSlug/settings/profile'
+    | '/_app/$orgSlug/settings/team'
     | '/_app/$orgSlug/settings/'
   fileRoutesById: FileRoutesById
 }
@@ -255,11 +280,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOrgSlugSettingsIndexRouteImport
       parentRoute: typeof AppOrgSlugSettingsLayoutRoute
     }
+    '/_app/$orgSlug/settings/team': {
+      id: '/_app/$orgSlug/settings/team'
+      path: '/team'
+      fullPath: '/$orgSlug/settings/team'
+      preLoaderRoute: typeof AppOrgSlugSettingsTeamRouteImport
+      parentRoute: typeof AppOrgSlugSettingsLayoutRoute
+    }
     '/_app/$orgSlug/settings/profile': {
       id: '/_app/$orgSlug/settings/profile'
       path: '/profile'
       fullPath: '/$orgSlug/settings/profile'
       preLoaderRoute: typeof AppOrgSlugSettingsProfileRouteImport
+      parentRoute: typeof AppOrgSlugSettingsLayoutRoute
+    }
+    '/_app/$orgSlug/settings/invitations': {
+      id: '/_app/$orgSlug/settings/invitations'
+      path: '/invitations'
+      fullPath: '/$orgSlug/settings/invitations'
+      preLoaderRoute: typeof AppOrgSlugSettingsInvitationsRouteImport
       parentRoute: typeof AppOrgSlugSettingsLayoutRoute
     }
     '/_app/$orgSlug/settings/integrations': {
@@ -282,7 +321,9 @@ declare module '@tanstack/react-router' {
 interface AppOrgSlugSettingsLayoutRouteChildren {
   AppOrgSlugSettingsDebugRoute: typeof AppOrgSlugSettingsDebugRoute
   AppOrgSlugSettingsIntegrationsRoute: typeof AppOrgSlugSettingsIntegrationsRoute
+  AppOrgSlugSettingsInvitationsRoute: typeof AppOrgSlugSettingsInvitationsRoute
   AppOrgSlugSettingsProfileRoute: typeof AppOrgSlugSettingsProfileRoute
+  AppOrgSlugSettingsTeamRoute: typeof AppOrgSlugSettingsTeamRoute
   AppOrgSlugSettingsIndexRoute: typeof AppOrgSlugSettingsIndexRoute
 }
 
@@ -290,7 +331,9 @@ const AppOrgSlugSettingsLayoutRouteChildren: AppOrgSlugSettingsLayoutRouteChildr
   {
     AppOrgSlugSettingsDebugRoute: AppOrgSlugSettingsDebugRoute,
     AppOrgSlugSettingsIntegrationsRoute: AppOrgSlugSettingsIntegrationsRoute,
+    AppOrgSlugSettingsInvitationsRoute: AppOrgSlugSettingsInvitationsRoute,
     AppOrgSlugSettingsProfileRoute: AppOrgSlugSettingsProfileRoute,
+    AppOrgSlugSettingsTeamRoute: AppOrgSlugSettingsTeamRoute,
     AppOrgSlugSettingsIndexRoute: AppOrgSlugSettingsIndexRoute,
   }
 
