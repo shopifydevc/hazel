@@ -8,9 +8,9 @@ import {
 	userWithPresenceAtomFamily,
 } from "~/atoms/message-atoms"
 import { useChat } from "~/hooks/use-chat"
-import { Button } from "../ui/button"
-import { Avatar } from "../ui/avatar"
 import IconThread from "../icons/icon-thread"
+import { Avatar } from "../ui/avatar"
+import { Button } from "../ui/button"
 
 interface InlineThreadPreviewProps {
 	threadChannelId: ChannelId
@@ -87,11 +87,7 @@ function ThreadMessagePreview({ message }: { message: typeof Message.Model.Type 
 
 	return (
 		<div className="group flex gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-secondary/50">
-			<Avatar
-				src={user.avatarUrl}
-				initials={`${user.firstName} ${user.lastName}`}
-				className="size-6"
-			/>
+			<Avatar src={user.avatarUrl} initials={`${user.firstName} ${user.lastName}`} className="size-6" />
 
 			<div className="min-w-0 flex-1">
 				<div className="flex items-baseline gap-2">

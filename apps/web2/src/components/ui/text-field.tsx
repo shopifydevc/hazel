@@ -4,7 +4,5 @@ import { cx } from "~/lib/primitive"
 import { fieldStyles } from "./field"
 
 export function TextField({ className, ...props }: TextFieldProps) {
-  return (
-    <TextFieldPrimitive data-slot="control" className={cx(fieldStyles(), className)} {...props} />
-  )
+	return <TextFieldPrimitive data-slot="control" className={cx(fieldStyles(), className)} {...props} />
 }

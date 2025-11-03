@@ -4,10 +4,10 @@ import { Button as PrimitiveButton } from "react-aria-components"
 import { messageCollection, pinnedMessageCollection, userCollection } from "~/db/collections"
 import { useChat } from "~/hooks/use-chat"
 import { cn } from "~/lib/utils"
-import { Button } from "../ui/button"
-import { Popover, PopoverContent } from "../ui/popover"
 import IconClose from "../icons/icon-close"
 import IconPin from "../icons/icon-pin"
+import { Button } from "../ui/button"
+import { Popover, PopoverContent } from "../ui/popover"
 import { UserProfilePopover } from "./user-profile-popover"
 
 export function PinnedMessagesModal() {
@@ -110,9 +110,7 @@ export function PinnedMessagesModal() {
 
 											{/* Message Content */}
 											<div className="flex gap-3 pr-8">
-												<UserProfilePopover
-													userId={pinnedMessage.message.authorId}
-												/>
+												<UserProfilePopover userId={pinnedMessage.message.authorId} />
 												<div className="min-w-0 flex-1">
 													{/* Message Author Header */}
 													<div className="flex items-baseline gap-2">
@@ -122,10 +120,7 @@ export function PinnedMessagesModal() {
 																: "Unknown"}
 														</span>
 														<span className="text-muted-fg text-xs">
-															{format(
-																pinnedMessage.message.createdAt,
-																"HH:mm",
-															)}
+															{format(pinnedMessage.message.createdAt, "HH:mm")}
 															{isEdited && " (edited)"}
 														</span>
 													</div>

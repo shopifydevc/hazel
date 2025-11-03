@@ -1,12 +1,13 @@
 import { ItalicSquare } from "@untitledui/icons"
 import { forwardRef, useRef } from "react"
+import { Button as AriaButton } from "react-aria-components"
+import { EmojiPickerDialog } from "~/components/emoji-picker"
 import IconEmoji1 from "~/components/icons/icon-emoji-1"
 import IconPaperclip from "~/components/icons/icon-paperclip2"
 import { useEmojiStats } from "~/hooks/use-emoji-stats"
 import { useFileUpload } from "~/hooks/use-file-upload"
 import { useOrganization } from "~/hooks/use-organization"
 import { useChat } from "~/providers/chat-provider"
-import { EmojiPicker } from "~/components/emoji-picker"
 
 export interface MessageComposerActionsRef {
 	cleanup: () => void
@@ -72,10 +73,10 @@ export const MessageComposerActions = forwardRef<MessageComposerActionsRef, Mess
 			}
 		}
 
-		const handleEmojiSelect = (unicode: string) => {
-			trackEmojiUsage(unicode)
+		const handleEmojiSelect = (emoji: { emoji: string; label: string }) => {
+			trackEmojiUsage(emoji.emoji)
 			if (onEmojiSelect) {
-				onEmojiSelect(unicode)
+				onEmojiSelect(emoji.emoji)
 			}
 		}
 
@@ -115,15 +116,15 @@ export const MessageComposerActions = forwardRef<MessageComposerActionsRef, Mess
 						</button>
 
 						{/* Emoji picker */}
-						<EmojiPicker onPick={handleEmojiSelect}>
-							<button
+						<EmojiPickerDialog onEmojiSelect={handleEmojiSelect}>
+							<AriaButton
 								type="button"
 								className="inline-flex items-center gap-1.5 rounded-xs p-0 font-semibold text-muted-fg text-xs transition-colors hover:text-fg"
 							>
 								<IconEmoji1 className="size-4 text-muted-fg" />
 								Emoji
-							</button>
-						</EmojiPicker>
+							</AriaButton>
+						</EmojiPickerDialog>
 					</div>
 				</div>
 			</>

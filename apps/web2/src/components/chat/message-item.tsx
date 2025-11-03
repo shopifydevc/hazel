@@ -7,14 +7,14 @@ import { Button } from "react-aria-components"
 import { toast } from "sonner"
 import type { MessageWithPinned } from "~/atoms/chat-query-atoms"
 import { processedReactionsAtomFamily } from "~/atoms/message-atoms"
+import IconPin from "~/components/icons/icon-pin"
+import { extractUrls, LinkPreview } from "~/components/link-preview"
+import { MarkdownReadonly } from "~/components/markdown-readonly"
 import { messageCollection } from "~/db/collections"
 import { useChat } from "~/hooks/use-chat"
 import { useEmojiStats } from "~/hooks/use-emoji-stats"
 import { useAuth } from "~/lib/auth"
 import { cn } from "~/lib/utils"
-import IconPin from "~/components/icons/icon-pin"
-import { MarkdownReadonly } from "~/components/markdown-readonly"
-import { LinkPreview, extractUrls } from "~/components/link-preview"
 import { InlineThreadPreview } from "./inline-thread-preview"
 import { MessageAttachments } from "./message-attachments"
 import { MessageReplySection } from "./message-reply-section"
@@ -246,7 +246,9 @@ export const MessageAuthorHeader = ({
 
 	return (
 		<div className="flex items-baseline gap-2">
-			<span className="font-semibold text-fg">{user ? `${user.firstName} ${user.lastName}` : "Unknown"}</span>
+			<span className="font-semibold text-fg">
+				{user ? `${user.firstName} ${user.lastName}` : "Unknown"}
+			</span>
 			<span className="text-muted-fg text-xs">
 				{format(message.createdAt, "HH:mm")}
 				{isEdited && " (edited)"}

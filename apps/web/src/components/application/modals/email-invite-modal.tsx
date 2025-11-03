@@ -12,9 +12,9 @@ import { Label } from "~/components/base/input/label"
 import { Select } from "~/components/base/select/select"
 import { FeaturedIcon } from "~/components/foundations/featured-icon/featured-icons"
 import { BackgroundPattern } from "~/components/shared-assets/background-patterns"
+import { sendInvitationEffect } from "~/db/actions"
 import { useOrganization } from "~/hooks/use-organization"
 import { useAuth } from "~/lib/auth"
-import { sendInvitationEffect } from "~/db/actions"
 
 interface EmailInviteModalProps {
 	isOpen: boolean

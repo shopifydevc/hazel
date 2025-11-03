@@ -1,6 +1,13 @@
 import { ExclamationTriangleIcon } from "@heroicons/react/20/solid"
 import { Button } from "~/components/ui/button"
-import { Dialog, DialogClose, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "~/components/ui/dialog"
+import {
+	Dialog,
+	DialogClose,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "~/components/ui/dialog"
 import { Modal, ModalContent } from "~/components/ui/modal"
 
 interface DeleteMessageModalProps {

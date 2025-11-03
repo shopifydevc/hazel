@@ -2,15 +2,15 @@ import { and, eq, inArray, useLiveQuery } from "@tanstack/react-db"
 import { FileIcon } from "@untitledui/file-icons"
 import { useMemo, useRef } from "react"
 import IconClose from "~/components/icons/icon-close"
+import { MarkdownEditor, type MarkdownEditorRef } from "~/components/markdown-editor"
 import { Button } from "~/components/ui/button"
 import { Loader } from "~/components/ui/loader"
-import { cn } from "~/lib/utils"
 import { attachmentCollection, channelMemberCollection } from "~/db/collections"
 import { useTyping } from "~/hooks/use-typing"
 import { useAuth } from "~/lib/auth"
+import { cn } from "~/lib/utils"
 import { useChat } from "~/providers/chat-provider"
 import { formatFileSize, getFileTypeFromName } from "~/utils/file-utils"
-import { MarkdownEditor, type MarkdownEditorRef } from "~/components/markdown-editor"
 import { ReplyIndicator } from "./reply-indicator"
 
 interface MessageComposerProps {
@@ -79,7 +79,6 @@ export const MessageComposer = ({ placeholder = "Type a message..." }: MessageCo
 		editorRef.current?.clearContent()
 	}
 
-
 	return (
 		<div className="relative flex h-max items-center gap-3">
 			<div className="w-full">
@@ -104,10 +103,7 @@ export const MessageComposer = ({ placeholder = "Type a message..." }: MessageCo
 										key={attachmentId}
 										className="group flex items-center gap-2 rounded-lg bg-bg p-2 transition-colors hover:bg-secondary"
 									>
-										<FileIcon
-											type={fileType}
-											className="size-8 shrink-0 text-muted-fg"
-										/>
+										<FileIcon type={fileType} className="size-8 shrink-0 text-muted-fg" />
 										<div className="min-w-0 flex-1">
 											<div className="truncate font-medium text-fg text-sm">
 												{fileName}
@@ -135,10 +131,7 @@ export const MessageComposer = ({ placeholder = "Type a message..." }: MessageCo
 										key={file.fileId}
 										className="group flex items-center gap-2 rounded-lg bg-bg p-2 transition-colors hover:bg-secondary"
 									>
-										<FileIcon
-											type={fileType}
-											className="size-8 shrink-0 text-muted-fg"
-										/>
+										<FileIcon type={fileType} className="size-8 shrink-0 text-muted-fg" />
 										<div className="min-w-0 flex-1">
 											<div className="truncate font-medium text-fg text-sm">
 												{file.fileName}

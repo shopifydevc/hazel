@@ -1,9 +1,9 @@
 import { Flag01 } from "@untitledui/icons"
 import { useEffect, useState } from "react"
 import type { MessageWithPinned } from "~/atoms/chat-query-atoms"
-import { EmojiPicker } from "~/components/emoji-picker"
+import { EmojiPickerDialog } from "~/components/emoji-picker"
 import { Button } from "~/components/ui/button"
-import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger, MenuLabel } from "~/components/ui/menu"
+import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuTrigger } from "~/components/ui/menu"
 import { useChat } from "~/hooks/use-chat"
 import { useEmojiStats } from "~/hooks/use-emoji-stats"
 import IconCopy from "../icons/icon-copy"
@@ -28,7 +28,7 @@ export function MessageToolbar({ message, onMenuOpenChange }: MessageToolbarProp
 	const { addReaction } = useChat()
 	const { topEmojis, trackEmojiUsage } = useEmojiStats()
 	const [deleteModalOpen, setDeleteModalOpen] = useState(false)
-	const [dropdownOpen, setDropdownOpen] = useState(false)
+	const [dropdownOpen, _setDropdownOpen] = useState(false)
 
 	// Get message-specific handlers
 	const messageHandlers = useMessageHandlers(message)
@@ -37,9 +37,10 @@ export function MessageToolbar({ message, onMenuOpenChange }: MessageToolbarProp
 	const isOwnMessage = messageHandlers.isOwnMessage
 	const isPinned = message.pinnedMessage?.id !== undefined
 
-	const handleReaction = (emoji: string) => {
-		trackEmojiUsage(emoji)
-		addReaction(message.id, emoji)
+	const handleReaction = (emoji: string | { emoji: string; label: string }) => {
+		const emojiString = typeof emoji === "string" ? emoji : emoji.emoji
+		trackEmojiUsage(emojiString)
+		addReaction(message.id, emojiString)
 	}
 
 	const handleEdit = () => {
@@ -94,16 +95,16 @@ export function MessageToolbar({ message, onMenuOpenChange }: MessageToolbarProp
 			<div className="mx-0.5 h-4 w-px bg-border" />
 
 			{/* More Reactions Button */}
-			<EmojiPicker onPick={handleReaction}>
+			<EmojiPickerDialog onEmojiSelect={handleReaction}>
 				<Button
 					size="sq-sm"
 					intent="plain"
 					aria-label="More reactions"
-					className="!p-1.5 hover:bg-secondary"
+					className="p-1.5! hover:bg-secondary"
 				>
 					<IconEmojiAdd data-slot="icon" className="size-3.5" />
 				</Button>
-			</EmojiPicker>
+			</EmojiPickerDialog>
 
 			{/* Copy Button */}
 			<Button
@@ -158,10 +159,7 @@ export function MessageToolbar({ message, onMenuOpenChange }: MessageToolbarProp
 
 			{/* More Options Menu */}
 			<Menu>
-				<MenuTrigger
-					aria-label="More options"
-					className="!p-1.5 hover:bg-secondary rounded-md"
-				>
+				<MenuTrigger aria-label="More options" className="!p-1.5 rounded-md hover:bg-secondary">
 					<IconDotsVertical className="size-3.5" />
 				</MenuTrigger>
 				<MenuContent placement="bottom end">

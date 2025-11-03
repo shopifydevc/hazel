@@ -127,7 +127,7 @@ function RouteComponent() {
 			toast.success("Email copied", {
 				description: `${email} copied to clipboard`,
 			})
-		} catch (error) {
+		} catch (_error) {
 			toast.error("Failed to copy email", {
 				description: "Please try again",
 			})
@@ -194,7 +194,7 @@ function RouteComponent() {
 										{member.presence?.status && (
 											<span
 												className={cn(
-													"absolute bottom-0 right-0 size-2.5 rounded-full border-2 border-bg",
+													"absolute right-0 bottom-0 size-2.5 rounded-full border-2 border-bg",
 													getStatusColor(member.presence.status).replace(
 														"text-",
 														"bg-",

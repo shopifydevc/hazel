@@ -154,7 +154,8 @@ function AppearanceSettings() {
 													<div
 														className={cn(
 															"absolute bottom-2 left-2 flex size-5 items-center justify-center rounded-full border-2 border-fg bg-primary",
-															isFocusVisible && "ring-2 ring-ring ring-offset-2",
+															isFocusVisible &&
+																"ring-2 ring-ring ring-offset-2",
 														)}
 													>
 														<div className="size-2.5 rounded-full bg-fg" />

@@ -96,7 +96,7 @@ export function CreateDmModal({ isOpen, onOpenChange }: CreateDmModalProps) {
 				}),
 				{
 					loading: "Creating conversation...",
-					success: (result) => {
+					success: (_result) => {
 						// Navigate back to org page (TODO: navigate to channel when route exists)
 						navigate({
 							to: "/$orgSlug",

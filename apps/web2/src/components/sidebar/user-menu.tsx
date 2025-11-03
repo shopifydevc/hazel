@@ -1,8 +1,4 @@
-import {
-	ChartPieIcon,
-	ChevronUpDownIcon,
-	ShieldCheckIcon,
-} from "@heroicons/react/20/solid"
+import { ChartPieIcon, ChevronUpDownIcon, ShieldCheckIcon } from "@heroicons/react/20/solid"
 import { twJoin } from "tailwind-merge"
 import { Avatar } from "~/components/ui/avatar"
 import {

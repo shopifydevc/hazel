@@ -59,7 +59,8 @@ export const AppSidebar = ({ setOpenCmd }: { setOpenCmd: (open: boolean) => void
 											exact: true,
 										}}
 										activeProps={{
-											className: "bg-sidebar-accent font-medium text-sidebar-accent-foreground",
+											className:
+												"bg-sidebar-accent font-medium text-sidebar-accent-foreground",
 										}}
 									>
 										<IconDashboard />
@@ -76,7 +77,8 @@ export const AppSidebar = ({ setOpenCmd }: { setOpenCmd: (open: boolean) => void
 											exact: true,
 										}}
 										activeProps={{
-											className: "bg-sidebar-accent font-medium text-sidebar-accent-foreground",
+											className:
+												"bg-sidebar-accent font-medium text-sidebar-accent-foreground",
 										}}
 									>
 										<IconMsgs />

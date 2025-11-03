@@ -1,8 +1,8 @@
 import type { MessageId } from "@hazel/db/schema"
 import { useMessage } from "~/db/hooks"
 import { cn } from "~/lib/utils"
-import { Button } from "../ui/button"
 import IconClose from "../icons/icon-close"
+import { Button } from "../ui/button"
 
 interface ReplyIndicatorProps {
 	className?: string
@@ -53,13 +53,7 @@ export function ReplyIndicator({ className, replyToMessageId, onClose }: ReplyIn
 				</span>
 				<span className="max-w-xs truncate text-muted-fg">{data.content.split("\n")[0]}</span>
 			</div>
-			<Button
-				size="sq-xs"
-				intent="plain"
-				onPress={onClose}
-				aria-label="Cancel reply"
-				className="!p-1"
-			>
+			<Button size="sq-xs" intent="plain" onPress={onClose} aria-label="Cancel reply" className="!p-1">
 				<IconClose data-slot="icon" className="size-3.5" />
 			</Button>
 		</div>
