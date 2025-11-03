@@ -5,6 +5,7 @@ import { Button, DialogTrigger, Dialog as PrimitiveDialog } from "react-aria-com
 import { toast } from "sonner"
 import { userWithPresenceAtomFamily } from "~/atoms/message-atoms"
 import { Avatar } from "~/components/base/avatar/avatar"
+import { Badge, type BadgeColor } from "~/components/base/badges/badges"
 import { Button as StyledButton } from "~/components/base/buttons/button"
 import { ButtonUtility } from "~/components/base/buttons/button-utility"
 import { Dropdown } from "~/components/base/dropdown/dropdown"
@@ -38,6 +39,19 @@ export function UserProfilePopover({ userId }: UserProfilePopoverProps) {
 
 	const isOwnProfile = currentUser?.id === userId
 	const fullName = `${user.firstName} ${user.lastName}`
+
+	const statusToBadgeColorMap: Record<string, BadgeColor<"pill-color">> = {
+		online: "success",
+		away: "warning",
+		busy: "orange",
+		dnd: "error",
+		offline: "gray",
+	}
+
+	const formatStatus = (status: string) => {
+		if (status === "dnd") return "Do Not Disturb"
+		return status.charAt(0).toUpperCase() + status.slice(1)
+	}
 
 	const handleCopyUserId = () => {
 		navigator.clipboard.writeText(user.id)
@@ -184,6 +198,16 @@ export function UserProfilePopover({ userId }: UserProfilePopoverProps) {
 									<div className="mt-3 flex flex-col">
 										<span className="font-semibold">{user ? fullName : "Unknown"}</span>
 										<span className="text-secondary text-xs">{user?.email}</span>
+										{presence?.status && (
+											<Badge
+												className="mt-2 w-fit"
+												color={statusToBadgeColorMap[presence.status] ?? "gray"}
+												type="pill-color"
+												size="sm"
+											>
+												{formatStatus(presence.status)}
+											</Badge>
+										)}
 										{presence?.customMessage && (
 											<span className="mt-1 text-tertiary text-xs italic">
 												"{presence.customMessage}"

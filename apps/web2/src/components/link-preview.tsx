@@ -35,7 +35,7 @@ const linkPreviewAtomFamily = Atom.family((url: string) =>
 			),
 			Effect.catchAll(() => Effect.succeed(null as LinkPreviewData | null)),
 		),
-	),
+	).pipe(Atom.setIdleTTL("10 minutes")),
 )
 
 export function LinkPreview({ url }: { url: string }) {
