@@ -226,7 +226,7 @@ function RouteComponent() {
 											intent="secondary"
 											size="sm"
 											onPress={() => handleOpenChat(member.id, fullName)}
-											className="hidden border-transparent pressed:bg-tertiary group-hover:border-border sm:inline-flex"
+											className="hidden border-transparent pressed:bg-muted group-hover:border-border sm:inline-flex"
 										>
 											<IconMsgs data-slot="icon" />
 										</Button>
@@ -234,8 +234,8 @@ function RouteComponent() {
 											<MenuTrigger
 												aria-label="Member actions"
 												className={cn(
-													"inline-flex size-8 items-center justify-center rounded-lg border border-transparent hover:border-border hover:bg-tertiary",
-													"pressed:bg-tertiary group-hover:border-border",
+													"inline-flex size-8 items-center justify-center rounded-lg border border-transparent hover:border-border hover:bg-muted",
+													"pressed:bg-muted group-hover:border-border",
 												)}
 											>
 												<IconDots className="size-5 text-muted-fg" />

@@ -379,7 +379,7 @@ function MembersView({ onClose }: { onClose: () => void }) {
 						/>
 						<CommandMenuLabel>{fullName}</CommandMenuLabel>
 						{presence?.customMessage && (
-							<span className="ml-auto truncate text-tertiary text-xs">
+							<span className="ml-auto truncate text-muted text-xs">
 								{presence.customMessage}
 							</span>
 						)}

@@ -288,10 +288,10 @@ function DmCard({ channel, currentUserId }: { channel: any; currentUserId?: stri
 							.map((member: any) => `${member.user.firstName} ${member.user.lastName}`)
 							.join(", ")}{" "}
 						{otherMembers.length > 3 && (
-							<span className="text-tertiary">+{otherMembers.length - 3} more</span>
+							<span className="text-muted">+{otherMembers.length - 3} more</span>
 						)}
 					</h3>
-					<p className="text-sm text-tertiary">{otherMembers.length} participants</p>
+					<p className="text-sm text-muted">{otherMembers.length} participants</p>
 				</div>
 			</div>
 			{channel.currentUser?.notificationCount > 0 && (

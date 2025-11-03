@@ -14,6 +14,7 @@ import { useAuth } from "~/lib/auth"
 import { cn } from "~/lib/utils"
 import IconPin from "~/components/icons/icon-pin"
 import { MarkdownReadonly } from "~/components/markdown-readonly"
+import { LinkPreview, extractUrls } from "~/components/link-preview"
 import { InlineThreadPreview } from "./inline-thread-preview"
 import { MessageAttachments } from "./message-attachments"
 import { MessageReplySection } from "./message-reply-section"
@@ -133,7 +134,15 @@ export function MessageItem({
 							</div>
 						</div>
 					) : (
-						<MarkdownReadonly content={message.content} />
+						<>
+							<MarkdownReadonly content={message.content} />
+							{/* Link Preview */}
+							{(() => {
+								const urls = extractUrls(message.content)
+								const lastUrl = urls[urls.length - 1]
+								return lastUrl ? <LinkPreview url={lastUrl} /> : null
+							})()}
+						</>
 					)}
 
 					{/* Attachments */}
