@@ -77,7 +77,13 @@ export function ChannelItem({ channel, member }: ChannelItemProps) {
 			<SidebarItem tooltip={channel.name}>
 				{({ isCollapsed, isFocused }) => (
 					<>
-						<SidebarLink to="/$orgSlug/chat/$id" params={{ orgSlug: slug, id: channel.id }}>
+						<SidebarLink
+							to="/$orgSlug/chat/$id"
+							params={{ orgSlug: slug, id: channel.id }}
+							activeProps={{
+								className: "bg-sidebar-accent font-medium text-sidebar-accent-fg",
+							}}
+						>
 							<IconHashtag />
 							<SidebarLabel>{channel.name}</SidebarLabel>
 						</SidebarLink>

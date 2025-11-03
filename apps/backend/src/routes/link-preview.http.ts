@@ -19,6 +19,64 @@ const scraper = metascraper([
 	metascraperPublisher(),
 ])
 
+// Validate if an image URL is accessible
+async function validateImageUrl(url: string): Promise<boolean> {
+	try {
+		const response = await fetch(url, {
+			method: "HEAD",
+			signal: AbortSignal.timeout(5000),
+			headers: {
+				"User-Agent": "Mozilla/5.0 (compatible; HazelBot/1.0; +https://hazel.chat/bot)",
+			},
+		})
+
+		// Check if response is OK and content-type is an image
+		if (!response.ok) return false
+
+		const contentType = response.headers.get("content-type")
+		return contentType ? contentType.startsWith("image/") : false
+	} catch {
+		return false
+	}
+}
+
+// Extract meta tag content from HTML
+function extractMetaTag(html: string, property: string): string | null {
+	// Try property attribute first (og:image uses property)
+	const propertyRegex = new RegExp(
+		`<meta[^>]*property=["']${property}["'][^>]*content=["']([^"']+)["'][^>]*>`,
+		"i",
+	)
+	// Try name attribute (twitter:image uses name)
+	const nameRegex = new RegExp(
+		`<meta[^>]*name=["']${property}["'][^>]*content=["']([^"']+)["'][^>]*>`,
+		"i",
+	)
+	// Also try reverse order (content before property/name)
+	const reversePropertyRegex = new RegExp(
+		`<meta[^>]*content=["']([^"']+)["'][^>]*property=["']${property}["'][^>]*>`,
+		"i",
+	)
+	const reverseNameRegex = new RegExp(
+		`<meta[^>]*content=["']([^"']+)["'][^>]*name=["']${property}["'][^>]*>`,
+		"i",
+	)
+
+	const propertyMatch = html.match(propertyRegex)
+	if (propertyMatch) return propertyMatch[1]
+
+	const nameMatch = html.match(nameRegex)
+	if (nameMatch) return nameMatch[1]
+
+	const reversePropertyMatch = html.match(reversePropertyRegex)
+	if (reversePropertyMatch) return reversePropertyMatch[1]
+
+	const reverseNameMatch = html.match(reverseNameRegex)
+	if (reverseNameMatch) return reverseNameMatch[1]
+
+	return null
+}
+
 export const HttpLinkPreviewLive = HttpApiBuilder.group(HazelApi, "linkPreview", (handlers) =>
 	handlers.handle(
 		"get",
@@ -61,12 +119,39 @@ export const HttpLinkPreviewLive = HttpApiBuilder.group(HazelApi, "linkPreview",
 
 			yield* Effect.log(`Successfully extracted metadata for: ${targetUrl}`)
 
+			// Collect image candidates in priority order
+			// Priority: twitter:image (Discord), og:image:secure_url, og:image:url, og:image, twitter:image:src
+			const imageCandidates = [
+				extractMetaTag(html, "twitter:image"), // Preferred by Discord
+				extractMetaTag(html, "og:image:secure_url"),
+				extractMetaTag(html, "og:image:url"),
+				extractMetaTag(html, "og:image"),
+				extractMetaTag(html, "twitter:image:src"),
+				metadata.image, // Fallback to metascraper result
+			].filter((url): url is string => Boolean(url))
+
+			// Find the first working image
+			let validImageUrl: string | undefined
+			for (const imageUrl of imageCandidates) {
+				yield* Effect.log(`Validating image: ${imageUrl}`)
+				const isValid = yield* Effect.promise(() => validateImageUrl(imageUrl))
+				if (isValid) {
+					validImageUrl = imageUrl
+					yield* Effect.log(`Valid image found: ${imageUrl}`)
+					break
+				}
+			}
+
+			if (!validImageUrl && imageCandidates.length > 0) {
+				yield* Effect.log(`No valid images found out of ${imageCandidates.length} candidates`)
+			}
+
 			// Transform to match the frontend schema, converting null to undefined
 			return {
 				url: metadata.url ?? undefined,
 				title: metadata.title ?? undefined,
 				description: metadata.description ?? undefined,
-				image: metadata.image ? { url: metadata.image } : undefined,
+				image: validImageUrl ? { url: validImageUrl } : undefined,
 				logo: metadata.logo ? { url: metadata.logo } : undefined,
 				publisher: metadata.publisher ?? undefined,
 			}

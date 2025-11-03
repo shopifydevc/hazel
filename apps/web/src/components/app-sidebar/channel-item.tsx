@@ -135,6 +135,9 @@ export const ChannelItem = ({ channelId }: ChannelItemProps) => {
 					to="/$orgSlug/chat/$id"
 					params={{ orgSlug: orgSlug || "", id: channelId }}
 					onMouseEnter={handleMouseEnter}
+					activeProps={{
+						className: "bg-sidebar-accent font-medium text-sidebar-accent-foreground",
+					}}
 				>
 					<IconHashtag className="size-5" />
 					<p
@@ -289,6 +292,9 @@ export const DmChannelLink = ({ channelId }: DmChannelLinkProps) => {
 					to="/$orgSlug/chat/$id"
 					params={{ orgSlug: orgSlug || "", id: channelId }}
 					onMouseEnter={handleMouseEnter}
+					activeProps={{
+						className: "bg-sidebar-accent font-medium text-sidebar-accent-foreground",
+					}}
 				>
 					<div className="-space-x-4 flex items-center justify-center">
 						{channel.type === "single" && filteredMembers.length === 1 && filteredMembers[0] ? (

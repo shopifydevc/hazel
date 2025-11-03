@@ -110,6 +110,9 @@ export const DmChannelItem = ({ channelId }: DmChannelItemProps) => {
 						to="/$orgSlug/chat/$id"
 						params={{ orgSlug: orgSlug || "", id: channelId }}
 						onMouseEnter={handleMouseEnter}
+						activeProps={{
+							className: "bg-sidebar-accent font-medium text-sidebar-accent-fg",
+						}}
 					>
 						{channel.type === "single" && filteredMembers.length === 1 && filteredMembers[0] ? (
 							<>

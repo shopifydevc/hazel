@@ -70,14 +70,14 @@ export function UserProfilePopover({ userId }: UserProfilePopoverProps) {
 	const getStatusColor = (status?: string) => {
 		switch (status) {
 			case "online":
-				return "text-success bg-success"
+				return "text-success bg-success/10"
 			case "away":
 			case "busy":
-				return "text-warning bg-warning"
+				return "text-warning bg-warning/10"
 			case "dnd":
-				return "text-danger bg-danger"
+				return "text-danger bg-danger/10"
 			default:
-				return "text-muted-fg bg-muted-fg"
+				return "text-muted-fg bg-muted/10"
 		}
 	}
 
@@ -148,7 +148,7 @@ export function UserProfilePopover({ userId }: UserProfilePopoverProps) {
 							{presence?.status && (
 								<span
 									className={cn(
-										"absolute bottom-1 right-1 size-3 rounded-full border-2 border-bg",
+										"absolute right-1 bottom-1 size-3 rounded-full border-2 border-bg",
 										getStatusColor(presence.status),
 									)}
 								/>
