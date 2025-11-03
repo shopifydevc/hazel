@@ -66,7 +66,6 @@
 ### Authentication & Authorization
 - [ ] Create organization membership when user has organizationId (`apps/backend/src/routes/auth.http.ts:99`)
 - [ ] Implement smarter role-based policies (`apps/backend/src/policies/channel-policy.ts:26,39,53`)
-- [ ] User creation logic improvements (`apps/backend/src/services/auth.ts:74,144`)
 
 ### Organizations
 - [ ] Return separate error for duplicate slug errors (`apps/backend/src/routes/organizations.http.ts:53`)
