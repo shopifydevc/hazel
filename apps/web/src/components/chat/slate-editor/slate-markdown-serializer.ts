@@ -59,7 +59,7 @@ export function extractMentionsFromMarkdown(
 	const pattern = /@\[(userId|directive):([^\]]+)\]/g
 	let match: RegExpExecArray | null
 
-	// biome-ignore lint/suspicious/noAssignInExpressions: <explanation>
+	// biome-ignore lint/suspicious/noAssignInExpressions: regex matching pattern
 	while ((match = pattern.exec(markdown)) !== null) {
 		const prefix = match[1] as "userId" | "directive"
 		const value = match[2]
@@ -152,7 +152,7 @@ function parseInlineContent(text: string): Array<CustomText | MentionElement> {
 	let lastIndex = 0
 	let match: RegExpExecArray | null
 
-	// biome-ignore lint/suspicious/noAssignInExpressions: <explanation>
+	// biome-ignore lint/suspicious/noAssignInExpressions: regex matching pattern
 	while ((match = mentionPattern.exec(text)) !== null) {
 		// Add text before the mention
 		if (match.index > lastIndex) {
@@ -160,15 +160,17 @@ function parseInlineContent(text: string): Array<CustomText | MentionElement> {
 		}
 
 		// Add the mention element
-		const _prefix = match[1] as "userId" | "directive"
 		const value = match[2]
 
-		nodes.push({
-			type: "mention",
-			userId: value,
-			displayName: value,
-			children: [{ text: "" }],
-		})
+		// Only add mention if value exists (type guard)
+		if (value) {
+			nodes.push({
+				type: "mention",
+				userId: value,
+				displayName: value,
+				children: [{ text: "" }],
+			})
+		}
 
 		lastIndex = match.index + match[0].length
 	}

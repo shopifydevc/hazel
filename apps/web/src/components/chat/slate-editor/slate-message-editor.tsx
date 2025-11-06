@@ -227,11 +227,10 @@ const shouldHidePlaceholder = (value: CustomDescendant[]): boolean => {
 export const SlateMessageEditor = forwardRef<SlateMessageEditorRef, SlateMessageEditorProps>(
 	({ placeholder = "Type a message...", className, onSubmit, onUpdate, isUploading = false }, ref) => {
 		// Create Slate editor with React, History, Autoformat, and Mentions plugins
-		const editor = useMemo(() => {
-			const base = withHistory(withReact(createEditor()))
-			const withMentionsEditor = withMentions(base as any)
-			return withAutoformat(withMentionsEditor)
-		}, [])
+		const editor = useMemo(
+			() => withAutoformat(withMentions(withReact(withHistory(createEditor())))) as CustomEditor,
+			[],
+		)
 
 		const [value, setValue] = useState<CustomDescendant[]>(createEmptyValue())
 		const focusAndInsertTextInternal = useCallback(
