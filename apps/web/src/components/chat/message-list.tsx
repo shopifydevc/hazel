@@ -217,7 +217,7 @@ export function MessageList({ ref }: { ref?: React.Ref<MessageListRef> }) {
 
 	return (
 		<div
-			className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-2 transition-opacity duration-200"
+			className="isolate flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-2 transition-opacity duration-200"
 			style={{
 				overflowAnchor: "auto",
 				scrollBehavior: "auto",
