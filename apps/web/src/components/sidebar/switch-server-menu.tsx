@@ -1,7 +1,6 @@
 import type { OrganizationId } from "@hazel/db/schema"
 import { eq, useLiveQuery } from "@tanstack/react-db"
 import { toast } from "sonner"
-import { openModal } from "~/atoms/modal-atoms"
 import IconPlus from "~/components/icons/icon-plus"
 import { organizationCollection, organizationMemberCollection } from "~/db/collections"
 import { useOrganization } from "~/hooks/use-organization"
@@ -11,7 +10,11 @@ import { Avatar } from "../ui/avatar"
 import { MenuItem, MenuSection, MenuSeparator } from "../ui/menu"
 import { SidebarLabel } from "../ui/sidebar"
 
-export const SwitchServerMenu = () => {
+interface SwitchServerMenuProps {
+	onCreateOrganization: () => void
+}
+
+export const SwitchServerMenu = ({ onCreateOrganization }: SwitchServerMenuProps) => {
 	const { user } = useAuth()
 
 	const { organizationId: currentOrgId } = useOrganization()
@@ -77,9 +80,7 @@ export const SwitchServerMenu = () => {
 			<MenuItem
 				id="create-server"
 				textValue="Create server"
-				onAction={() => {
-					openModal("create-organization")
-				}}
+				onAction={onCreateOrganization}
 			>
 				<IconPlus data-slot="icon" />
 				<SidebarLabel>Create server</SidebarLabel>

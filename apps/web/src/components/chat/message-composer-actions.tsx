@@ -1,4 +1,3 @@
-import { ItalicSquare } from "@untitledui/icons"
 import { forwardRef, useRef } from "react"
 import { Button as AriaButton } from "react-aria-components"
 import { EmojiPickerDialog } from "~/components/emoji-picker"
@@ -8,6 +7,7 @@ import { useEmojiStats } from "~/hooks/use-emoji-stats"
 import { useFileUpload } from "~/hooks/use-file-upload"
 import { useOrganization } from "~/hooks/use-organization"
 import { useChat } from "~/providers/chat-provider"
+import { IconSquareCommand } from "../icons/icon-square-command"
 
 export interface MessageComposerActionsRef {
 	cleanup: () => void
@@ -100,7 +100,7 @@ export const MessageComposerActions = forwardRef<MessageComposerActionsRef, Mess
 							type="button"
 							className="inline-flex items-center gap-1.5 rounded-xs p-0 font-semibold text-muted-fg text-xs transition-colors hover:text-fg"
 						>
-							<ItalicSquare className="size-4 text-muted-fg" />
+							<IconSquareCommand className="size-4 text-muted-fg" />
 							Shortcuts
 						</button>
 

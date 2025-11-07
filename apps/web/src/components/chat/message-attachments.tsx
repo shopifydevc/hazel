@@ -1,10 +1,11 @@
 import type { Attachment } from "@hazel/db/models"
 import type { MessageId } from "@hazel/db/schema"
 import { FileIcon } from "@untitledui/file-icons"
-import { Download01 } from "@untitledui/icons"
+
 import { useState } from "react"
 import { useAttachments, useMessage } from "~/db/hooks"
 import { formatFileSize, getFileTypeFromName } from "~/utils/file-utils"
+import { IconDownload } from "../icons/icon-download"
 import { Button } from "../ui/button"
 import { ImageViewerModal } from "./image-viewer-modal"
 
@@ -90,7 +91,7 @@ function AttachmentItem({ attachment }: AttachmentItemProps) {
 							aria-label="Download file"
 							className="pointer-events-auto bg-bg"
 						>
-							<Download01 data-slot="icon" />
+							<IconDownload data-slot="icon" />
 						</Button>
 					</div>
 				</div>
@@ -114,7 +115,7 @@ function AttachmentItem({ attachment }: AttachmentItemProps) {
 				aria-label="Download file"
 				className="opacity-0 transition-opacity group-hover:opacity-100"
 			>
-				<Download01 data-slot="icon" />
+				<IconDownload />
 			</Button>
 		</div>
 	)

@@ -1,6 +1,5 @@
 "use client"
 
-import { Loading01 } from "@untitledui/icons"
 import {
 	type EmojiPickerListCategoryHeaderProps,
 	type EmojiPickerListEmojiProps,
@@ -9,6 +8,7 @@ import {
 } from "frimousse"
 import type * as React from "react"
 import { cn } from "~/lib/utils"
+import { IconLoader } from "../icons/icon-loader"
 
 function EmojiPickerRow({ children, ...props }: EmojiPickerListRowProps) {
 	return (
@@ -59,7 +59,7 @@ function EmojiPickerContent({
 				className="absolute inset-0 flex items-center justify-center text-muted-fg"
 				data-slot="emoji-picker-loading"
 			>
-				<Loading01 className="size-4 animate-spin" />
+				<IconLoader className="size-4 animate-spin" />
 			</EmojiPickerPrimitive.Loading>
 			<EmojiPickerPrimitive.Empty
 				className="absolute inset-0 flex items-center justify-center text-secondary-fg text-sm"

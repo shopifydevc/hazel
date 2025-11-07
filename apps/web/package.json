@@ -40,7 +40,6 @@
 		"@tanstack/react-router-devtools": "^1.134.13",
 		"@tanstack/router-plugin": "^1.134.14",
 		"@untitledui/file-icons": "^0.0.9",
-		"@untitledui/icons": "^0.0.19",
 		"@workos-inc/authkit-js": "^0.14.0",
 		"@workos-inc/widgets": "^1.5.0",
 		"arktype": "^2.1.25",

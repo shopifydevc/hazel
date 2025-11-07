@@ -1,4 +1,3 @@
-import { Flag01 } from "@untitledui/icons"
 import { useEffect, useState } from "react"
 import type { MessageWithPinned } from "~/atoms/chat-query-atoms"
 import { EmojiPickerDialog } from "~/components/emoji-picker"
@@ -53,10 +52,6 @@ export function MessageToolbar({ message, onMenuOpenChange }: MessageToolbarProp
 
 	const handleMarkUnread = () => {
 		console.log("Mark as unread")
-	}
-
-	const handleReport = () => {
-		console.log("Report message")
 	}
 
 	const handleViewDetails = () => {
@@ -182,12 +177,6 @@ export function MessageToolbar({ message, onMenuOpenChange }: MessageToolbarProp
 
 					<MenuSeparator />
 
-					{!isOwnMessage && (
-						<MenuItem intent="danger" onAction={handleReport}>
-							<Flag01 data-slot="icon" />
-							<MenuLabel>Report message</MenuLabel>
-						</MenuItem>
-					)}
 					<MenuItem onAction={handleViewDetails}>
 						<MenuLabel>View details</MenuLabel>
 					</MenuItem>

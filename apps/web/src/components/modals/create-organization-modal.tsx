@@ -1,7 +1,6 @@
-import { useAtomSet, useAtomValue } from "@effect-atom/atom-react"
+import { useAtomSet } from "@effect-atom/atom-react"
 import { type } from "arktype"
 import { useCallback } from "react"
-import { closeModal, modalAtomFamily } from "~/atoms/modal-atoms"
 import { createOrganizationMutation } from "~/atoms/organization-atoms"
 import { IconServers } from "~/components/icons/icon-servers"
 import { Button } from "~/components/ui/button"
@@ -14,23 +13,24 @@ import { toastExit } from "~/lib/toast-exit"
 
 const organizationSchema = type({
 	name: "string > 2",
-	"slug?": "string > 2",
+	slug: "string > 2",
 })
 
 type OrganizationFormData = typeof organizationSchema.infer
 
-export function CreateOrganizationModal() {
-	const modalState = useAtomValue(modalAtomFamily("create-organization"))
+interface CreateOrganizationModalProps {
+	isOpen: boolean
+	onOpenChange: (isOpen: boolean) => void
+}
 
-	if (!modalState.isOpen) return null
-
+export function CreateOrganizationModal({ isOpen, onOpenChange }: CreateOrganizationModalProps) {
 	const createOrganization = useAtomSet(createOrganizationMutation, {
 		mode: "promiseExit",
 	})
 
 	const handleClose = useCallback(() => {
-		closeModal("create-organization")
-	}, [])
+		onOpenChange(false)
+	}, [onOpenChange])
 
 	const form = useAppForm({
 		defaultValues: {
@@ -45,7 +45,7 @@ export function CreateOrganizationModal() {
 				createOrganization({
 					payload: {
 						name: value.name,
-						slug: value.slug || null,
+						slug: value.slug,
 						logoUrl: null,
 						settings: null,
 					},
@@ -61,7 +61,7 @@ export function CreateOrganizationModal() {
 						// WorkOS will handle the organization switch
 						const backendUrl = import.meta.env.VITE_BACKEND_URL
 						const frontendUrl = window.location.origin
-						const returnUrl = `${frontendUrl}/${result.data.slug || result.data.id}`
+						const returnUrl = `${frontendUrl}/${result.data.slug}`
 
 						window.location.href = `${backendUrl}/auth/login?organizationId=${result.data.id}&returnTo=${encodeURIComponent(returnUrl)}`
 
@@ -77,8 +77,8 @@ export function CreateOrganizationModal() {
 	return (
 		<Modal>
 			<ModalContent
-				isOpen={modalState.isOpen}
-				onOpenChange={(open) => !open && handleClose()}
+				isOpen={isOpen}
+				onOpenChange={onOpenChange}
 				size="lg"
 			>
 				<ModalHeader>
@@ -121,11 +121,11 @@ export function CreateOrganizationModal() {
 							name="slug"
 							children={(field) => (
 								<TextField>
-									<Label>Server Slug (Optional)</Label>
+									<Label>Server Slug</Label>
 									<InputGroup>
 										<Input
 											placeholder="acme-corp"
-											value={field.state.value || ""}
+											value={field.state.value}
 											onChange={(e) => field.handleChange(e.target.value)}
 											onBlur={field.handleBlur}
 											aria-invalid={!!field.state.meta.errors?.length}
