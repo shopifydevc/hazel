@@ -27,8 +27,5 @@
 		"typescript": "^5.9.3",
 		"vitest": "^4.0.8"
 	},
-	"trustedDependencies": [],
-	"dependencies": {
-		"lucide-react": "^0.552.0"
-	}
+	"trustedDependencies": []
 }
