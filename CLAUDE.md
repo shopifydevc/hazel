@@ -33,8 +33,10 @@ When working with Effect, Effect Atom, or TanStack DB, refer to these directorie
 
 ## Development Commands
 
+**CRITICAL**: NEVER start the dev server - it should already be running! Do not run `bun run dev`, `PORT=3000 bun run dev`, or any variant of starting the dev server.
+
 ### Root Level
-- `bun run dev` - Start all apps in development mode via Turbo
+- `bun run dev` - Start all apps in development mode via Turbo (DO NOT USE - already running)
 - `bun run build` - Build all apps and run typecheck
 - `bun run typecheck` - Run TypeScript typechecking across all packages
 - `bun run format:fix` - Format code using Biome (includes linting and auto-fixes)
@@ -43,12 +45,12 @@ When working with Effect, Effect Atom, or TanStack DB, refer to these directorie
 - `bun run test:coverage` - Run tests with coverage report
 
 ### Web App (apps/web)
-- `bun run dev` - Start Vite dev server on port 3000
+- `bun run dev` - Start Vite dev server on port 3000 (DO NOT USE - already running)
 - `bun run build` - Build for production and typecheck
 - `bun run typecheck` - TypeScript checking without emitting files
 
 ### Backend (apps/backendv2)
-- `bun run dev` - Start backend with hot reload using Bun
+- `bun run dev` - Start backend with hot reload using Bun (DO NOT USE - already running)
 - `bun run typecheck` - TypeScript checking
 
 ### Database (packages/db)
