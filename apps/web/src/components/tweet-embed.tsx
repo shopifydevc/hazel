@@ -1,33 +1,10 @@
-"use client"
-
-import { Atom, Result, useAtomValue } from "@effect-atom/atom-react"
+import { Result, useAtomValue } from "@effect-atom/atom-react"
 import type { User } from "@hazel/db/models"
-import { Effect } from "effect"
 import { useState } from "react"
 import { type EnrichedTweet, enrichTweet } from "react-tweet"
-import type { Tweet } from "react-tweet/api"
-import { ApiClient } from "~/lib/services/common/api-client"
+import { LinkPreviewClient } from "~/lib/services/common/link-preview-client"
 import { ImageViewerModal, type ViewerImage } from "./chat/image-viewer-modal"
 import IconHeart from "./icons/icon-heart"
-
-// Atom family for per-tweet-ID caching using typesafe API client
-const tweetAtomFamily = Atom.family((id: string) =>
-	Atom.make(
-		Effect.gen(function* () {
-			const client = yield* ApiClient
-			const tweet = yield* client.tweet.get({ urlParams: { id } })
-			return tweet as Tweet
-		}).pipe(
-			Effect.provide(ApiClient.Default),
-			Effect.tapError((error) =>
-				Effect.sync(() => {
-					console.error("Tweet fetch error:", error)
-				}),
-			),
-			Effect.catchAll(() => Effect.succeed(null as Tweet | null)),
-		),
-	).pipe(Atom.setIdleTTL("10 minutes")),
-)
 
 function truncate(str: string | null, length: number) {
 	if (!str || str.length <= length) return str
@@ -253,7 +230,7 @@ interface TweetEmbedProps {
 }
 
 export function TweetEmbed({ id, author, messageCreatedAt }: TweetEmbedProps) {
-	const tweetResult = useAtomValue(tweetAtomFamily(id))
+	const tweetResult = useAtomValue(LinkPreviewClient.query("tweet", "get", { urlParams: { id } }))
 	const tweet = Result.getOrElse(tweetResult, () => null)
 	const isLoading = Result.isInitial(tweetResult)
 

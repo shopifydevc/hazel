@@ -8,6 +8,7 @@ import metascraperPublisher from "metascraper-publisher"
 import metascraperTitle from "metascraper-title"
 import metascraperUrl from "metascraper-url"
 import { LinkPreviewApi } from "../api"
+import { KVCache } from "../cache"
 import { LinkPreviewError } from "../declare"
 
 // Initialize metascraper with plugins
@@ -72,8 +73,27 @@ export const HttpLinkPreviewLive = HttpApiBuilder.group(LinkPreviewApi, "linkPre
 		"get",
 		Effect.fn(function* ({ urlParams }) {
 			const targetUrl = urlParams.url
+			const cacheKey = `link-preview:${targetUrl}`
+			const cache = yield* KVCache
 
-			yield* Effect.log(`Fetching link preview for: ${targetUrl}`)
+			// Check cache first
+			const cachedData = yield* cache
+				.get<{
+					url?: string
+					title?: string
+					description?: string
+					image?: { url: string }
+					logo?: { url: string }
+					publisher?: string
+				}>(cacheKey)
+				.pipe(Effect.catchAll(() => Effect.succeed(null)))
+
+			if (cachedData) {
+				yield* Effect.log(`Cache hit for: ${targetUrl}`)
+				return cachedData
+			}
+
+			yield* Effect.log(`Cache miss - fetching link preview for: ${targetUrl}`)
 
 			// Fetch the HTML content using native fetch
 			const html = yield* Effect.tryPromise({
@@ -136,7 +156,7 @@ export const HttpLinkPreviewLive = HttpApiBuilder.group(LinkPreviewApi, "linkPre
 			}
 
 			// Transform to match the frontend schema, converting null to undefined
-			return {
+			const result = {
 				url: metadata.url ?? undefined,
 				title: metadata.title ?? undefined,
 				description: metadata.description ?? undefined,
@@ -144,6 +164,17 @@ export const HttpLinkPreviewLive = HttpApiBuilder.group(LinkPreviewApi, "linkPre
 				logo: metadata.logo ? { url: metadata.logo } : undefined,
 				publisher: metadata.publisher ?? undefined,
 			}
+
+			// Store in cache (don't fail request if caching fails)
+			yield* cache.set(cacheKey, result).pipe(
+				Effect.catchAll((error) =>
+					Effect.log(`Failed to cache result: ${error.message}`).pipe(
+						Effect.andThen(Effect.succeed(undefined)),
+					),
+				),
+			)
+
+			return result
 		}),
 	),
 )

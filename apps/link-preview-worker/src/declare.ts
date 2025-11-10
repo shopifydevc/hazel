@@ -1,6 +1,11 @@
 import { HttpApiEndpoint, HttpApiGroup, HttpApiSchema, OpenApi } from "@effect/platform"
 import { Schema } from "effect"
 
+// Worker Environment
+export interface Env {
+	LINK_CACHE: KVNamespace
+}
+
 // Health check API
 export class AppApi extends HttpApiGroup.make("app")
 

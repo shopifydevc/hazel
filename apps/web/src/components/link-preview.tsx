@@ -1,32 +1,11 @@
 "use client"
 
-import { Atom, Result, useAtomValue } from "@effect-atom/atom-react"
-import type { LinkPreviewData } from "@hazel/backend/api"
-import { Effect } from "effect"
+import { Result, useAtomValue } from "@effect-atom/atom-react"
 import { useMemo } from "react"
-import { ApiClient } from "~/lib/services/common/api-client"
-
-// Atom family for per-URL caching using typesafe API client
-const linkPreviewAtomFamily = Atom.family((url: string) =>
-	Atom.make(
-		Effect.gen(function* () {
-			const client = yield* ApiClient
-			const data = yield* client.linkPreview.get({ urlParams: { url } })
-			return data
-		}).pipe(
-			Effect.provide(ApiClient.Default),
-			Effect.tapError((error) =>
-				Effect.sync(() => {
-					console.error("Link preview fetch error:", error)
-				}),
-			),
-			Effect.catchAll(() => Effect.succeed(null as LinkPreviewData | null)),
-		),
-	).pipe(Atom.setIdleTTL("10 minutes")),
-)
+import { LinkPreviewClient } from "~/lib/services/common/link-preview-client"
 
 export function LinkPreview({ url }: { url: string }) {
-	const previewResult = useAtomValue(linkPreviewAtomFamily(url))
+	const previewResult = useAtomValue(LinkPreviewClient.query("linkPreview", "get", { urlParams: { url } }))
 	const og = Result.getOrElse(previewResult, () => null)
 	const isLoading = Result.isInitial(previewResult)
 

@@ -6,5 +6,5 @@ import { LinkPreviewApi } from "@hazel/link-preview-worker"
 export class LinkPreviewClient extends AtomHttpApi.Tag<LinkPreviewClient>()("LinkPreviewClient", {
 	api: LinkPreviewApi,
 	httpClient: FetchHttpClient.layer,
-	baseUrl: "http://localhost:3000",
+	baseUrl: "https://link-preview.hazel.sh",
 }) {}
