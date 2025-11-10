@@ -151,77 +151,6 @@ export class AuthGroup extends HttpApiGroup.make("auth")
 	)
 	.prefix("/auth") {}
 
-export class LinkPreviewData extends Schema.Class<LinkPreviewData>("LinkPreviewData")({
-	url: Schema.optional(Schema.String),
-	title: Schema.optional(Schema.String),
-	description: Schema.optional(Schema.String),
-	image: Schema.optional(Schema.Struct({ url: Schema.optional(Schema.String) })),
-	logo: Schema.optional(Schema.Struct({ url: Schema.optional(Schema.String) })),
-	publisher: Schema.optional(Schema.String),
-}) {}
-
-export class LinkPreviewError extends Schema.TaggedError<LinkPreviewError>("LinkPreviewError")(
-	"LinkPreviewError",
-	{
-		message: Schema.String,
-	},
-	HttpApiSchema.annotations({
-		status: 500,
-	}),
-) {}
-
-export class LinkPreviewGroup extends HttpApiGroup.make("linkPreview")
-	.add(
-		HttpApiEndpoint.get("get")`/`
-			.addSuccess(LinkPreviewData)
-			.addError(LinkPreviewError)
-			.addError(InternalServerError)
-			.setUrlParams(
-				Schema.Struct({
-					url: Schema.String,
-				}),
-			)
-			.annotateContext(
-				OpenApi.annotations({
-					title: "Get Link Preview",
-					description: "Extract metadata from a URL for rich link previews",
-					summary: "Extract link metadata",
-				}),
-			),
-	)
-	.prefix("/link-preview") {}
-
-export class TweetError extends Schema.TaggedError<TweetError>("TweetError")(
-	"TweetError",
-	{
-		message: Schema.String,
-	},
-	HttpApiSchema.annotations({
-		status: 500,
-	}),
-) {}
-
-export class TweetGroup extends HttpApiGroup.make("tweet")
-	.add(
-		HttpApiEndpoint.get("get")`/`
-			.addSuccess(Schema.Any)
-			.addError(TweetError)
-			.addError(InternalServerError)
-			.setUrlParams(
-				Schema.Struct({
-					id: Schema.String,
-				}),
-			)
-			.annotateContext(
-				OpenApi.annotations({
-					title: "Get Tweet",
-					description: "Fetch tweet data from Twitter/X by tweet ID",
-					summary: "Fetch tweet data",
-				}),
-			),
-	)
-	.prefix("/tweet") {}
-
 export class HazelApi extends HttpApi.make("HazelApp")
 	.add(AttachmentGroup)
 	.add(PresencePublicGroup)
@@ -229,8 +158,6 @@ export class HazelApi extends HttpApi.make("HazelApp")
 	.add(AuthGroup)
 	.add(WebhookGroup)
 	.add(MockDataGroup)
-	.add(LinkPreviewGroup)
-	.add(TweetGroup)
 	.annotateContext(
 		OpenApi.annotations({
 			title: "Hazel Chat API",
