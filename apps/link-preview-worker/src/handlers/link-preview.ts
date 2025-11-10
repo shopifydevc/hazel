@@ -7,7 +7,7 @@ import metascraperLogo from "metascraper-logo"
 import metascraperPublisher from "metascraper-publisher"
 import metascraperTitle from "metascraper-title"
 import metascraperUrl from "metascraper-url"
-import { MyHttpApi } from "../api"
+import { LinkPreviewApi } from "../api"
 import { LinkPreviewError } from "../declare"
 
 // Initialize metascraper with plugins
@@ -67,7 +67,7 @@ function extractMetaTag(html: string, property: string): string | null {
 	return null
 }
 
-export const HttpLinkPreviewLive = HttpApiBuilder.group(MyHttpApi, "linkPreview", (handlers) =>
+export const HttpLinkPreviewLive = HttpApiBuilder.group(LinkPreviewApi, "linkPreview", (handlers) =>
 	handlers.handle(
 		"get",
 		Effect.fn(function* ({ urlParams }) {

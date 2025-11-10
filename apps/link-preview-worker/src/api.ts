@@ -1,7 +1,7 @@
 import { HttpApi, OpenApi } from "@effect/platform"
 import { AppApi, LinkPreviewGroup, TweetGroup } from "./declare"
 
-export class MyHttpApi extends HttpApi.make("api")
+export class LinkPreviewApi extends HttpApi.make("api")
 	.add(AppApi)
 	.add(LinkPreviewGroup)
 	.add(TweetGroup)

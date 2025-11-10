@@ -1,5 +1,5 @@
 {
-	"name": "link-preview-worker",
+	"name": "@hazel/link-preview-worker",
 	"version": "0.0.0",
 	"private": true,
 	"scripts": {
@@ -11,12 +11,12 @@
 	},
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.8.19",
-		"typescript": "^5.5.2",
-		"vitest": "~3.2.0",
+		"typescript": "^5.9.3",
+		"vitest": "^4.0.8",
 		"wrangler": "^4.46.0"
 	},
 	"dependencies": {
-		"@effect/platform": "^0.93.0",
+		"@effect/platform": "0.93.0",
 		"effect": "^3.19.3",
 		"metascraper": "^5.49.5",
 		"metascraper-description": "^5.49.5",
@@ -26,5 +26,7 @@
 		"metascraper-title": "^5.49.5",
 		"metascraper-url": "^5.49.5",
 		"react-tweet": "^3.2.2"
-	}
+	},
+	"type": "module",
+	"main": "src/api.ts"
 }

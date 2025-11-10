@@ -1,10 +1,10 @@
 import { HttpApiBuilder } from "@effect/platform"
 import { Effect } from "effect"
 import { getTweet } from "react-tweet/api"
-import { MyHttpApi } from "../api"
+import { LinkPreviewApi } from "../api"
 import { TweetError } from "../declare"
 
-export const HttpTweetLive = HttpApiBuilder.group(MyHttpApi, "tweet", (handlers) =>
+export const HttpTweetLive = HttpApiBuilder.group(LinkPreviewApi, "tweet", (handlers) =>
 	handlers.handle(
 		"get",
 		Effect.fn(function* ({ urlParams }) {
