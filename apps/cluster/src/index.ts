@@ -5,19 +5,15 @@ import { PgClient } from "@effect/sql-pg"
 import { WorkflowProxyServer } from "@effect/workflow"
 import { Database } from "@hazel/db"
 import { Cluster } from "@hazel/domain"
-import { Effect, Layer, Logger, Redacted } from "effect"
+import { Config, Effect, Layer, Logger, Redacted } from "effect"
 import { MessageNotificationWorkflowLayer } from "./workflows/index.ts"
 
 // PostgreSQL configuration (uses existing database)
 const WorkflowEngineLayer = ClusterWorkflowEngine.layer.pipe(
 	Layer.provideMerge(BunClusterSocket.layer()),
 	Layer.provideMerge(
-		PgClient.layer({
-			database: "postgres",
-			username: "user",
-			password: Redacted.make("password"),
-			port: 5432,
-			host: "postgres.app.orb.local",
+		PgClient.layerConfig({
+			url: Config.redacted("EFFECT_DATABASE_URL"),
 		}),
 	),
 )
