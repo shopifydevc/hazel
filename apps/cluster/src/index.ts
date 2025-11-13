@@ -52,7 +52,7 @@ const ServerLayer = HttpApiBuilder.serve(
 		BunHttpServer.layerConfig(
 			Config.all({
 				hostname: Config.succeed("::"),
-				port: Config.number("LISTEN_PORT").pipe(Config.withDefault(3020)),
+				port: Config.number("PORT").pipe(Config.withDefault(3020)),
 				ipv6Only: Config.succeed(true),
 				idleTimeout: Config.succeed(120),
 			}),
