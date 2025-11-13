@@ -1,7 +1,9 @@
+import { useAtomSet } from "@effect-atom/atom-react"
 import type { ChannelId, OrganizationId } from "@hazel/schema"
 import { createLiveQueryCollection, eq } from "@tanstack/db"
 import { createFileRoute } from "@tanstack/react-router"
-import { useCallback, useRef } from "react"
+import { useCallback, useEffect, useRef } from "react"
+import { clearChannelNotificationsMutation } from "~/atoms/channel-member-atoms"
 import { ChatHeader } from "~/components/chat/chat-header"
 import { MessageList, type MessageListRef } from "~/components/chat/message-list"
 import { SlateMessageComposer } from "~/components/chat/slate-editor/slate-message-composer"
@@ -89,6 +91,15 @@ function RouteComponent() {
 	const handleMessageSent = useCallback(() => {
 		messageListRef.current?.scrollToBottom()
 	}, [])
+
+	// Clear notifications when entering the channel using Effect Atom
+	const clearNotifications = useAtomSet(clearChannelNotificationsMutation, { mode: "promiseExit" })
+
+	useEffect(() => {
+		clearNotifications({
+			payload: { channelId: id as ChannelId },
+		})
+	}, [id, clearNotifications])
 
 	return (
 		<ChatProvider

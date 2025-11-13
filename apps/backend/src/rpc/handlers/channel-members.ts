@@ -75,6 +75,36 @@ export const ChannelMemberRpcLive = ChannelMemberRpcs.toLayer(
 						policyUse(ChannelMemberPolicy.canDelete(id)),
 						withRemapDbErrors("ChannelMember", "delete"),
 					),
+
+			"channelMember.clearNotifications": ({ channelId }) =>
+				db
+					.transaction(
+						Effect.gen(function* () {
+							const user = yield* CurrentUser.Context
+
+							// Find the channel member record for this user and channel
+							const memberOption = yield* ChannelMemberRepo.findByChannelAndUser(
+								channelId,
+								user.id,
+							)
+
+							// If member exists, clear the notification count
+							if (memberOption._tag === "Some") {
+								yield* ChannelMemberRepo.update({
+									id: memberOption.value.id,
+									notificationCount: 0,
+								})
+							}
+
+							const txid = yield* generateTransactionId()
+
+							return { transactionId: txid }
+						}),
+					)
+					.pipe(
+						policyUse(ChannelMemberPolicy.canCreate(channelId)),
+						withRemapDbErrors("ChannelMember", "update"),
+					),
 		}
 	}),
 )

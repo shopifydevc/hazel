@@ -1,7 +1,7 @@
 import { Rpc, RpcGroup } from "@effect/rpc"
 import { Schema } from "effect"
 import { InternalServerError, UnauthorizedError } from "../errors"
-import { ChannelMemberId } from "../ids"
+import { ChannelId, ChannelMemberId } from "../ids"
 import { ChannelMember } from "../models"
 import { TransactionId } from "../transaction-id"
 import { ChannelNotFoundError } from "./channels"
@@ -120,5 +120,23 @@ export class ChannelMemberRpcs extends RpcGroup.make(
 		payload: Schema.Struct({ id: ChannelMemberId }),
 		success: Schema.Struct({ transactionId: TransactionId }),
 		error: Schema.Union(ChannelMemberNotFoundError, UnauthorizedError, InternalServerError),
+	}).middleware(AuthMiddleware),
+
+	/**
+	 * ChannelMemberClearNotifications
+	 *
+	 * Clears the notification count for the current user in a specific channel.
+	 * Called when a user views/enters a channel to reset their unread notification count.
+	 *
+	 * @param payload - Channel ID to clear notifications for
+	 * @returns Transaction ID
+	 * @throws ChannelNotFoundError if channel doesn't exist
+	 * @throws UnauthorizedError if user is not a member
+	 * @throws InternalServerError for unexpected errors
+	 */
+	Rpc.make("channelMember.clearNotifications", {
+		payload: Schema.Struct({ channelId: ChannelId }),
+		success: Schema.Struct({ transactionId: TransactionId }),
+		error: Schema.Union(ChannelNotFoundError, UnauthorizedError, InternalServerError),
 	}).middleware(AuthMiddleware),
 ) {}

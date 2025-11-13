@@ -1,7 +1,9 @@
-import type { Channel, ChannelMember, OrganizationMember } from "@hazel/db/schema"
-import type { ChannelId } from "@hazel/schema"
+import { useAtomSet } from "@effect-atom/atom-react"
+import type { Channel, ChannelMember } from "@hazel/db/schema"
+import { Exit } from "effect"
 import { useState } from "react"
 import { toast } from "sonner"
+import { deleteChannelMemberMutation, updateChannelMemberMutation } from "~/atoms/channel-member-atoms"
 import IconDots from "~/components/icons/icon-dots"
 import IconEdit from "~/components/icons/icon-edit"
 import IconHashtag from "~/components/icons/icon-hashtag"
@@ -15,7 +17,7 @@ import { RenameChannelModal } from "~/components/modals/rename-channel-modal"
 import { Button } from "~/components/ui/button"
 import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator } from "~/components/ui/menu"
 import { SidebarItem, SidebarLabel, SidebarLink } from "~/components/ui/sidebar"
-import { channelCollection, channelMemberCollection } from "~/db/collections"
+import { channelCollection } from "~/db/collections"
 import { useOrganization } from "~/hooks/use-organization"
 
 interface ChannelItemProps {
@@ -29,28 +31,56 @@ export function ChannelItem({ channel, member }: ChannelItemProps) {
 
 	const { slug } = useOrganization()
 
+	// Use Effect Atom mutations for channel member operations
+	const updateMember = useAtomSet(updateChannelMemberMutation, { mode: "promiseExit" })
+	const deleteMember = useAtomSet(deleteChannelMemberMutation, { mode: "promiseExit" })
+
 	const handleToggleMute = async () => {
-		try {
-			channelMemberCollection.update(member.id, (item) => {
-				item.isMuted = !item.isMuted
-			})
-			toast.success(member.isMuted ? "Channel unmuted" : "Channel muted")
-		} catch (error) {
-			console.error("Failed to toggle mute:", error)
-			toast.error("Failed to update channel")
-		}
+		const exit = await updateMember({
+			payload: {
+				id: member.id,
+				channelId: member.channelId,
+				isHidden: member.isHidden,
+				isMuted: !member.isMuted,
+				isFavorite: member.isFavorite,
+				lastSeenMessageId: member.lastSeenMessageId,
+				notificationCount: member.notificationCount,
+			},
+		})
+
+		Exit.match(exit, {
+			onSuccess: () => {
+				toast.success(member.isMuted ? "Channel unmuted" : "Channel muted")
+			},
+			onFailure: (cause) => {
+				console.error("Failed to toggle mute:", cause)
+				toast.error("Failed to update channel")
+			},
+		})
 	}
 
 	const handleToggleFavorite = async () => {
-		try {
-			channelMemberCollection.update(member.id, (item) => {
-				item.isFavorite = !item.isFavorite
-			})
-			toast.success(member.isFavorite ? "Removed from favorites" : "Added to favorites")
-		} catch (error) {
-			console.error("Failed to toggle favorite:", error)
-			toast.error("Failed to update channel")
-		}
+		const exit = await updateMember({
+			payload: {
+				id: member.id,
+				channelId: member.channelId,
+				isHidden: member.isHidden,
+				isMuted: member.isMuted,
+				isFavorite: !member.isFavorite,
+				lastSeenMessageId: member.lastSeenMessageId,
+				notificationCount: member.notificationCount,
+			},
+		})
+
+		Exit.match(exit, {
+			onSuccess: () => {
+				toast.success(member.isFavorite ? "Removed from favorites" : "Added to favorites")
+			},
+			onFailure: (cause) => {
+				console.error("Failed to toggle favorite:", cause)
+				toast.error("Failed to update channel")
+			},
+		})
 	}
 
 	const handleDeleteChannel = async () => {
@@ -64,18 +94,27 @@ export function ChannelItem({ channel, member }: ChannelItemProps) {
 	}
 
 	const handleLeaveChannel = async () => {
-		try {
-			channelMemberCollection.delete(member.id)
-			toast.success("Left channel successfully")
-		} catch (error) {
-			console.error("Failed to leave channel:", error)
-			toast.error("Failed to leave channel")
-		}
+		const exit = await deleteMember({
+			payload: { id: member.id },
+		})
+
+		Exit.match(exit, {
+			onSuccess: () => {
+				toast.success("Left channel successfully")
+			},
+			onFailure: (cause) => {
+				console.error("Failed to leave channel:", cause)
+				toast.error("Failed to leave channel")
+			},
+		})
 	}
 
 	return (
 		<>
-			<SidebarItem tooltip={channel.name}>
+			<SidebarItem
+				tooltip={channel.name}
+				badge={member.notificationCount > 0 ? member.notificationCount : undefined}
+			>
 				{({ isCollapsed, isFocused }) => (
 					<>
 						<SidebarLink
@@ -88,50 +127,46 @@ export function ChannelItem({ channel, member }: ChannelItemProps) {
 							<IconHashtag />
 							<SidebarLabel>{channel.name}</SidebarLabel>
 						</SidebarLink>
-						{(!isCollapsed || isFocused) && (
-							<Menu>
-								<Button
-									intent="plain"
-									size="sq-xs"
-									data-slot="menu-trigger"
-									className="size-5 text-muted-fg"
-								>
-									<IconDots className="size-4" />
-								</Button>
-								<MenuContent placement="right top" className="w-42">
-									<MenuItem onAction={handleToggleMute}>
-										{member.isMuted ? (
-											<IconVolume className="size-4" />
-										) : (
-											<IconVolumeMute className="size-4" />
-										)}
-										<MenuLabel>{member.isMuted ? "Unmute" : "Mute"}</MenuLabel>
-									</MenuItem>
-									<MenuItem onAction={handleToggleFavorite}>
-										<IconStar
-											className={
-												member.isFavorite ? "size-4 text-yellow-500" : "size-4"
-											}
-										/>
-										<MenuLabel>{member.isFavorite ? "Unfavorite" : "Favorite"}</MenuLabel>
-									</MenuItem>
-									<MenuSeparator />
-									<MenuItem onAction={() => setRenameModalOpen(true)}>
-										<IconEdit />
-										<MenuLabel>Rename</MenuLabel>
-									</MenuItem>
-									<MenuItem intent="danger" onAction={() => setDeleteModalOpen(true)}>
-										<IconTrash />
-										<MenuLabel>Delete</MenuLabel>
-									</MenuItem>
-									<MenuSeparator />
-									<MenuItem intent="danger" onAction={handleLeaveChannel}>
-										<IconLeave />
-										<MenuLabel className="text-destructive">Leave</MenuLabel>
-									</MenuItem>
-								</MenuContent>
-							</Menu>
-						)}
+						<Menu>
+							<Button
+								intent="plain"
+								size="sq-xs"
+								data-slot="menu-trigger"
+								className="size-5 text-muted-fg"
+							>
+								<IconDots className="size-4" />
+							</Button>
+							<MenuContent placement="right top" className="w-42">
+								<MenuItem onAction={handleToggleMute}>
+									{member.isMuted ? (
+										<IconVolume className="size-4" />
+									) : (
+										<IconVolumeMute className="size-4" />
+									)}
+									<MenuLabel>{member.isMuted ? "Unmute" : "Mute"}</MenuLabel>
+								</MenuItem>
+								<MenuItem onAction={handleToggleFavorite}>
+									<IconStar
+										className={member.isFavorite ? "size-4 text-yellow-500" : "size-4"}
+									/>
+									<MenuLabel>{member.isFavorite ? "Unfavorite" : "Favorite"}</MenuLabel>
+								</MenuItem>
+								<MenuSeparator />
+								<MenuItem onAction={() => setRenameModalOpen(true)}>
+									<IconEdit />
+									<MenuLabel>Rename</MenuLabel>
+								</MenuItem>
+								<MenuItem intent="danger" onAction={() => setDeleteModalOpen(true)}>
+									<IconTrash />
+									<MenuLabel>Delete</MenuLabel>
+								</MenuItem>
+								<MenuSeparator />
+								<MenuItem intent="danger" onAction={handleLeaveChannel}>
+									<IconLeave />
+									<MenuLabel className="text-destructive">Leave</MenuLabel>
+								</MenuItem>
+							</MenuContent>
+						</Menu>
 					</>
 				)}
 			</SidebarItem>
