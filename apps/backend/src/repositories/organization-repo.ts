@@ -1,7 +1,9 @@
 import { and, Database, eq, isNull, ModelRepository, schema, type TransactionClient } from "@hazel/db"
 import { Organization } from "@hazel/domain/models"
-import { type OrganizationId, policyRequire } from "@hazel/domain"
+import { type OrganizationId, type UserId, policyRequire, withSystemActor } from "@hazel/domain"
 import { Effect, Option } from "effect"
+import { ChannelMemberRepo } from "./channel-member-repo"
+import { ChannelRepo } from "./channel-repo"
 import { DatabaseLive } from "../services/database"
 
 type TxFn = <T>(fn: (client: TransactionClient) => Promise<T>) => Effect.Effect<T, any, never>
@@ -18,6 +20,8 @@ export class OrganizationRepo extends Effect.Service<OrganizationRepo>()("Organi
 			},
 		)
 		const db = yield* Database.Database
+		const channelRepo = yield* ChannelRepo
+		const channelMemberRepo = yield* ChannelMemberRepo
 
 		const findBySlug = (slug: string, tx?: TxFn) =>
 			db
@@ -63,12 +67,44 @@ export class OrganizationRepo extends Effect.Service<OrganizationRepo>()("Organi
 				policyRequire("Organization", "delete"),
 			)(id, tx)
 
+		const setupDefaultChannels = (organizationId: OrganizationId, userId: UserId) =>
+			Effect.gen(function* () {
+				// Create default "general" channel
+				const defaultChannel = yield* channelRepo
+					.insert({
+						name: "general",
+						type: "public",
+						organizationId,
+						parentChannelId: null,
+						deletedAt: null,
+					})
+					.pipe(Effect.map((res) => res[0]!), withSystemActor)
+
+				// Add creator as channel member
+				yield* channelMemberRepo
+					.insert({
+						channelId: defaultChannel.id,
+						userId,
+						isHidden: false,
+						isMuted: false,
+						isFavorite: false,
+						lastSeenMessageId: null,
+						notificationCount: 0,
+						joinedAt: new Date(),
+						deletedAt: null,
+					})
+					.pipe(withSystemActor)
+
+				return defaultChannel
+			})
+
 		return {
 			...baseRepo,
 			findBySlug,
 			findAllActive,
 			softDelete,
+			setupDefaultChannels,
 		}
 	}),
-	dependencies: [DatabaseLive],
+	dependencies: [DatabaseLive, ChannelRepo.Default, ChannelMemberRepo.Default],
 }) {}

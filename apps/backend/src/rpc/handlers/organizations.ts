@@ -190,6 +190,12 @@ export const OrganizationRpcLive = OrganizationRpcs.toLayer(
 								deletedAt: null,
 							}).pipe(withSystemActor)
 
+							// Setup default channels for the organization
+							yield* OrganizationRepo.setupDefaultChannels(
+								createdOrganization.id,
+								currentUser.id,
+							)
+
 							const txid = yield* generateTransactionId()
 
 							return {
