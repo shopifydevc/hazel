@@ -1,6 +1,7 @@
 import { Headers } from "@effect/platform"
-import { type CurrentUser, UnauthorizedError } from "@hazel/domain"
+import { type CurrentUser, UnauthorizedError, withSystemActor } from "@hazel/domain"
 import { Config, Effect, FiberRef, Layer, Option } from "effect"
+import { UserPresenceStatusRepo } from "../../repositories/user-presence-status-repo"
 import { SessionManager } from "../../services/session-manager"
 import { AuthMiddleware } from "./auth-class"
 
@@ -10,33 +11,34 @@ export const AuthMiddlewareLive = Layer.scoped(
 	AuthMiddleware,
 	Effect.gen(function* () {
 		const sessionManager = yield* SessionManager
+		const presenceRepo = yield* UserPresenceStatusRepo
 		const workOsCookiePassword = yield* Config.string("WORKOS_COOKIE_PASSWORD").pipe(Effect.orDie)
 
 		// Create a FiberRef to track the current user in each WebSocket connection
 		const currentUserRef = yield* FiberRef.make<Option.Option<CurrentUser.Schema>>(Option.none())
 
 		// Add finalizer that runs when the WebSocket scope closes
-		// yield* Effect.addFinalizer(() =>
-		// 	Effect.gen(function* () {
-		// 		const userOption = yield* FiberRef.get(currentUserRef)
-		// 		if (Option.isSome(userOption)) {
-		// 			yield* Effect.logInfo("Closing WebSocket connection")
-		// 			const user = userOption.value
-		// 			yield* presenceRepo
-		// 				.updateStatus({
-		// 					userId: user.id,
-		// 					status: "offline",
-		// 					customMessage: null,
-		// 				})
-		// 				.pipe(
-		// 					withSystemActor,
-		// 					Effect.catchAll((error) =>
-		// 						Effect.logError("Failed to mark user offline on disconnect", error),
-		// 					),
-		// 				)
-		// 		}
-		// 	}),
-		// )
+		yield* Effect.addFinalizer(() =>
+			Effect.gen(function* () {
+				const userOption = yield* FiberRef.get(currentUserRef)
+				if (Option.isSome(userOption)) {
+					yield* Effect.logInfo("Closing WebSocket connection")
+					const user = userOption.value
+					yield* presenceRepo
+						.updateStatus({
+							userId: user.id,
+							status: "offline",
+							customMessage: null,
+						})
+						.pipe(
+							withSystemActor,
+							Effect.catchAll((error) =>
+								Effect.logError("Failed to mark user offline on disconnect", error),
+							),
+						)
+				}
+			}),
+		)
 
 		return AuthMiddleware.of(({ headers }) =>
 			Effect.gen(function* () {

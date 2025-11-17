@@ -1,3 +1,4 @@
+import * as BrowserSocket from "@effect/platform-browser/BrowserSocket"
 import { RpcClient as RpcClientBuilder, RpcSerialization } from "@effect/rpc"
 import { AtomRpc } from "@effect-atom/atom-react"
 import { AuthMiddlewareClientLive } from "@hazel/backend/rpc/middleware/client"
@@ -17,14 +18,13 @@ import {
 	UserRpcs,
 } from "@hazel/domain/rpc"
 import { Layer } from "effect"
-import { CustomFetchLive } from "./api-client"
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL
-const httpUrl = `${backendUrl}/rpc`
+const wsUrl = `${backendUrl.replace(/^http/, "ws")}/rpc`
 
-export const RpcProtocolLive = RpcClientBuilder.layerProtocolHttp({
-	url: httpUrl,
-}).pipe(Layer.provide(CustomFetchLive), Layer.provide(RpcSerialization.layerJson))
+export const RpcProtocolLive = RpcClientBuilder.layerProtocolSocket({
+	retryTransientErrors: true,
+}).pipe(Layer.provide(BrowserSocket.layerWebSocket(wsUrl)), Layer.provide(RpcSerialization.layerNdjson))
 
 const AtomRpcProtocolLive = RpcProtocolLive.pipe(Layer.provide(AuthMiddlewareClientLive))
 
