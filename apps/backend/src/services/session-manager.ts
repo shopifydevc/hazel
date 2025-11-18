@@ -100,7 +100,7 @@ export class SessionManager extends Effect.Service<SessionManager>()("SessionMan
 			// If authenticated, sync user and return
 			if (session.authenticated && session.accessToken) {
 				// Decode JWT payload
-				const _jwtPayload = yield* Schema.decodeUnknown(JwtPayload)(
+				const jwtPayload = yield* Schema.decodeUnknown(JwtPayload)(
 					decodeJwt(session.accessToken),
 				).pipe(
 					Effect.mapError(
@@ -125,14 +125,18 @@ export class SessionManager extends Effect.Service<SessionManager>()("SessionMan
 				const currentUser = new CurrentUser.Schema({
 					id: user.id,
 					role: (session.role as "admin" | "member") || "member",
-					organizationId: session.externalOrganizationId
-						? OrgId.make(session.externalOrganizationId)
-						: undefined,
+					organizationId: jwtPayload.externalOrganizationId,
 					avatarUrl: user.avatarUrl,
 					firstName: user.firstName,
 					lastName: user.lastName,
 					email: user.email,
 					isOnboarded: user.isOnboarded,
+				})
+
+				yield* Effect.log("🔍 [Cookie Auth] Final CurrentUser:", {
+					id: currentUser.id,
+					organizationId: currentUser.organizationId,
+					role: currentUser.role,
 				})
 
 				return { currentUser, refreshedSession: undefined }
@@ -201,6 +205,12 @@ export class SessionManager extends Effect.Service<SessionManager>()("SessionMan
 				lastName: user.lastName,
 				email: user.email,
 				isOnboarded: user.isOnboarded,
+			})
+
+			yield* Effect.log("🔍 [Refresh] Final CurrentUser:", {
+				id: currentUser.id,
+				organizationId: currentUser.organizationId,
+				role: currentUser.role,
 			})
 
 			return { currentUser, refreshedSession: refreshedSession.sealedSession }
@@ -273,7 +283,7 @@ export class SessionManager extends Effect.Service<SessionManager>()("SessionMan
 			})
 
 			// Build CurrentUser from JWT payload and DB user
-			return new CurrentUser.Schema({
+			const currentUser = new CurrentUser.Schema({
 				id: user.id,
 				role: (payload.role as "admin" | "member") || "member",
 				organizationId: payload.externalOrganizationId as OrganizationId | undefined,
@@ -283,6 +293,8 @@ export class SessionManager extends Effect.Service<SessionManager>()("SessionMan
 				email: user.email,
 				isOnboarded: user.isOnboarded,
 			})
+
+			return currentUser
 		})
 
 		return {
