@@ -1,97 +1,41 @@
-import {
-	HttpMiddleware,
-	HttpRouter,
-	HttpServer,
-	HttpServerRequest,
-	HttpServerResponse,
-} from "@effect/platform"
-import { BunHttpServer, BunRuntime } from "@effect/platform-bun"
-import { ELECTRIC_PROTOCOL_QUERY_PARAMS } from "@electric-sql/client"
-import { Config, Effect, Layer, Redacted } from "effect"
+import { prepareElectricUrl, proxyElectricRequest } from "./electric-proxy"
 
-const electricUrl = Config.string("ELECTRIC_URL").pipe(Config.withDefault("https://api.electric-sql.cloud"))
-const electricSecret = Config.redacted("ELECTRIC_SECRET")
-const electricSourceId = Config.string("ELECTRIC_SOURCE_ID")
-
-const router = HttpRouter.empty.pipe(
-	HttpRouter.get(
-		"/electric/proxy",
-		Effect.gen(function* () {
-			const request = yield* HttpServerRequest.HttpServerRequest
-			const url = request.url
-			const searchParams = new URLSearchParams(url.split("?")[1] || "")
-
-			const table = searchParams.get("table")
-			if (!table) {
-				return yield* HttpServerResponse.json(
-					{ message: "Needs to have a table param" },
-					{ status: 400 },
-				)
-			}
-
-			const [elUrl, elSecret, elSourceId] = yield* Effect.all([
-				electricUrl,
-				electricSecret,
-				electricSourceId,
-			])
-
-			const originUrl = new URL("/v1/shape", elUrl)
-
-			searchParams.forEach((value, key) => {
-				if (ELECTRIC_PROTOCOL_QUERY_PARAMS.includes(key)) {
-					originUrl.searchParams.set(key, value)
-				}
+export default {
+	async fetch(request: Request, env: Env): Promise<Response> {
+		// Handle CORS preflight
+		if (request.method === "OPTIONS") {
+			return new Response(null, {
+				status: 204,
+				headers: {
+					"Access-Control-Allow-Origin": "*",
+					"Access-Control-Allow-Methods": "GET, DELETE, OPTIONS",
+					"Access-Control-Allow-Headers": "*",
+				},
 			})
+		}
 
-			originUrl.searchParams.set(`table`, searchParams.get("table")!)
-
-			originUrl.searchParams.set("source_id", elSourceId)
-			originUrl.searchParams.set("secret", Redacted.value(elSecret))
-
-			const response = yield* Effect.tryPromise({
-				try: () => fetch(originUrl.toString()),
-				catch: (error) => new Error(`Proxy fetch failed: ${error}`),
+		// Only allow GET and DELETE methods (Electric protocol)
+		if (request.method !== "GET" && request.method !== "DELETE") {
+			return new Response("Method not allowed", {
+				status: 405,
+				headers: {
+					Allow: "GET, DELETE, OPTIONS",
+				},
 			})
+		}
 
-			const headers = new Headers(response.headers)
-			headers.delete("content-encoding")
-			headers.delete("content-length")
-			headers.set("Vary", "Authorization")
-			headers.set("Access-Control-Allow-Origin", "*")
-			headers.set("Access-Control-Allow-Methods", "GET, OPTIONS")
-			headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		// Get Electric URL from environment
+		const electricUrl = env.ELECTRIC_URL
+		if (!electricUrl) {
+			return new Response("ELECTRIC_URL not configured", { status: 500 })
+		}
 
-			const body = yield* Effect.tryPromise({
-				try: () => response.arrayBuffer(),
-				catch: (error) => new Error(`Failed to read response body: ${error}`),
-			})
+		const originUrl = prepareElectricUrl(request.url)
 
-			const headersObject: Record<string, string> = {}
-			headers.forEach((value, key) => {
-				headersObject[key] = value
-			})
+		const searchParams = new URL(request.url).searchParams
 
-			return HttpServerResponse.raw(new Uint8Array(body), {
-				status: response.status,
-				statusText: response.statusText,
-				headers: headersObject,
-			})
-		}),
-	),
-)
+		originUrl.searchParams.set(`table`, searchParams.get("table")!)
 
-const app = router.pipe(
-	HttpServer.serve(
-		HttpMiddleware.cors({
-			allowedOrigins: ["*"],
-			allowedMethods: ["GET", "OPTIONS"],
-			allowedHeaders: ["Content-Type", "Authorization"],
-			credentials: true,
-		}),
-	),
-	HttpServer.withLogAddress,
-)
-
-const ServerLive = BunHttpServer.layer({ port: 3004 })
-
-BunRuntime.runMain(Layer.launch(Layer.provide(app, ServerLive)))
+		return await proxyElectricRequest(originUrl)
+	},
+} satisfies ExportedHandler<Env>
