@@ -36,7 +36,7 @@ export type OnboardingEvent =
 	  }
 	| {
 			type: "ORG_SETUP_CONTINUE"
-			data: { name: string; slug: string }
+			data: { name: string; slug: string; organizationId: OrganizationId }
 	  }
 	| {
 			type: "USE_CASE_CONTINUE"

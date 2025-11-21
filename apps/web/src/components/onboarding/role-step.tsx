@@ -82,9 +82,9 @@ interface RoleStepProps {
 export function RoleStep({ onBack, onContinue, defaultSelection }: RoleStepProps) {
 	const [selected, setSelected] = useState<string | undefined>(defaultSelection)
 
-	const handleContinue = async () => {
+	const handleContinue = () => {
 		if (selected) {
-			await onContinue(selected)
+			onContinue(selected)
 		}
 	}
 

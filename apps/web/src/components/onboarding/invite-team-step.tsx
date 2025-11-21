@@ -1,19 +1,26 @@
+import { useAtomSet } from "@effect-atom/atom-react"
+import type { OrganizationId } from "@hazel/schema"
 import { PlusIcon, XMarkIcon } from "@heroicons/react/24/outline"
+import { Exit } from "effect"
 import { useState } from "react"
+import { createInvitationMutation } from "~/atoms/invitation-atoms"
 import { Button } from "~/components/ui/button"
 import { CardDescription, CardHeader, CardTitle } from "~/components/ui/card"
 import { Description, FieldError, Label } from "~/components/ui/field"
 import { Input } from "~/components/ui/input"
 import { TextField } from "~/components/ui/text-field"
+import { toastExit } from "~/lib/toast-exit"
 import { OnboardingNavigation } from "./onboarding-navigation"
 
 interface InviteTeamStepProps {
 	onBack: () => void
-	onContinue: (emails: string[]) => Promise<void>
+	onContinue: (emails: string[]) => void
 	onSkip: () => void
+	organizationId: OrganizationId | undefined
 }
 
-export function InviteTeamStep({ onBack, onContinue, onSkip }: InviteTeamStepProps) {
+export function InviteTeamStep({ onBack, onContinue, onSkip, organizationId }: InviteTeamStepProps) {
+	const createInvitation = useAtomSet(createInvitationMutation, { mode: "promiseExit" })
 	const [emails, setEmails] = useState<string[]>([""])
 	const [errors, setErrors] = useState<Record<number, string>>({})
 	const [isLoading, setIsLoading] = useState(false)
@@ -70,11 +77,38 @@ export function InviteTeamStep({ onBack, onContinue, onSkip }: InviteTeamStepPro
 			return
 		}
 
+		if (!organizationId) {
+			console.error("No organization ID available")
+			return
+		}
+
 		setIsLoading(true)
 		try {
-			await onContinue(filledEmails)
-		} catch (error) {
-			console.error("Failed to send invites:", error)
+			const exit = await toastExit(
+				createInvitation({
+					payload: {
+						organizationId: organizationId,
+						invites: filledEmails.map((email) => ({
+							email,
+							role: "member",
+						})),
+					},
+				}),
+				{
+					loading: `Sending ${filledEmails.length} invitation${filledEmails.length > 1 ? "s" : ""}...`,
+					success: (result) => {
+						const { successCount, errorCount } = result
+						if (errorCount > 0) {
+							return `Sent ${successCount} invitation${successCount !== 1 ? "s" : ""}, ${errorCount} failed`
+						}
+						return `Sent ${successCount} invitation${successCount !== 1 ? "s" : ""} successfully`
+					},
+				},
+			)
+
+			if (Exit.isSuccess(exit)) {
+				onContinue(filledEmails)
+			}
 		} finally {
 			setIsLoading(false)
 		}

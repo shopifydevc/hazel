@@ -1,9 +1,22 @@
-import { useState } from "react"
+import { useAtomSet } from "@effect-atom/atom-react"
+import { type } from "arktype"
+import { Exit } from "effect"
+import { updateUserMutation } from "~/atoms/user-atoms"
 import { CardDescription, CardHeader, CardTitle } from "~/components/ui/card"
-import { Description, Label } from "~/components/ui/field"
+import { Description, FieldError, Label } from "~/components/ui/field"
 import { Input } from "~/components/ui/input"
 import { TextField } from "~/components/ui/text-field"
+import { useAppForm } from "~/hooks/use-app-form"
+import { useAuth } from "~/lib/auth"
+import { toastExit } from "~/lib/toast-exit"
 import { OnboardingNavigation } from "./onboarding-navigation"
+
+const profileSchema = type({
+	firstName: "string > 0",
+	lastName: "string > 0",
+})
+
+type ProfileFormData = typeof profileSchema.infer
 
 interface ProfileInfoStepProps {
 	onBack: () => void
@@ -18,14 +31,39 @@ export function ProfileInfoStep({
 	defaultFirstName = "",
 	defaultLastName = "",
 }: ProfileInfoStepProps) {
-	const [firstName, setFirstName] = useState(defaultFirstName)
-	const [lastName, setLastName] = useState(defaultLastName)
+	const { user } = useAuth()
+	const updateUser = useAtomSet(updateUserMutation, { mode: "promiseExit" })
 
-	const handleContinue = () => {
-		onContinue({ firstName: firstName.trim(), lastName: lastName.trim() })
-	}
+	const form = useAppForm({
+		defaultValues: {
+			firstName: defaultFirstName,
+			lastName: defaultLastName,
+		} as ProfileFormData,
+		validators: {
+			onChange: profileSchema,
+		},
+		onSubmit: async ({ value }) => {
+			if (!user?.id) return
 
-	const canContinue = firstName.trim().length > 0 && lastName.trim().length > 0
+			const exit = await toastExit(
+				updateUser({
+					payload: {
+						id: user.id,
+						firstName: value.firstName.trim(),
+						lastName: value.lastName.trim(),
+					},
+				}),
+				{
+					loading: "Updating profile...",
+					success: "Profile updated successfully",
+				},
+			)
+
+			if (Exit.isSuccess(exit)) {
+				onContinue({ firstName: value.firstName.trim(), lastName: value.lastName.trim() })
+			}
+		},
+	})
 
 	return (
 		<div className="space-y-6">
@@ -34,26 +72,66 @@ export function ProfileInfoStep({
 				<CardDescription>Tell us a bit about yourself to personalize your experience</CardDescription>
 			</CardHeader>
 
-			<div className="space-y-4">
-				<TextField isRequired>
-					<Label>First name</Label>
-					<Input
-						value={firstName}
-						onChange={(e) => setFirstName(e.target.value)}
-						placeholder="John"
-						autoFocus
+			<form
+				onSubmit={(e) => {
+					e.preventDefault()
+					form.handleSubmit()
+				}}
+			>
+				<div className="space-y-4">
+					<form.AppField
+						name="firstName"
+						children={(field) => (
+							<TextField isRequired>
+								<Label>First name</Label>
+								<Input
+									value={field.state.value}
+									onChange={(e) => field.handleChange(e.target.value)}
+									onBlur={field.handleBlur}
+									placeholder="John"
+									autoFocus
+									aria-invalid={!!field.state.meta.errors?.length}
+								/>
+								<Description>Your first name as you'd like it to appear</Description>
+								{field.state.meta.errors?.[0] && (
+									<FieldError>{field.state.meta.errors[0].message}</FieldError>
+								)}
+							</TextField>
+						)}
 					/>
-					<Description>Your first name as you'd like it to appear</Description>
-				</TextField>
 
-				<TextField isRequired>
-					<Label>Last name</Label>
-					<Input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Doe" />
-					<Description>Your last name as you'd like it to appear</Description>
-				</TextField>
-			</div>
+					<form.AppField
+						name="lastName"
+						children={(field) => (
+							<TextField isRequired>
+								<Label>Last name</Label>
+								<Input
+									value={field.state.value}
+									onChange={(e) => field.handleChange(e.target.value)}
+									onBlur={field.handleBlur}
+									placeholder="Doe"
+									aria-invalid={!!field.state.meta.errors?.length}
+								/>
+								<Description>Your last name as you'd like it to appear</Description>
+								{field.state.meta.errors?.[0] && (
+									<FieldError>{field.state.meta.errors[0].message}</FieldError>
+								)}
+							</TextField>
+						)}
+					/>
+				</div>
 
-			<OnboardingNavigation onBack={onBack} onContinue={handleContinue} canContinue={canContinue} />
+				<form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+					{([canSubmit, isSubmitting]) => (
+						<OnboardingNavigation
+							onBack={onBack}
+							onContinue={() => form.handleSubmit()}
+							canContinue={canSubmit}
+							isLoading={isSubmitting}
+						/>
+					)}
+				</form.Subscribe>
+			</form>
 		</div>
 	)
 }

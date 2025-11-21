@@ -13,7 +13,7 @@ import {
 	setOrganizationSlugMutation,
 	updateOrganizationMemberMetadataMutation,
 } from "~/atoms/organization-atoms"
-import { finalizeOnboardingMutation, updateUserMutation } from "~/atoms/user-atoms"
+import { finalizeOnboardingMutation } from "~/atoms/user-atoms"
 import { InviteTeamStep } from "~/components/onboarding/invite-team-step"
 import { OnboardingLayout } from "~/components/onboarding/onboarding-layout"
 import { OrgSetupStep } from "~/components/onboarding/org-setup-step"
@@ -36,7 +36,6 @@ function RouteComponent() {
 
 	const createOrganization = useAtomSet(createOrganizationMutation, { mode: "promiseExit" })
 	const setOrganizationSlugAction = useAtomSet(setOrganizationSlugMutation, { mode: "promiseExit" })
-	const updateUser = useAtomSet(updateUserMutation, { mode: "promiseExit" })
 	const finalizeOnboarding = useAtomSet(finalizeOnboardingMutation, { mode: "promiseExit" })
 	const createInvitation = useAtomSet(createInvitationMutation, { mode: "promiseExit" })
 	const updateOrganizationMemberMetadata = useAtomSet(updateOrganizationMemberMetadataMutation, {
@@ -325,22 +324,7 @@ function RouteComponent() {
 					>
 						<ProfileInfoStep
 							onBack={() => sendWithDirection({ type: "BACK" })}
-							onContinue={async (data) => {
-								// Save user profile info
-								if (user?.id) {
-									const result = await updateUser({
-										payload: {
-											id: user.id,
-											firstName: data.firstName,
-											lastName: data.lastName,
-										},
-									})
-
-									if (!Exit.isSuccess(result)) {
-										console.error("Failed to update user profile:", result.cause)
-										return
-									}
-								}
+							onContinue={(data) => {
 								sendWithDirection({ type: "PROFILE_INFO_CONTINUE", data })
 							}}
 							defaultFirstName={user?.firstName || ""}
@@ -378,7 +362,7 @@ function RouteComponent() {
 					>
 						<OrgSetupStep
 							onBack={() => sendWithDirection({ type: "BACK" })}
-							onContinue={async (data) => {
+							onContinue={(data) => {
 								sendWithDirection({ type: "ORG_SETUP_CONTINUE", data })
 							}}
 							defaultName={organization?.name}
@@ -439,10 +423,11 @@ function RouteComponent() {
 					>
 						<InviteTeamStep
 							onBack={() => sendWithDirection({ type: "BACK" })}
-							onContinue={async (emails) => {
+							onContinue={(emails) => {
 								sendWithDirection({ type: "INVITE_TEAM_CONTINUE", data: { emails } })
 							}}
 							onSkip={() => sendWithDirection({ type: "INVITE_TEAM_SKIP" })}
+							organizationId={orgId}
 						/>
 					</motion.div>
 				)}

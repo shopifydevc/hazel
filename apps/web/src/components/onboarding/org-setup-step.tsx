@@ -1,60 +1,84 @@
-import { useState } from "react"
+import { useAtomSet } from "@effect-atom/atom-react"
+import { type } from "arktype"
+import { Exit } from "effect"
+import { createOrganizationMutation } from "~/atoms/organization-atoms"
 import { CardDescription, CardHeader, CardTitle } from "~/components/ui/card"
 import { Description, FieldError, Label } from "~/components/ui/field"
-import { Input, InputGroup } from "~/components/ui/input"
+import { Input } from "~/components/ui/input"
 import { TextField } from "~/components/ui/text-field"
+import { useAppForm } from "~/hooks/use-app-form"
+import { useAuth } from "~/lib/auth"
+import { toastExit } from "~/lib/toast-exit"
 import { OnboardingNavigation } from "./onboarding-navigation"
+
+// Sanitize slug value to URL-safe format
+function sanitizeSlug(value: string): string {
+	return value
+		.toLowerCase()
+		.replace(/[^a-z0-9\s-]/g, "")
+		.replace(/\s+/g, "-")
+		.replace(/-+/g, "-")
+		.slice(0, 50)
+}
+
+// Define a custom slug validator
+const slugValidator = (slug: string) => {
+	if (slug.startsWith("-") || slug.endsWith("-")) {
+		return false
+	}
+	return true
+}
+
+const orgSchema = type({
+	name: "string > 0",
+	slug: type("string >= 3").narrow(slugValidator),
+})
+
+type OrgFormData = typeof orgSchema.infer
 
 interface OrgSetupStepProps {
 	onBack: () => void
-	onContinue: (data: { name: string; slug: string }) => Promise<void>
+	onContinue: (data: { name: string; slug: string; organizationId: string }) => void
 	defaultName?: string
 	defaultSlug?: string
 }
 
 export function OrgSetupStep({ onBack, onContinue, defaultName = "", defaultSlug = "" }: OrgSetupStepProps) {
-	const [name, setName] = useState(defaultName)
-	const [slug, setSlug] = useState(defaultSlug)
-	const [slugError, setSlugError] = useState<string | null>(null)
-	const [isLoading, setIsLoading] = useState(false)
+	const { user } = useAuth()
+	const createOrganization = useAtomSet(createOrganizationMutation, { mode: "promiseExit" })
 
-	const handleSlugChange = (value: string) => {
-		// Convert to URL-safe slug: lowercase, remove special chars, replace spaces with hyphens
-		const sanitized = value
-			.toLowerCase()
-			.replace(/[^a-z0-9\s-]/g, "")
-			.replace(/\s+/g, "-")
-			.replace(/-+/g, "-")
-			.slice(0, 50)
+	const form = useAppForm({
+		defaultValues: {
+			name: defaultName,
+			slug: defaultSlug,
+		} as OrgFormData,
+		validators: {
+			onChange: orgSchema,
+		},
+		onSubmit: async ({ value }) => {
+			if (!user?.id) return
 
-		setSlug(sanitized)
-		setSlugError(null)
-	}
+			const exit = await toastExit(
+				createOrganization({
+					payload: {
+						name: value.name,
+						slug: value.slug,
+						logoUrl: null,
+						settings: null,
+					},
+				}),
+				{
+					loading: "Creating workspace...",
+					success: "Workspace created successfully",
+				},
+			)
 
-	const handleContinue = async () => {
-		// Validate slug
-		if (slug.length < 3) {
-			setSlugError("Slug must be at least 3 characters long")
-			return
-		}
-
-		if (slug.startsWith("-") || slug.endsWith("-")) {
-			setSlugError("Slug cannot start or end with a hyphen")
-			return
-		}
-
-		setIsLoading(true)
-		try {
-			await onContinue({ name, slug })
-		} catch (error) {
-			console.error("Failed to set up organization:", error)
-			setSlugError("Failed to set up organization. Please try again.")
-		} finally {
-			setIsLoading(false)
-		}
-	}
-
-	const canContinue = name.trim().length > 0 && slug.length >= 3 && !slugError
+			if (Exit.isSuccess(exit)) {
+				const organizationId = exit.value.data.id
+				onContinue({ name: value.name, slug: value.slug, organizationId })
+			}
+		},
+	})
 
 	return (
 		<div className="space-y-6">
@@ -65,56 +89,85 @@ export function OrgSetupStep({ onBack, onContinue, defaultName = "", defaultSlug
 				</CardDescription>
 			</CardHeader>
 
-			<div className="space-y-4">
-				<TextField isRequired>
-					<Label>Organization name</Label>
-					<Input
-						value={name}
-						onChange={(e) => setName(e.target.value)}
-						placeholder="Acme Inc."
-						autoFocus
+			<form
+				onSubmit={(e) => {
+					e.preventDefault()
+					form.handleSubmit()
+				}}
+			>
+				<div className="space-y-4">
+					<form.AppField
+						name="name"
+						children={(field) => (
+							<TextField isRequired>
+								<Label>Organization name</Label>
+								<Input
+									value={field.state.value}
+									onChange={(e) => field.handleChange(e.target.value)}
+									onBlur={field.handleBlur}
+									placeholder="Acme Inc."
+									autoFocus
+									aria-invalid={!!field.state.meta.errors?.length}
+								/>
+								<Description>The display name for your organization</Description>
+								{field.state.meta.errors?.[0] && (
+									<FieldError>{field.state.meta.errors[0].message}</FieldError>
+								)}
+							</TextField>
+						)}
 					/>
-					<Description>The display name for your organization</Description>
-				</TextField>
 
-				<TextField isRequired isInvalid={!!slugError}>
-					<Label>Workspace URL</Label>
-					<div className="relative">
-						<div className="flex items-center gap-2">
-							<span className="text-muted-fg text-sm">hazel.app/</span>
+					<form.AppField
+						name="slug"
+						children={(field) => (
+							<>
+								<TextField isRequired isInvalid={!!field.state.meta.errors?.length}>
+									<Label>Workspace URL</Label>
+									<div className="relative">
+										<div className="flex items-center gap-2">
+											<span className="text-muted-fg text-sm">hazel.app/</span>
+											<Input
+												value={field.state.value}
+												onChange={(e) => field.handleChange(sanitizeSlug(e.target.value))}
+												onBlur={field.handleBlur}
+												placeholder="acme"
+												aria-invalid={!!field.state.meta.errors?.length}
+											/>
+										</div>
+									</div>
+									{field.state.meta.errors?.[0] ? (
+										<FieldError>{field.state.meta.errors[0].message}</FieldError>
+									) : (
+										<Description>
+											Your unique workspace URL (lowercase letters, numbers, and hyphens)
+										</Description>
+									)}
+								</TextField>
 
-							<Input
-								value={slug}
-								onChange={(e) => handleSlugChange(e.target.value)}
-								placeholder="acme"
-							/>
-						</div>
-					</div>
-					{slugError ? (
-						<FieldError>{slugError}</FieldError>
-					) : (
-						<Description>
-							Your unique workspace URL (lowercase letters, numbers, and hyphens)
-						</Description>
+								{field.state.value && field.state.value.length >= 3 && !field.state.meta.errors?.length && (
+									<div className="rounded-lg border border-border bg-muted/30 p-4">
+										<p className="text-muted-fg text-sm">
+											Your workspace will be accessible at:{" "}
+											<span className="font-medium text-fg">hazel.app/{field.state.value}</span>
+										</p>
+									</div>
+								)}
+							</>
+						)}
+					/>
+				</div>
+
+				<form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+					{([canSubmit, isSubmitting]) => (
+						<OnboardingNavigation
+							onBack={onBack}
+							onContinue={() => form.handleSubmit()}
+							canContinue={canSubmit}
+							isLoading={isSubmitting}
+						/>
 					)}
-				</TextField>
-
-				{slug && slug.length >= 3 && !slugError && (
-					<div className="rounded-lg border border-border bg-muted/30 p-4">
-						<p className="text-muted-fg text-sm">
-							Your workspace will be accessible at:{" "}
-							<span className="font-medium text-fg">hazel.app/{slug}</span>
-						</p>
-					</div>
-				)}
-			</div>
-
-			<OnboardingNavigation
-				onBack={onBack}
-				onContinue={handleContinue}
-				canContinue={canContinue}
-				isLoading={isLoading}
-			/>
+				</form.Subscribe>
+			</form>
 		</div>
 	)
 }
