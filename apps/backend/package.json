@@ -36,6 +36,7 @@
 		"@effect/rpc": "catalog:effect",
 		"@effect/sql": "catalog:effect",
 		"@effect/sql-pg": "catalog:effect",
+		"@hazel/backend-core": "workspace:*",
 		"@hazel/db": "workspace:*",
 		"@hazel/domain": "workspace:*",
 		"@opentelemetry/sdk-logs": "^0.208.0",
