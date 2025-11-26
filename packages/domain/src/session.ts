@@ -7,7 +7,7 @@ import { Schema } from "effect"
 export class JwtPayload extends Schema.Class<JwtPayload>("JwtPayload")({
 	name: Schema.String,
 	email: Schema.String,
-	picture: Schema.String,
+	picture: Schema.NullishOr(Schema.String),
 	given_name: Schema.NullishOr(Schema.String),
 	updated_at: Schema.String,
 	family_name: Schema.NullishOr(Schema.String),
