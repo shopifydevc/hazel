@@ -1,6 +1,4 @@
-import { inArray, type SQL, sql } from "@hazel/db"
 import type { PgColumn } from "drizzle-orm/pg-core"
-import { QueryBuilder } from "drizzle-orm/pg-core"
 
 /**
  * Result of building a WHERE clause with parameterized values
@@ -11,46 +9,62 @@ export interface WhereClauseResult {
 }
 
 /**
- * Builds a WHERE clause using Drizzle's QueryBuilder.
- * Extracts just the WHERE portion from the full SELECT query.
+ * Build IN clause with sorted IDs using unqualified column name.
+ * Uses column.name for Electric SQL compatibility (Electric requires unqualified column names).
  *
- * @param table - The Drizzle table to build the query against
- * @param condition - The WHERE condition using Drizzle operators
- * @returns WhereClauseResult with the WHERE clause string and params array
+ * @param column - The Drizzle column to filter on (uses column.name for unqualified name)
+ * @param values - Array of values for the IN clause
+ * @returns WhereClauseResult with parameterized WHERE clause
  */
-export function buildWhereClause(table: any, condition: SQL | undefined): WhereClauseResult {
-	const qb = new QueryBuilder()
-	// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-	const query = qb.select().from(table).where(condition).toSQL()
-
-	// Extract WHERE clause from: SELECT ... FROM "table" WHERE <clause>
-	const whereMatch = query.sql.match(/WHERE\s+(.+)$/i)
-	const whereClause = whereMatch?.[1] ?? ""
-
+export function buildInClause<T extends string>(column: PgColumn, values: readonly T[]): WhereClauseResult {
+	if (values.length === 0) {
+		return { whereClause: "false", params: [] }
+	}
+	const sorted = [...values].sort()
+	const placeholders = sorted.map((_, i) => `$${i + 1}`).join(", ")
 	return {
-		whereClause,
-		params: query.params,
+		whereClause: `"${column.name}" IN (${placeholders})`,
+		params: sorted,
 	}
 }
 
 /**
- * Helper for IN clause with sorted IDs for deterministic Electric shapes.
- * Sorting ensures the same set of IDs always produces the same WHERE clause,
- * which is important for Electric shape stability.
- *
- * Handles empty arrays by returning a "false" condition that matches no rows.
+ * Build IN clause with deletedAt IS NULL check using unqualified column names.
  *
  * @param column - The Drizzle column to filter on
  * @param values - Array of values for the IN clause
- * @returns SQL expression for the IN clause
+ * @param deletedAtColumn - The deletedAt column to check for NULL
+ * @returns WhereClauseResult with parameterized WHERE clause
  */
-export function inArraySorted<T extends string>(column: PgColumn, values: readonly T[]): SQL {
+export function buildInClauseWithDeletedAt<T extends string>(
+	column: PgColumn,
+	values: readonly T[],
+	deletedAtColumn: PgColumn,
+): WhereClauseResult {
 	if (values.length === 0) {
-		// Return a condition that's always false - matches nothing
-		return sql`false`
+		return { whereClause: "false", params: [] }
 	}
 	const sorted = [...values].sort()
-	return inArray(column, sorted)
+	const placeholders = sorted.map((_, i) => `$${i + 1}`).join(", ")
+	return {
+		whereClause: `"${column.name}" IN (${placeholders}) AND "${deletedAtColumn.name}" IS NULL`,
+		params: sorted,
+	}
+}
+
+/**
+ * Build equality check using unqualified column name.
+ *
+ * @param column - The Drizzle column to filter on
+ * @param value - The value to compare against
+ * @param paramIndex - The parameter index (default: 1)
+ * @returns WhereClauseResult with parameterized WHERE clause
+ */
+export function buildEqClause<T>(column: PgColumn, value: T, paramIndex = 1): WhereClauseResult {
+	return {
+		whereClause: `"${column.name}" = $${paramIndex}`,
+		params: [value],
+	}
 }
 
 /**
@@ -58,7 +72,7 @@ export function inArraySorted<T extends string>(column: PgColumn, values: readon
  * Sets the "where" parameter and individual "params[N]" parameters.
  *
  * @param url - The URL to modify
- * @param result - The WhereClauseResult from buildWhereClause
+ * @param result - The WhereClauseResult
  */
 export function applyWhereToElectricUrl(url: URL, result: WhereClauseResult): void {
 	url.searchParams.set("where", result.whereClause)

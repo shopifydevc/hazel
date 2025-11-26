@@ -1,7 +1,7 @@
-import { and, isNull, schema } from "@hazel/db"
+import { schema } from "@hazel/db"
 import { Effect, Match, Schema } from "effect"
 import type { AuthenticatedBot } from "../auth/bot-auth"
-import { buildWhereClause, inArraySorted, type WhereClauseResult } from "./where-clause-builder"
+import { buildInClauseWithDeletedAt, type WhereClauseResult } from "./where-clause-builder"
 
 /**
  * Error thrown when bot table access is denied or where clause cannot be generated
@@ -62,8 +62,8 @@ export function validateBotTable(table: string | null): {
  * Get the WHERE clause for a table based on the authenticated bot.
  * This ensures bots can only access data from channels they're installed in.
  *
- * Uses Drizzle's QueryBuilder for type-safe WHERE clause generation with
- * parameterized queries.
+ * Uses unqualified column names (via column.name) for Electric SQL compatibility.
+ * All WHERE clauses are parameterized for security.
  *
  * @param table - The table name
  * @param bot - The authenticated bot context
@@ -77,12 +77,10 @@ export function getBotWhereClauseForTable(
 		Match.when("messages", () =>
 			// Messages only from channels the bot is a member of
 			Effect.succeed(
-				buildWhereClause(
-					schema.messagesTable,
-					and(
-						inArraySorted(schema.messagesTable.channelId, bot.accessContext.channelIds),
-						isNull(schema.messagesTable.deletedAt),
-					),
+				buildInClauseWithDeletedAt(
+					schema.messagesTable.channelId,
+					bot.accessContext.channelIds,
+					schema.messagesTable.deletedAt,
 				),
 			),
 		),
@@ -90,23 +88,19 @@ export function getBotWhereClauseForTable(
 		// Future tables can be added here:
 		// Match.when("channels", () =>
 		// 	Effect.succeed(
-		// 		buildWhereClause(
-		// 			schema.channelsTable,
-		// 			and(
-		// 				inArraySorted(schema.channelsTable.id, bot.accessContext.channelIds),
-		// 				isNull(schema.channelsTable.deletedAt),
-		// 			),
+		// 		buildInClauseWithDeletedAt(
+		// 			schema.channelsTable.id,
+		// 			bot.accessContext.channelIds,
+		// 			schema.channelsTable.deletedAt,
 		// 		),
 		// 	),
 		// ),
 		// Match.when("attachments", () =>
 		// 	Effect.succeed(
-		// 		buildWhereClause(
-		// 			schema.attachmentsTable,
-		// 			and(
-		// 				inArraySorted(schema.attachmentsTable.channelId, bot.accessContext.channelIds),
-		// 				isNull(schema.attachmentsTable.deletedAt),
-		// 			),
+		// 		buildInClauseWithDeletedAt(
+		// 			schema.attachmentsTable.channelId,
+		// 			bot.accessContext.channelIds,
+		// 			schema.attachmentsTable.deletedAt,
 		// 		),
 		// 	),
 		// ),
