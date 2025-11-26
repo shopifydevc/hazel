@@ -23,12 +23,16 @@ export const prepareElectricUrl = (requestUrl: string) =>
 		const url = new URL(requestUrl)
 		const originUrl = new URL(`${config.electricUrl}/v1/shape`)
 
+		// Copy Electric-specific query params
 		url.searchParams.forEach((value, key) => {
-			if (ELECTRIC_PROTOCOL_QUERY_PARAMS.some((param) => key === param)) {
+			if (
+				ELECTRIC_PROTOCOL_QUERY_PARAMS.some((param) => key === param || key.startsWith(`${param}[`))
+			) {
 				originUrl.searchParams.set(key, value)
 			}
 		})
 
+		// Add Electric Cloud authentication if configured
 		if (config.electricSourceId && config.electricSourceSecret) {
 			originUrl.searchParams.set("source_id", config.electricSourceId)
 			originUrl.searchParams.set("secret", config.electricSourceSecret)
