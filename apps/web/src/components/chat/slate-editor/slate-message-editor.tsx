@@ -833,6 +833,12 @@ export const SlateMessageEditor = forwardRef<SlateMessageEditorRef, SlateMessage
 						aria-autocomplete="list"
 						aria-expanded={autocompleteState.isOpen && currentOptions.length > 0}
 						aria-haspopup="listbox"
+						onBlur={() => {
+							// Close autocomplete when editor loses focus (e.g., clicking outside)
+							if (autocompleteState.isOpen) {
+								closeAutocomplete()
+							}
+						}}
 						className={cx(
 							"w-full whitespace-pre-wrap break-all px-3 py-2 text-base md:text-sm",
 							"rounded-xl bg-transparent",
