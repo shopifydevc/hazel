@@ -2,8 +2,6 @@
 - rpc client for bot
 - add helper for status color for badge and dot
 - fix channel creation not actually appearing in the channel list
-- fix reacting not working for people with member role in dm channel
-- notification sound not working?
 
 Deploy production
 
@@ -14,24 +12,9 @@ Deploy production
 
 
 # Before release
-- Test Invite Flow
 
 - Migrate the missing icons to nucleo
 
-
-
-
-## High Priority Features
-
-## Medium Priority Features
-
-
-
-
-### Core Features
-- [ ] **Chat Improvements**
-  - Better Chat Input with:
-    - Slash commands
 
 ### Chat Components
 - [ ] **Message Features**
