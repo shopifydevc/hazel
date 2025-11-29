@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react"
 import { cn } from "~/lib/utils"
-import { useEmbedContext } from "./embed"
+import { embedSectionStyles, useEmbedContext } from "./embed"
 
 export interface EmbedAuthorProps {
 	/** URL for the author's icon/logo */
@@ -32,7 +32,7 @@ export function EmbedAuthor({ iconUrl, name, url, trailing, className }: EmbedAu
 
 	return (
 		<div
-			className={cn("flex items-center gap-2 border-border/40 border-b px-3 py-2", className)}
+			className={cn(embedSectionStyles({ position: "top" }), "flex items-center gap-2", className)}
 			style={{
 				background: accentColor
 					? `linear-gradient(to right, ${accentColor}08, transparent)`

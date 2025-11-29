@@ -4,7 +4,7 @@ import { Result, useAtomValue } from "@effect-atom/atom-react"
 import { Option } from "effect"
 import { HazelApiClient } from "~/lib/services/common/atom-client"
 import { cn } from "~/lib/utils"
-import { Embed, useEmbedTheme } from "../embeds"
+import { Embed, embedSectionStyles, useEmbedTheme } from "../embeds"
 import { extractLinearIssueKey } from "../link-preview"
 
 interface LinearIssueEmbedProps {
@@ -176,22 +176,8 @@ export function LinearIssueEmbed({ url }: LinearIssueEmbedProps) {
 		return <Embed.Error iconUrl={theme.iconUrl} accentColor={theme.color} />
 	}
 
-	// Build fields array for the footer
+	// Build fields array for priority and labels
 	const fields = []
-
-	if (issue.assignee) {
-		fields.push({
-			name: "Assignee",
-			value: (
-				<AssigneeAvatar
-					name={issue.assignee.name}
-					avatarUrl={issue.assignee.avatarUrl}
-					accentColor={theme.color}
-				/>
-			),
-			inline: true,
-		})
-	}
 
 	if (issue.priority > 0) {
 		fields.push({
@@ -227,6 +213,15 @@ export function LinearIssueEmbed({ url }: LinearIssueEmbedProps) {
 			/>
 			<Embed.Body title={issue.title} description={issue.description} />
 			{fields.length > 0 && <Embed.Fields fields={fields} />}
+			{issue.assignee && (
+				<div className={cn(embedSectionStyles({ position: "bottom" }), "bg-muted/20")}>
+					<AssigneeAvatar
+						name={issue.assignee.name}
+						avatarUrl={issue.assignee.avatarUrl}
+						accentColor={theme.color}
+					/>
+				</div>
+			)}
 		</Embed>
 	)
 }

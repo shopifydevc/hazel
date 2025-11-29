@@ -1,6 +1,7 @@
 "use client"
 
 import { cn } from "~/lib/utils"
+import { embedContainerStyles } from "./embed"
 
 export interface EmbedErrorProps {
 	/** Icon URL for the provider (shows in error state) */
@@ -24,11 +25,7 @@ export function EmbedError({
 }: EmbedErrorProps) {
 	return (
 		<div
-			className={cn(
-				"mt-2 flex max-w-md items-center gap-3 overflow-hidden rounded-lg border-l-4",
-				"border border-border/60 bg-secondary/30 p-3",
-				className,
-			)}
+			className={cn(embedContainerStyles({ variant: "error" }), className)}
 			style={{
 				borderLeftColor: accentColor || "var(--color-border)",
 			}}

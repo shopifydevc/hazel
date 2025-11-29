@@ -1,6 +1,7 @@
 "use client"
 
 import { cn } from "~/lib/utils"
+import { embedSectionStyles } from "./embed"
 
 export interface EmbedImageProps {
 	/** Image source URL */
@@ -16,7 +17,7 @@ export interface EmbedImageProps {
  */
 export function EmbedImage({ src, alt = "", className }: EmbedImageProps) {
 	return (
-		<div className={cn("border-border/40 border-t", className)}>
+		<div className={cn(embedSectionStyles({ position: "bottom", padding: "none" }), className)}>
 			<img src={src} alt={alt} className="aspect-video w-full object-cover" />
 		</div>
 	)

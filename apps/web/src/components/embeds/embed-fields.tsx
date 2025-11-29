@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react"
 import { cn } from "~/lib/utils"
+import { embedSectionStyles } from "./embed"
 
 export interface EmbedField {
 	/** Field label/name */
@@ -29,8 +30,8 @@ export function EmbedFields({ fields, className }: EmbedFieldsProps) {
 	return (
 		<div
 			className={cn(
-				"flex flex-wrap items-center gap-x-3 gap-y-1.5",
-				"border-border/40 border-t bg-muted/10 px-3 py-2",
+				embedSectionStyles({ position: "bottom" }),
+				"flex flex-wrap items-center gap-x-3 gap-y-1.5 bg-muted/10",
 				className,
 			)}
 		>

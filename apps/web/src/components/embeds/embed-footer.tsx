@@ -1,6 +1,7 @@
 "use client"
 
 import { cn } from "~/lib/utils"
+import { embedSectionStyles } from "./embed"
 
 export interface EmbedFooterProps {
 	/** URL for the footer icon */
@@ -31,8 +32,8 @@ export function EmbedFooter({ iconUrl, text, timestamp, className }: EmbedFooter
 	return (
 		<div
 			className={cn(
-				"flex items-center gap-2 border-border/40 border-t px-3 py-1.5",
-				"text-[11px] text-muted-fg",
+				embedSectionStyles({ position: "bottom", padding: "compact" }),
+				"flex items-center gap-2 text-[11px] text-muted-fg",
 				className,
 			)}
 		>
