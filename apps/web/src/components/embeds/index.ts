@@ -9,10 +9,11 @@ import { EmbedImage } from "./embed-image"
 import { EmbedSkeleton } from "./embed-skeleton"
 import { EmbedThumbnail } from "./embed-thumbnail"
 
-// Re-export types
-export type { EmbedContainerVariants, EmbedProps, EmbedSectionVariants } from "./embed"
 // Re-export styles
 export { embedContainerStyles, embedSectionStyles } from "./embed"
+
+// Re-export types
+export type { EmbedContainerVariants, EmbedProps, EmbedSectionVariants } from "./embed"
 export type { EmbedAuthorProps } from "./embed-author"
 export type { EmbedBodyProps } from "./embed-body"
 export type { EmbedConnectPromptProps } from "./embed-connect-prompt"

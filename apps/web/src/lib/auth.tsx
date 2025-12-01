@@ -1,6 +1,7 @@
 import { Atom, Result, useAtomSet, useAtomValue } from "@effect-atom/atom-react"
 import type { OrganizationId } from "@hazel/schema"
-import { Effect } from "effect"
+import { Effect, Exit } from "effect"
+import { HazelApiClient } from "~/lib/services/common/atom-client"
 import { router } from "~/main"
 import { HazelRpcClient } from "./services/common/rpc-atom-client"
 
@@ -63,26 +64,9 @@ const isLoadingAtom = Atom.make((get) => {
 })
 
 /**
- * Login function atom - navigates directly to backend login endpoint
- * The backend returns a 302 redirect to WorkOS, which the browser follows naturally
+ * Login mutation atom
  */
-const loginAtom = Atom.fn(
-	Effect.fnUntraced(function* (options?: LoginOptions) {
-		const loginUrl = new URL("/auth/login", import.meta.env.VITE_BACKEND_URL)
-		if (options?.returnTo) {
-			loginUrl.searchParams.set("returnTo", options.returnTo)
-		} else {
-			loginUrl.searchParams.set("returnTo", location.href)
-		}
-		if (options?.organizationId) {
-			loginUrl.searchParams.set("organizationId", options.organizationId)
-		}
-		if (options?.invitationToken) {
-			loginUrl.searchParams.set("invitationToken", options.invitationToken)
-		}
-		window.location.href = loginUrl.toString()
-	}),
-)
+const loginAtom = HazelApiClient.mutation("auth", "login")
 
 /**
  * Logout function atom
@@ -99,11 +83,25 @@ const logoutAtom = Atom.fn(
 export function useAuth() {
 	const userResult = useAtomValue(userAtom)
 	const isLoading = useAtomValue(isLoadingAtom)
-	const loginFn = useAtomSet(loginAtom)
+	const loginMutation = useAtomSet(loginAtom, { mode: "promiseExit" })
 	const logoutFn = useAtomSet(logoutAtom)
 
-	const login = (options?: LoginOptions) => {
-		loginFn(options)
+	const login = async (options?: LoginOptions) => {
+		const exit = await loginMutation({
+			urlParams: {
+				...options,
+				returnTo: options?.returnTo || location.href,
+			},
+		})
+
+		Exit.match(exit, {
+			onSuccess: (data) => {
+				window.location.href = data.authorizationUrl
+			},
+			onFailure: (cause) => {
+				console.error("Login failed:", cause)
+			},
+		})
 	}
 
 	const logout = (options?: LogoutOptions) => {
