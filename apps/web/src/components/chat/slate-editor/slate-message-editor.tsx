@@ -1,6 +1,8 @@
 "use client"
 
-import { pipe } from "effect"
+import { useAtomSet } from "@effect-atom/atom-react"
+import type { ChannelId } from "@hazel/schema"
+import { Exit, pipe } from "effect"
 import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from "react"
 import type { Descendant } from "slate"
 import { createEditor, Editor, Range, Element as SlateElement, Transforms } from "slate"
@@ -13,26 +15,31 @@ import {
 	Slate,
 	withReact,
 } from "slate-react"
+import { toast } from "sonner"
 import { useGlobalKeyboardFocus } from "~/hooks/use-global-keyboard-focus"
+import { HazelApiClient } from "~/lib/services/common/atom-client"
 import { cx } from "~/utils/cx"
 import {
 	type AutocompleteEditor,
 	type AutocompleteState,
-	type CommandData,
+	type BotCommandData,
+	type CommandInputState,
 	CommandTrigger,
 	DEFAULT_TRIGGERS,
 	EditorAutocomplete,
 	type EmojiData,
 	EmojiTrigger,
-	getCommandById,
+	initialCommandInputState,
 	insertAutocompleteResult,
 	type MentionData,
 	MentionTrigger,
-	useCommandOptions,
+	useBotCommandOptions,
+	useBotCommands,
 	useEmojiOptions,
 	useMentionOptions,
 	withAutocomplete,
 } from "./autocomplete"
+import { CommandInputPanel } from "./autocomplete/command-input-panel"
 import { getOptionByIndex, useSlateAutocomplete } from "./autocomplete/use-slate-combobox"
 import { CodeBlockElement } from "./code-block-element"
 import { MentionElement } from "./mention-element"
@@ -60,6 +67,7 @@ export interface SlateMessageEditorRef {
 interface SlateMessageEditorProps {
 	placeholder?: string
 	className?: string
+	channelId?: ChannelId
 	onSubmit?: (content: string) => void | Promise<void>
 	onUpdate?: (content: string) => void
 	isUploading?: boolean
@@ -265,7 +273,10 @@ const shouldHidePlaceholder = (value: CustomDescendant[]): boolean => {
 }
 
 export const SlateMessageEditor = forwardRef<SlateMessageEditorRef, SlateMessageEditorProps>(
-	({ placeholder = "Type a message...", className, onSubmit, onUpdate, isUploading = false }, ref) => {
+	(
+		{ placeholder = "Type a message...", className, channelId, onSubmit, onUpdate, isUploading = false },
+		ref,
+	) => {
 		const containerRef = useRef<HTMLDivElement>(null)
 
 		// Autocomplete state from Slate plugin
@@ -277,6 +288,10 @@ export const SlateMessageEditor = forwardRef<SlateMessageEditorRef, SlateMessage
 			startPoint: null,
 			targetRange: null,
 		})
+
+		// Command input state (Discord-style argument entry)
+		const [commandInputState, setCommandInputState] =
+			useState<CommandInputState>(initialCommandInputState)
 
 		// Create Slate editor with plugins
 		const editor = useMemo(
@@ -294,9 +309,17 @@ export const SlateMessageEditor = forwardRef<SlateMessageEditorRef, SlateMessage
 
 		const [value, setValue] = useState<CustomDescendant[]>(createEmptyValue())
 
+		// Get bot commands for this channel
+		const botCommands = useBotCommands(channelId ?? "")
+
+		// Mutation for executing integration commands
+		const executeCommand = useAtomSet(HazelApiClient.mutation("integration-commands", "executeCommand"), {
+			mode: "promiseExit",
+		})
+
 		// Get options for each trigger type
 		const mentionOptions = useMentionOptions(autocompleteState)
-		const commandOptions = useCommandOptions(autocompleteState)
+		const commandOptions = useBotCommandOptions(autocompleteState, botCommands)
 		const emojiOptions = useEmojiOptions(autocompleteState)
 
 		// Get current options based on active trigger
@@ -334,6 +357,106 @@ export const SlateMessageEditor = forwardRef<SlateMessageEditorRef, SlateMessage
 			editor.autocompleteState = newState
 		}, [editor])
 
+		// Command input handlers (Discord-style argument entry)
+		const handleCommandValueChange = useCallback((argName: string, value: string) => {
+			setCommandInputState((prev) => ({
+				...prev,
+				values: { ...prev.values, [argName]: value },
+			}))
+		}, [])
+
+		const handleCommandFocusField = useCallback((index: number) => {
+			setCommandInputState((prev) => ({
+				...prev,
+				focusedFieldIndex: index,
+			}))
+		}, [])
+
+		const handleCommandExecute = useCallback(async () => {
+			if (!commandInputState.command) return
+			if (!channelId) {
+				toast.error("Cannot execute command without a channel")
+				return
+			}
+
+			// Validate required fields
+			const missingRequired = commandInputState.command.arguments
+				.filter((arg) => arg.required && !commandInputState.values[arg.name])
+				.map((arg) => arg.name)
+
+			if (missingRequired.length > 0) {
+				toast.error(`Missing required: ${missingRequired.join(", ")}`)
+				return
+			}
+
+			// Get provider from the command data
+			const provider = commandInputState.command.provider
+
+			// Build arguments array
+			const args = Object.entries(commandInputState.values)
+				.filter(([_, value]) => value.trim() !== "")
+				.map(([name, value]) => ({ name, value }))
+
+			const toastId = toast.loading(`Creating ${commandInputState.command.name}...`)
+
+			const exit = await executeCommand({
+				path: { provider, commandId: commandInputState.command.id },
+				payload: { channelId, arguments: args },
+			})
+
+			Exit.match(exit, {
+				onSuccess: (result) => {
+					toast.dismiss(toastId)
+
+					// Handle Linear issue result
+					if ("identifier" in result && "url" in result) {
+						toast.success(`Created ${result.identifier}`, {
+							action: {
+								label: "View",
+								onClick: () => window.open(result.url, "_blank"),
+							},
+						})
+					} else {
+						toast.success(`Executed /${commandInputState.command?.name}`)
+					}
+
+					// Exit input mode and focus editor
+					setCommandInputState(initialCommandInputState)
+					ReactEditor.focus(editor)
+				},
+				onFailure: (cause) => {
+					toast.dismiss(toastId)
+
+					// Extract error message from cause
+					const error = cause._tag === "Fail" ? cause.error : null
+					let message = "Command failed"
+
+					if (error && typeof error === "object" && "_tag" in error) {
+						switch (error._tag) {
+							case "IntegrationNotConnectedForCommandError":
+								message = `${provider.charAt(0).toUpperCase() + provider.slice(1)} is not connected`
+								break
+							case "CommandExecutionError":
+								message = (error as { message: string }).message
+								break
+							case "MissingRequiredArgumentError":
+								message = `Missing required: ${(error as { argumentName: string }).argumentName}`
+								break
+							default:
+								message = "Command execution failed"
+						}
+					}
+
+					toast.error(message)
+				},
+			})
+		}, [commandInputState, channelId, executeCommand, editor])
+
+		const handleCommandCancel = useCallback(() => {
+			setCommandInputState(initialCommandInputState)
+			ReactEditor.focus(editor)
+		}, [editor])
+
 		// Handle selection by index - routes to the right handler based on trigger type
 		const handleSelectByIndex = useCallback(
 			(index: number) => {
@@ -359,24 +482,22 @@ export const SlateMessageEditor = forwardRef<SlateMessageEditorRef, SlateMessage
 						const option = getOptionByIndex(commandOptions, index)
 						if (!option) return
 
-						const command = getCommandById(option.data.id)
-						if (!command) return
-
-						// Delete the /command text
+						// Enter command input mode (Discord-style)
+						// Clear the editor and show the command input panel
 						const { startPoint, targetRange } = editor.autocompleteState
 						if (startPoint && targetRange) {
 							Transforms.select(editor, { anchor: startPoint, focus: targetRange.focus })
 							Transforms.delete(editor)
 						}
 
-						// Apply the block type
-						Transforms.setNodes(editor, {
-							type: command.blockType,
-							...command.blockProps,
-						} as Partial<CustomElement>)
-
+						// Close autocomplete and enter command input mode
 						closeAutocomplete()
-						ReactEditor.focus(editor)
+						setCommandInputState({
+							isActive: true,
+							command: option.data,
+							values: {},
+							focusedFieldIndex: 0,
+						})
 						break
 					}
 					case "emoji": {
@@ -798,74 +919,87 @@ export const SlateMessageEditor = forwardRef<SlateMessageEditorRef, SlateMessage
 
 		return (
 			<div ref={containerRef} className={cx("relative w-full", className)}>
-				<Slate editor={editor} initialValue={value} onChange={handleChange}>
-					{/* Autocomplete popover - positioned above the editor */}
-					<EditorAutocomplete containerRef={containerRef} state={autocompleteState}>
-						{autocompleteState.trigger?.id === "mention" && (
-							<MentionTrigger
-								items={currentOptions as any}
-								activeIndex={autocomplete.activeIndex}
-								onSelect={handleSelectByIndex}
-								onHover={autocomplete.setActiveIndex}
-							/>
-						)}
-						{autocompleteState.trigger?.id === "command" && (
-							<CommandTrigger
-								items={currentOptions as any}
-								activeIndex={autocomplete.activeIndex}
-								onSelect={handleSelectByIndex}
-								onHover={autocomplete.setActiveIndex}
-							/>
-						)}
-						{autocompleteState.trigger?.id === "emoji" && (
-							<EmojiTrigger
-								items={currentOptions as any}
-								activeIndex={autocomplete.activeIndex}
-								onSelect={handleSelectByIndex}
-								onHover={autocomplete.setActiveIndex}
-								searchLength={autocompleteState.search.length}
-							/>
-						)}
-					</EditorAutocomplete>
-
-					<Editable
-						role="combobox"
-						aria-autocomplete="list"
-						aria-expanded={autocompleteState.isOpen && currentOptions.length > 0}
-						aria-haspopup="listbox"
-						onBlur={() => {
-							// Close autocomplete when editor loses focus (e.g., clicking outside)
-							if (autocompleteState.isOpen) {
-								closeAutocomplete()
-							}
-						}}
-						className={cx(
-							"w-full whitespace-pre-wrap break-all px-3 py-2 text-base md:text-sm",
-							"rounded-xl bg-transparent",
-							"focus:border-primary focus:outline-hidden",
-							"caret-primary",
-							"placeholder:text-muted-fg",
-							"min-h-10",
-							"leading-normal",
-							"**:data-slate-placeholder:top-2!",
-							"**:data-slate-placeholder:translate-y-0!",
-						)}
-						placeholder={placeholder}
-						renderElement={Element}
-						renderLeaf={Leaf}
-						decorate={decorate}
-						onKeyDown={handleKeyDown}
-						renderPlaceholder={({ attributes, children }) => {
-							// Don't render placeholder if there are blockquotes or code blocks
-							if (shouldHidePlaceholder(value)) {
-								// biome-ignore lint: Slate's type definition requires React.Element
-								return <></>
-							}
-
-							return <span {...attributes}>{children}</span>
-						}}
+				{/* Command input panel (Discord-style) - replaces editor when active */}
+				{commandInputState.isActive && commandInputState.command ? (
+					<CommandInputPanel
+						command={commandInputState.command}
+						values={commandInputState.values}
+						focusedFieldIndex={commandInputState.focusedFieldIndex}
+						onValueChange={handleCommandValueChange}
+						onFocusField={handleCommandFocusField}
+						onExecute={handleCommandExecute}
+						onCancel={handleCommandCancel}
 					/>
-				</Slate>
+				) : (
+					<Slate editor={editor} initialValue={value} onChange={handleChange}>
+						{/* Autocomplete popover - positioned above the editor */}
+						<EditorAutocomplete containerRef={containerRef} state={autocompleteState}>
+							{autocompleteState.trigger?.id === "mention" && (
+								<MentionTrigger
+									items={mentionOptions}
+									activeIndex={autocomplete.activeIndex}
+									onSelect={handleSelectByIndex}
+									onHover={autocomplete.setActiveIndex}
+								/>
+							)}
+							{autocompleteState.trigger?.id === "command" && (
+								<CommandTrigger
+									items={commandOptions}
+									activeIndex={autocomplete.activeIndex}
+									onSelect={handleSelectByIndex}
+									onHover={autocomplete.setActiveIndex}
+								/>
+							)}
+							{autocompleteState.trigger?.id === "emoji" && (
+								<EmojiTrigger
+									items={emojiOptions}
+									activeIndex={autocomplete.activeIndex}
+									onSelect={handleSelectByIndex}
+									onHover={autocomplete.setActiveIndex}
+									searchLength={autocompleteState.search.length}
+								/>
+							)}
+						</EditorAutocomplete>
+
+						<Editable
+							role="combobox"
+							aria-autocomplete="list"
+							aria-expanded={autocompleteState.isOpen && currentOptions.length > 0}
+							aria-haspopup="listbox"
+							onBlur={() => {
+								// Close autocomplete when editor loses focus (e.g., clicking outside)
+								if (autocompleteState.isOpen) {
+									closeAutocomplete()
+								}
+							}}
+							className={cx(
+								"w-full whitespace-pre-wrap break-all px-3 py-2 text-base md:text-sm",
+								"rounded-xl bg-transparent",
+								"focus:border-primary focus:outline-hidden",
+								"caret-primary",
+								"placeholder:text-muted-fg",
+								"min-h-10",
+								"leading-normal",
+								"**:data-slate-placeholder:top-2!",
+								"**:data-slate-placeholder:translate-y-0!",
+							)}
+							placeholder={placeholder}
+							renderElement={Element}
+							renderLeaf={Leaf}
+							decorate={decorate}
+							onKeyDown={handleKeyDown}
+							renderPlaceholder={({ attributes, children }) => {
+								// Don't render placeholder if there are blockquotes or code blocks
+								if (shouldHidePlaceholder(value)) {
+									// biome-ignore lint: Slate's type definition requires React.Element
+									return <></>
+								}
+
+								return <span {...attributes}>{children}</span>
+							}}
+						/>
+					</Slate>
+				)}
 			</div>
 		)
 	},

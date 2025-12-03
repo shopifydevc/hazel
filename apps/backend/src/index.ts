@@ -47,6 +47,8 @@ import { AllRpcs, RpcServerLive } from "./rpc/server"
 import { AuthorizationLive } from "./services/auth"
 import { DatabaseLive } from "./services/database"
 import { IntegrationTokenService } from "./services/integration-token-service"
+import { CommandRegistry } from "./services/integrations/command-registry"
+import { IntegrationBotService } from "./services/integrations/integration-bot-service"
 import { MockDataGenerator } from "./services/mock-data-generator"
 import { OAuthProviderRegistry } from "./services/oauth"
 import { SessionManager } from "./services/session-manager"
@@ -138,6 +140,8 @@ const MainLive = Layer.mergeAll(
 	MultipartUpload.layerWithoutS3Service,
 	IntegrationTokenService.Default,
 	OAuthProviderRegistry.Default,
+	CommandRegistry.Default,
+	IntegrationBotService.Default,
 ).pipe(
 	Layer.provide(
 		S3.layer({

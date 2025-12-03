@@ -91,12 +91,40 @@ export interface MentionData {
 	status?: "online" | "offline" | "away" | "busy" | "dnd"
 }
 
-// Command trigger data
-export interface CommandData {
-	id: string
+// Bot command argument definition
+export interface BotCommandArgument {
+	/** Argument name for display */
 	name: string
+	/** Description shown in hint */
+	description?: string
+	/** Whether this argument is required */
+	required: boolean
+	/** Placeholder text */
+	placeholder?: string
+	/** Argument type for validation */
+	type: "string" | "number" | "user" | "channel"
+}
+
+// Bot command trigger data
+export interface BotCommandData {
+	/** Command ID (unique per bot) */
+	id: string
+	/** Command name without leading slash (e.g., "summarize") */
+	name: string
+	/** Human-readable description */
 	description: string
-	execute: () => void
+	/** Integration provider that owns this command */
+	provider: "linear" | "github" | "figma" | "notion"
+	/** Bot that owns this command */
+	bot: {
+		id: string
+		name: string
+		avatarUrl?: string
+	}
+	/** Command arguments */
+	arguments: BotCommandArgument[]
+	/** Usage example shown in dropdown */
+	usageExample?: string
 }
 
 // Emoji trigger data
@@ -105,4 +133,23 @@ export interface EmojiData {
 	emoji: string
 	name: string
 	keywords?: string[]
+}
+
+// Command input state (Discord-style argument entry)
+export interface CommandInputState {
+	/** Whether command input mode is active */
+	isActive: boolean
+	/** The selected command */
+	command: BotCommandData | null
+	/** Current argument values */
+	values: Record<string, string>
+	/** Which field is focused (index) */
+	focusedFieldIndex: number
+}
+
+export const initialCommandInputState: CommandInputState = {
+	isActive: false,
+	command: null,
+	values: {},
+	focusedFieldIndex: 0,
 }
