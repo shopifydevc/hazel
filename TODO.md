@@ -1,5 +1,5 @@
 # Today
-- fix channel creation not actually appearing in the channel list
+- fix channel creation not actually appearing in the channel list (due to reverse proxy querieng per channelId)
 - test and actually build stuff for githib integration
 
 

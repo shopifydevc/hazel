@@ -38,17 +38,7 @@ export function EmbedBody({
 			: description
 
 	const titleElement = (
-		<h4
-			className={cn(
-				"font-semibold text-fg text-sm leading-snug transition-colors",
-				embedUrl && "group-hover:text-[var(--embed-accent)]",
-			)}
-			style={
-				{
-					"--embed-accent": accentColor,
-				} as React.CSSProperties
-			}
-		>
+		<h4 className="font-semibold text-fg text-sm leading-snug">
 			{title}
 		</h4>
 	)

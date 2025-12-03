@@ -82,7 +82,7 @@ export interface EmbedProps {
 export function Embed({ accentColor, url, className, children }: EmbedProps) {
 	const content = (
 		<div
-			className={cn(embedContainerStyles({ variant: "default" }), url && "hover:shadow-md", className)}
+			className={cn(embedContainerStyles({ variant: "default" }), url && "hover:border-border", className)}
 			style={{
 				borderLeftColor: accentColor || "var(--color-border)",
 			}}
