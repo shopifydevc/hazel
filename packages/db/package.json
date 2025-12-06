@@ -19,14 +19,14 @@
 	"devDependencies": {
 		"@effect/language-service": "catalog:effect",
 		"@types/node": "^24.10.1",
-		"drizzle-kit": "^0.31.7",
+		"drizzle-kit": "^0.31.8",
 		"typescript": "^5.9.3"
 	},
 	"dependencies": {
 		"@effect/experimental": "catalog:effect",
 		"@hazel/domain": "workspace:*",
 		"@hazel/schema": "workspace:*",
-		"drizzle-orm": "^0.44.7",
+		"drizzle-orm": "^0.45.0",
 		"effect": "catalog:effect",
 		"postgres": "^3.4.7"
 	}

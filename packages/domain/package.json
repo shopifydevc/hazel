@@ -22,7 +22,7 @@
 		"@effect/rpc": "catalog:effect",
 		"@effect/workflow": "catalog:effect",
 		"@hazel/schema": "workspace:*",
-		"drizzle-orm": "^0.44.7",
+		"drizzle-orm": "^0.45.0",
 		"effect": "catalog:effect"
 	},
 	"devDependencies": {

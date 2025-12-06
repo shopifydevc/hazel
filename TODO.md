@@ -9,7 +9,7 @@
 # FE stuff
 - allow using Icons/Emojis for channel icon
 - replace webhook icon with actual webhook icons
-- openstatus main integration should have channe selection to setup webhooks (?)
+- polish openstatus integration page
 
 # Important but big
 
