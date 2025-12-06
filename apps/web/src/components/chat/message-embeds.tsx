@@ -28,7 +28,11 @@ function MessageEmbedCard({ embed }: { embed: MessageEmbedType }) {
 		<Embed accentColor={accentColor} url={embed.url}>
 			{/* Author row */}
 			{embed.author && (
-				<Embed.Author iconUrl={embed.author.iconUrl} name={embed.author.name} url={embed.author.url} />
+				<Embed.Author
+					iconUrl={embed.author.iconUrl}
+					name={embed.author.name}
+					url={embed.author.url}
+				/>
 			)}
 
 			{/* Body with thumbnail */}

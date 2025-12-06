@@ -244,18 +244,12 @@ function IntegrationsPage() {
 							stroke="currentColor"
 							strokeWidth={1.5}
 						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								d="M12 4.5v15m7.5-7.5h-15"
-							/>
+							<path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
 						</svg>
 					</div>
 					<div className="flex flex-col gap-0.5">
 						<span className="font-medium text-muted-fg">More integrations coming soon</span>
-						<span className="text-muted-fg/70 text-sm">
-							Slack, GitHub, Linear, and more
-						</span>
+						<span className="text-muted-fg/70 text-sm">Slack, GitHub, Linear, and more</span>
 					</div>
 				</div>
 			</div>

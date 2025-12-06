@@ -1,6 +1,6 @@
-import { EyeIcon, EyeSlashIcon } from "@heroicons/react/20/solid"
 import { useAtomSet } from "@effect-atom/atom-react"
 import type { ChannelWebhookId } from "@hazel/schema"
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/20/solid"
 import { Exit } from "effect"
 import { useState } from "react"
 import { toast } from "sonner"

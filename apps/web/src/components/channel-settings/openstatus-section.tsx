@@ -168,7 +168,9 @@ export function OpenStatusSection({ channelId, webhook, onWebhookChange, onDone 
 									<Button
 										intent="outline"
 										size="sq-sm"
-										onPress={() => handleCopy(`${webhookUrl}${displayToken}/openstatus`, "url")}
+										onPress={() =>
+											handleCopy(`${webhookUrl}${displayToken}/openstatus`, "url")
+										}
 									>
 										{copied === "url" ? (
 											<IconCheck className="size-4 text-emerald-500" />
@@ -202,11 +204,7 @@ export function OpenStatusSection({ channelId, webhook, onWebhookChange, onDone 
 		return (
 			<div className="flex flex-col gap-4">
 				<div className="flex items-center gap-3 rounded-lg bg-secondary/50 p-3">
-					<img
-						src={getProviderIconUrl("openstatus")}
-						alt="OpenStatus"
-						className="size-8 rounded"
-					/>
+					<img src={getProviderIconUrl("openstatus")} alt="OpenStatus" className="size-8 rounded" />
 					<div className="flex-1">
 						<p className="font-medium text-fg text-sm">Connect OpenStatus</p>
 						<p className="text-muted-fg text-xs">
@@ -259,11 +257,7 @@ export function OpenStatusSection({ channelId, webhook, onWebhookChange, onDone 
 				</div>
 
 				<div className="flex items-center gap-2">
-					<Button
-						intent="outline"
-						size="sm"
-						onPress={handleToggleEnabled}
-					>
+					<Button intent="outline" size="sm" onPress={handleToggleEnabled}>
 						{webhook.isEnabled ? "Disable" : "Enable"}
 					</Button>
 					<Button
@@ -298,11 +292,7 @@ export function OpenStatusSection({ channelId, webhook, onWebhookChange, onDone 
 				</div>
 				<p className="mt-1.5 text-muted-fg text-xs">
 					Need a new URL?{" "}
-					<button
-						type="button"
-						onClick={handleDelete}
-						className="text-primary underline"
-					>
+					<button type="button" onClick={handleDelete} className="text-primary underline">
 						Delete and recreate
 					</button>{" "}
 					the webhook to get a new token.

@@ -48,7 +48,11 @@ export function UserMenu() {
 
 					<div className="in-data-[collapsible=dock]:hidden min-w-0 text-sm">
 						<SidebarLabel>{displayName}</SidebarLabel>
-						{user?.email && <span className="-mt-0.5 block max-w-36 truncate text-muted-fg">{user.email}</span>}
+						{user?.email && (
+							<span className="-mt-0.5 block max-w-36 truncate text-muted-fg">
+								{user.email}
+							</span>
+						)}
 					</div>
 				</div>
 				<ChevronUpDownIcon data-slot="chevron" className="size-4" />
@@ -60,7 +64,9 @@ export function UserMenu() {
 				<MenuSection>
 					<MenuHeader separator>
 						<span className="block">{displayName}</span>
-						{user?.email && <span className="block truncate font-normal text-muted-fg">{user.email}</span>}
+						{user?.email && (
+							<span className="block truncate font-normal text-muted-fg">{user.email}</span>
+						)}
 					</MenuHeader>
 				</MenuSection>
 

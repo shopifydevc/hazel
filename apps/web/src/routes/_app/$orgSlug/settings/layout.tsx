@@ -76,7 +76,7 @@ function RouteComponent() {
 					</div>
 
 					{/* Desktop tabs */}
-					<div className="-mx-4 -my-1 lg:-mx-8 flex w-full max-w-full overflow-x-auto scrollbar-hide px-4 py-1 lg:px-8">
+					<div className="-mx-4 -my-1 lg:-mx-8 scrollbar-hide flex w-full max-w-full overflow-x-auto px-4 py-1 lg:px-8">
 						<Tabs
 							className="max-md:hidden"
 							selectedKey={selectedTab}
