@@ -4,7 +4,7 @@ import { memo, useCallback, useImperativeHandle, useMemo, useRef, useState } fro
 import { useOverlayPosition } from "react-aria"
 import { createPortal } from "react-dom"
 import type { MessageWithPinned, ProcessedMessage } from "~/atoms/chat-query-atoms"
-import { useChat } from "~/hooks/use-chat"
+
 import { Route } from "~/routes/_app/$orgSlug/chat/$id"
 import { MessageItem } from "./message-item"
 import { MessageToolbar } from "./message-toolbar"
@@ -118,7 +118,7 @@ export function MessageList({ ref }: { ref?: React.Ref<MessageListRef> }) {
 		targetRef,
 		overlayRef,
 		placement: "top end",
-		offset: -12,
+		offset: -6,
 		shouldFlip: true,
 		isOpen: hoveredMessageId !== null,
 	})
@@ -224,6 +224,9 @@ export function MessageList({ ref }: { ref?: React.Ref<MessageListRef> }) {
 				opacity: isLoadingMessages && messages.length > 0 ? 0.7 : 1,
 			}}
 		>
+			{hoveredMessageId && (
+				<style>{`#message-${hoveredMessageId} { background-color: var(--color-secondary) !important; }`}</style>
+			)}
 			<MessageVirtualList
 				ref={legendListRef}
 				messageRows={messageRows}
@@ -242,13 +245,23 @@ export function MessageList({ ref }: { ref?: React.Ref<MessageListRef> }) {
 						style={{ ...overlayProps.style, zIndex: 50 }}
 						role="group"
 						onMouseEnter={() => {
+							if (hideTimeoutRef.current) {
+								clearTimeout(hideTimeoutRef.current)
+								hideTimeoutRef.current = null
+							}
 							isToolbarHoveredRef.current = true
 						}}
 						onMouseLeave={() => {
 							isToolbarHoveredRef.current = false
 						}}
 					>
-						<MessageToolbar message={hoveredMessage} onMenuOpenChange={setIsToolbarMenuOpen} />
+						{/* Invisible padding for larger hitbox */}
+						<div className="-m-3 p-3">
+							<MessageToolbar
+								message={hoveredMessage}
+								onMenuOpenChange={setIsToolbarMenuOpen}
+							/>
+						</div>
 					</div>,
 					document.body,
 				)}

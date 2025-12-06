@@ -973,7 +973,7 @@ export const SlateMessageEditor = forwardRef<SlateMessageEditorRef, SlateMessage
 								}
 							}}
 							className={cx(
-								"w-full whitespace-pre-wrap break-all px-3 py-2 text-base md:text-sm",
+								"w-full whitespace-pre-wrap break-all px-3 py-2 text-base md:text-[15px]",
 								"rounded-xl bg-transparent",
 								"focus:border-primary focus:outline-hidden",
 								"caret-primary",
