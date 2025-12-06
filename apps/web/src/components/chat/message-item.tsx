@@ -89,7 +89,7 @@ export function MessageItem({
 			ref={messageRef}
 			id={`message-${message.id}`}
 			className={cn(
-				"group relative flex flex-col rounded-lg px-0.5 py-1 transition-colors duration-200 hover:bg-secondary",
+				"group relative flex flex-col rounded-lg px-0.5 py-1 hover:bg-secondary",
 				isGroupStart ? "mt-2" : "",
 				isGroupEnd ? "mb-2" : "",
 				isFirstNewMessage
