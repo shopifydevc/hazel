@@ -1,5 +1,5 @@
 import type { UserId } from "@hazel/schema"
-import IconHashtag from "~/components/icons/icon-hashtag"
+import { ChannelIcon } from "~/components/channel-icon"
 import { Avatar } from "~/components/ui/avatar"
 import { useChannel } from "~/db/hooks"
 import { useChat } from "~/hooks/use-chat"
@@ -73,7 +73,7 @@ export function ChatHeader() {
 					</>
 				) : (
 					<>
-						<IconHashtag className="size-5 text-muted-fg" />
+						<ChannelIcon icon={channel.icon} className="size-5 text-muted-fg" />
 						<div>
 							<h2 className="font-semibold text-fg text-sm">{channel.name}</h2>
 						</div>

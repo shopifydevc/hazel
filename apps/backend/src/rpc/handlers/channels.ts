@@ -153,6 +153,7 @@ export const ChannelRpcLive = ChannelRpcs.toLayer(
 							// Create channel
 							const createdChannel = yield* ChannelRepo.insert({
 								name: channelName || "Group Channel",
+								icon: null,
 								type: payload.type,
 								organizationId: OrganizationId.make(payload.organizationId),
 								parentChannelId: null,

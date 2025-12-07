@@ -7,7 +7,7 @@ import { toast } from "sonner"
 import { deleteChannelMemberMutation, updateChannelMemberMutation } from "~/atoms/channel-member-atoms"
 import IconDots from "~/components/icons/icon-dots"
 import IconGear from "~/components/icons/icon-gear"
-import IconHashtag from "~/components/icons/icon-hashtag"
+import { ChannelIcon } from "~/components/channel-icon"
 import IconLeave from "~/components/icons/icon-leave"
 import IconStar from "~/components/icons/icon-star"
 import IconTrash from "~/components/icons/icon-trash"
@@ -122,7 +122,7 @@ export function ChannelItem({ channel, member }: ChannelItemProps) {
 						className: "bg-sidebar-accent font-medium text-sidebar-accent-fg",
 					}}
 				>
-					<IconHashtag />
+					<ChannelIcon icon={channel.icon} />
 					<SidebarLabel>{channel.name}</SidebarLabel>
 				</SidebarLink>
 				<Menu>

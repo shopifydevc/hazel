@@ -31,7 +31,7 @@ import IconBell from "./icons/icon-bell"
 import IconCircleDottedUser from "./icons/icon-circle-dotted-user"
 import IconDashboard from "./icons/icon-dashboard"
 import IconGear from "./icons/icon-gear"
-import IconHashtag from "./icons/icon-hashtag"
+import { ChannelIcon } from "./channel-icon"
 import IconIntegration from "./icons/icon-integratio-"
 import IconMsgs from "./icons/icon-msgs"
 import IconUsersPlus from "./icons/icon-users-plus"
@@ -277,7 +277,7 @@ function ChannelsView({ onClose }: { onClose: () => void }) {
 						onClose()
 					}}
 				>
-					<IconHashtag />
+					<ChannelIcon icon={channel.icon} />
 					<CommandMenuLabel>{channel.name}</CommandMenuLabel>
 				</CommandMenuItem>
 			))}

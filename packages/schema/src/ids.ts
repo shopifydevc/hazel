@@ -125,3 +125,9 @@ export const ChannelWebhookId = Schema.UUID.pipe(Schema.brand("@HazelChat/Channe
 	title: "Channel Webhook ID",
 })
 export type ChannelWebhookId = Schema.Schema.Type<typeof ChannelWebhookId>
+
+export const ChannelIcon = Schema.String.pipe(Schema.brand("@HazelChat/ChannelIcon")).annotations({
+	description: "An emoji icon for a channel",
+	title: "Channel Icon",
+})
+export type ChannelIcon = Schema.Schema.Type<typeof ChannelIcon>

@@ -1,7 +1,9 @@
 import { useAtomSet } from "@effect-atom/atom-react"
 import { useNavigate } from "@tanstack/react-router"
 import { type } from "arktype"
-import IconHashtag from "~/components/icons/icon-hashtag"
+import { useState } from "react"
+import { ChannelIcon } from "~/components/channel-icon"
+import { EmojiPickerDialog } from "~/components/emoji-picker/emoji-picker-dialog"
 import { Button } from "~/components/ui/button"
 import { Description, FieldError, Label } from "~/components/ui/field"
 import { Input, InputGroup } from "~/components/ui/input"
@@ -30,6 +32,7 @@ export function CreateChannelModal({ isOpen, onOpenChange }: CreateChannelModalP
 	const { user } = useAuth()
 	const { organizationId, slug } = useOrganization()
 	const navigate = useNavigate()
+	const [icon, setIcon] = useState<string | null>(null)
 
 	const createChannel = useAtomSet(createChannelAction, {
 		mode: "promiseExit",
@@ -49,6 +52,7 @@ export function CreateChannelModal({ isOpen, onOpenChange }: CreateChannelModalP
 			const exit = await toastExit(
 				createChannel({
 					name: value.name,
+					icon,
 					type: value.type,
 					organizationId,
 					parentChannelId: null,
@@ -69,6 +73,7 @@ export function CreateChannelModal({ isOpen, onOpenChange }: CreateChannelModalP
 						// Close modal and reset form
 						onOpenChange(false)
 						form.reset()
+						setIcon(null)
 
 						return "Channel created successfully"
 					},
@@ -100,8 +105,20 @@ export function CreateChannelModal({ isOpen, onOpenChange }: CreateChannelModalP
 								<TextField>
 									<Label>Channel Name</Label>
 									<InputGroup>
-										<IconHashtag data-slot="icon" className="text-muted-fg" />
-										<Input
+									<EmojiPickerDialog
+										onEmojiSelect={(emoji) => setIcon(emoji.emoji)}
+									>
+										<Button
+											intent="plain"
+											size="sq-sm"
+											data-slot="icon"
+											className="text-muted-fg hover:text-fg"
+											type="button"
+										>
+											<ChannelIcon icon={icon} />
+										</Button>
+									</EmojiPickerDialog>
+									<Input
 											placeholder="general"
 											value={field.state.value}
 											onChange={(e) => field.handleChange(e.target.value)}

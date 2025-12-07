@@ -1,4 +1,4 @@
-import { ChannelId, OrganizationId } from "@hazel/schema"
+import { ChannelIcon, ChannelId, OrganizationId } from "@hazel/schema"
 import { Schema } from "effect"
 import * as M from "./utils"
 import { baseFields } from "./utils"
@@ -9,6 +9,7 @@ export type ChannelType = Schema.Schema.Type<typeof ChannelType>
 export class Model extends M.Class<Model>("Channel")({
 	id: M.Generated(ChannelId),
 	name: Schema.String,
+	icon: Schema.NullOr(ChannelIcon),
 	type: ChannelType,
 	organizationId: OrganizationId,
 	parentChannelId: Schema.NullOr(ChannelId),

@@ -1,11 +1,15 @@
 import { useAtomSet } from "@effect-atom/atom-react"
-import type { ChannelId } from "@hazel/schema"
+import type { ChannelIcon as ChannelIconType, ChannelId } from "@hazel/schema"
 import { eq, useLiveQuery } from "@tanstack/react-db"
 import { createFileRoute } from "@tanstack/react-router"
 import { type } from "arktype"
 import { Exit } from "effect"
+import { useState } from "react"
 import { toast } from "sonner"
 import { updateChannelMutation } from "~/atoms/channel-atoms"
+import { ChannelIcon } from "~/components/channel-icon"
+import { EmojiPickerDialog } from "~/components/emoji-picker/emoji-picker-dialog"
+import IconClose from "~/components/icons/icon-close"
 import { Button } from "~/components/ui/button"
 import { FieldError, Label } from "~/components/ui/field"
 import { Input } from "~/components/ui/input"
@@ -28,10 +32,15 @@ type ChannelFormData = typeof channelSchema.infer
 function ChannelSettingsForm({
 	channelId,
 	initialName,
+	initialIcon,
 }: {
 	channelId: ChannelId
 	initialName: string
+	initialIcon: ChannelIconType | null
 }) {
+	const [icon, setIcon] = useState<ChannelIconType | null>(initialIcon)
+	const [iconDirty, setIconDirty] = useState(false)
+
 	const updateChannel = useAtomSet(updateChannelMutation, {
 		mode: "promiseExit",
 	})
@@ -48,12 +57,14 @@ function ChannelSettingsForm({
 				payload: {
 					id: channelId,
 					name: value.name,
+					icon,
 				},
 			})
 
 			Exit.match(exit, {
 				onSuccess: () => {
 					toast.success("Channel updated successfully")
+					setIconDirty(false)
 				},
 				onFailure: (cause) => {
 					console.error("Failed to update channel:", cause)
@@ -63,6 +74,11 @@ function ChannelSettingsForm({
 		},
 	})
 
+	const handleIconChange = (emoji: string | null) => {
+		setIcon(emoji as ChannelIconType | null)
+		setIconDirty(emoji !== initialIcon)
+	}
+
 	return (
 		<form
 			onSubmit={(e) => {
@@ -71,6 +87,36 @@ function ChannelSettingsForm({
 			}}
 			className="flex flex-col gap-6"
 		>
+			<div className="flex flex-col gap-2">
+				<Label>Channel Icon</Label>
+				<div className="flex items-center gap-2">
+					<EmojiPickerDialog onEmojiSelect={(emoji) => handleIconChange(emoji.emoji)}>
+						<Button
+							intent="outline"
+							size="sq-md"
+							type="button"
+							className="text-xl"
+						>
+							<ChannelIcon icon={icon} />
+						</Button>
+					</EmojiPickerDialog>
+					{icon && (
+						<Button
+							intent="plain"
+							size="sq-sm"
+							type="button"
+							onPress={() => handleIconChange(null)}
+							className="text-muted-fg hover:text-fg"
+						>
+							<IconClose className="size-4" />
+						</Button>
+					)}
+					<span className="text-muted-fg text-sm">
+						{icon ? "Click to change icon" : "Click to add an emoji icon"}
+					</span>
+				</div>
+			</div>
+
 			<form.AppField
 				name="name"
 				children={(field) => (
@@ -98,7 +144,7 @@ function ChannelSettingsForm({
 						<Button
 							intent="primary"
 							type="submit"
-							isDisabled={!canSubmit || isSubmitting || !isDirty}
+							isDisabled={!canSubmit || isSubmitting || (!isDirty && !iconDirty)}
 						>
 							{isSubmitting ? "Saving..." : "Save changes"}
 						</Button>
@@ -142,6 +188,7 @@ function OverviewPage() {
 					key={channel.id}
 					channelId={channel.id}
 					initialName={channel.name}
+					initialIcon={channel.icon}
 				/>
 			)}
 		</div>

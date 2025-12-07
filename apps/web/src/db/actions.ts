@@ -1,6 +1,7 @@
 import { optimisticAction } from "@hazel/effect-electric-db-collection"
 import {
 	type AttachmentId,
+	type ChannelIcon,
 	ChannelId,
 	ChannelMemberId,
 	MessageId,
@@ -80,6 +81,7 @@ export const createChannelAction = optimisticAction({
 	onMutate: (props: {
 		organizationId: OrganizationId
 		name: string
+		icon?: string | null
 		type: "public" | "private" | "thread"
 		parentChannelId: ChannelId | null
 		currentUserId: UserId
@@ -91,6 +93,7 @@ export const createChannelAction = optimisticAction({
 		channelCollection.insert({
 			id: channelId,
 			name: props.name,
+			icon: (props.icon || null) as ChannelIcon | null,
 			type: props.type,
 			organizationId: props.organizationId,
 			parentChannelId: props.parentChannelId,
@@ -123,6 +126,7 @@ export const createChannelAction = optimisticAction({
 			const result = yield* client("channel.create", {
 				id: ctx.mutateResult.channelId,
 				name: props.name,
+				icon: (props.icon || null) as ChannelIcon | null,
 				type: props.type,
 				organizationId: props.organizationId,
 				parentChannelId: props.parentChannelId,
@@ -157,6 +161,7 @@ export const createDmChannelAction = optimisticAction({
 		channelCollection.insert({
 			id: channelId,
 			name: channelName || "Group Channel",
+			icon: null,
 			type: props.type === "direct" ? "single" : "direct",
 			organizationId: props.organizationId,
 			parentChannelId: null,
@@ -333,6 +338,7 @@ export const createThreadAction = optimisticAction({
 		channelCollection.insert({
 			id: threadChannelId,
 			name: "Thread",
+			icon: null,
 			type: "thread",
 			organizationId: props.organizationId,
 			parentChannelId: props.parentChannelId,
@@ -372,6 +378,7 @@ export const createThreadAction = optimisticAction({
 			const channelResult = yield* client("channel.create", {
 				id: ctx.mutateResult.threadChannelId,
 				name: "Thread",
+				icon: null,
 				type: "thread",
 				organizationId: props.organizationId,
 				parentChannelId: props.parentChannelId,

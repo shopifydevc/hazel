@@ -73,6 +73,7 @@ export class OrganizationRepo extends Effect.Service<OrganizationRepo>()("Organi
 				const defaultChannel = yield* channelRepo
 					.insert({
 						name: "general",
+						icon: null,
 						type: "public",
 						organizationId,
 						parentChannelId: null,

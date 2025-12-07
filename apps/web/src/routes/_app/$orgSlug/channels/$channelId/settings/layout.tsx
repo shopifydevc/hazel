@@ -1,7 +1,7 @@
 import type { ChannelId } from "@hazel/schema"
 import { eq, useLiveQuery } from "@tanstack/react-db"
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router"
-import IconHashtag from "~/components/icons/icon-hashtag"
+import { ChannelIcon } from "~/components/channel-icon"
 import { Tab, TabList, Tabs } from "~/components/ui/tabs"
 import { channelCollection } from "~/db/collections"
 
@@ -64,8 +64,8 @@ function RouteComponent() {
 						</Link>
 
 						<div className="flex items-center gap-3">
-							<div className="flex size-10 items-center justify-center rounded-lg bg-secondary">
-								<IconHashtag className="size-5 text-muted-fg" />
+							<div className="flex size-10 items-center justify-center rounded-lg bg-secondary text-xl">
+								<ChannelIcon icon={channel?.icon} className="size-5 text-muted-fg" />
 							</div>
 							<div className="flex flex-col">
 								<h1 className="font-semibold text-fg text-xl">

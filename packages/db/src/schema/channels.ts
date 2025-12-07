@@ -1,4 +1,4 @@
-import type { ChannelId, ChannelMemberId, MessageId, OrganizationId, UserId } from "@hazel/schema"
+import type { ChannelIcon, ChannelId, ChannelMemberId, MessageId, OrganizationId, UserId } from "@hazel/schema"
 import { sql } from "drizzle-orm"
 import {
 	boolean,
@@ -21,6 +21,7 @@ export const channelsTable = pgTable(
 	{
 		id: uuid().primaryKey().defaultRandom().$type<ChannelId>(),
 		name: varchar({ length: 255 }).notNull(),
+		icon: varchar({ length: 32 }).$type<ChannelIcon>(),
 		type: channelTypeEnum().notNull(),
 		organizationId: uuid().notNull().$type<OrganizationId>(),
 

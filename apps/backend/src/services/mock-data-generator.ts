@@ -76,6 +76,7 @@ export class MockDataGenerator extends Effect.Service<MockDataGenerator>()("Mock
 					(_, i) => ({
 						organizationId,
 						name: channelNames[i] || `channel-${i}`,
+						icon: null,
 						type: (i > 2 ? "private" : "public") as
 							| "public"
 							| "private"
