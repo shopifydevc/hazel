@@ -1,4 +1,4 @@
-import { type OrganizationId, policy, UnauthorizedError, withSystemActor } from "@hazel/domain"
+import { ErrorUtils, type OrganizationId, policy, withSystemActor } from "@hazel/domain"
 import { Effect, Option } from "effect"
 import { isAdminOrOwner } from "../lib/policy-utils"
 import { OrganizationMemberRepo } from "../repositories/organization-member-repo"
@@ -13,7 +13,7 @@ export class IntegrationConnectionPolicy extends Effect.Service<IntegrationConne
 
 			// For select, any org member can view integrations
 			const canSelect = (organizationId: OrganizationId) =>
-				UnauthorizedError.refail(
+				ErrorUtils.refailUnauthorized(
 					policyEntity,
 					"select",
 				)(
@@ -32,7 +32,7 @@ export class IntegrationConnectionPolicy extends Effect.Service<IntegrationConne
 
 			// For insert, only admins and owners can connect integrations
 			const canInsert = (organizationId: OrganizationId) =>
-				UnauthorizedError.refail(
+				ErrorUtils.refailUnauthorized(
 					policyEntity,
 					"insert",
 				)(
@@ -55,7 +55,7 @@ export class IntegrationConnectionPolicy extends Effect.Service<IntegrationConne
 
 			// For update, only admins and owners can modify integrations
 			const canUpdate = (organizationId: OrganizationId) =>
-				UnauthorizedError.refail(
+				ErrorUtils.refailUnauthorized(
 					policyEntity,
 					"update",
 				)(
@@ -78,7 +78,7 @@ export class IntegrationConnectionPolicy extends Effect.Service<IntegrationConne
 
 			// For delete, only admins and owners can disconnect integrations
 			const canDelete = (organizationId: OrganizationId) =>
-				UnauthorizedError.refail(
+				ErrorUtils.refailUnauthorized(
 					policyEntity,
 					"delete",
 				)(

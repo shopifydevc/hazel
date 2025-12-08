@@ -56,23 +56,20 @@ export function RailwayIntegrationContent({ organizationId }: RailwayIntegration
 	const channels = channelsData ?? []
 
 	// Fetch webhooks (isInitial = false for refetches to avoid remount)
-	const fetchWebhooks = useCallback(
-		async (isInitial = false) => {
-			if (isInitial) setIsLoading(true)
-			const exit = await listWebhooksRef.current({ payload: {} })
+	const fetchWebhooks = useCallback(async (isInitial = false) => {
+		if (isInitial) setIsLoading(true)
+		const exit = await listWebhooksRef.current({ payload: {} })
 
-			Exit.match(exit, {
-				onSuccess: (result) => {
-					setWebhooks(result.data)
-				},
-				onFailure: (cause) => {
-					console.error("Failed to fetch webhooks:", cause)
-				},
-			})
-			if (isInitial) setIsLoading(false)
-		},
-		[],
-	)
+		Exit.match(exit, {
+			onSuccess: (result) => {
+				setWebhooks(result.data)
+			},
+			onFailure: (cause) => {
+				console.error("Failed to fetch webhooks:", cause)
+			},
+		})
+		if (isInitial) setIsLoading(false)
+	}, [])
 
 	// Fetch webhooks on mount
 	useEffect(() => {
@@ -200,8 +197,7 @@ export function RailwayIntegrationContent({ organizationId }: RailwayIntegration
 						</div>
 						<h4 className="mb-1 font-medium text-fg">No channels configured</h4>
 						<p className="mb-6 max-w-sm text-muted-fg text-sm">
-							Add Railway to a channel to start receiving deployment alerts and
-							notifications.
+							Add Railway to a channel to start receiving deployment alerts and notifications.
 						</p>
 						<Button intent="primary" onPress={handleAddChannel}>
 							<svg

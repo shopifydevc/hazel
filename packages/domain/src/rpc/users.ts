@@ -1,4 +1,5 @@
-import { Rpc, RpcGroup } from "@effect/rpc"
+import { RpcGroup } from "@effect/rpc"
+import { Rpc } from "@hazel/rpc-devtools"
 import { Schema } from "effect"
 import * as CurrentUser from "../current-user"
 import { InternalServerError, UnauthorizedError } from "../errors"
@@ -34,7 +35,7 @@ export class UserRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user is not authenticated
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("user.me", {
+	Rpc.query("user.me", {
 		payload: Schema.Void,
 		success: CurrentUser.Schema,
 		error: Schema.Union(UnauthorizedError, InternalServerError),
@@ -52,7 +53,7 @@ export class UserRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("user.update", {
+	Rpc.mutation("user.update", {
 		payload: Schema.Struct({
 			id: UserId,
 		}).pipe(Schema.extend(Schema.partial(User.Model.jsonUpdate))),
@@ -72,7 +73,7 @@ export class UserRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("user.delete", {
+	Rpc.mutation("user.delete", {
 		payload: Schema.Struct({ id: UserId }),
 		success: Schema.Struct({ transactionId: TransactionId }),
 		error: Schema.Union(UserNotFoundError, UnauthorizedError, InternalServerError),
@@ -88,7 +89,7 @@ export class UserRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user is not authenticated
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("user.finalizeOnboarding", {
+	Rpc.mutation("user.finalizeOnboarding", {
 		payload: Schema.Void,
 		success: UserResponse,
 		error: Schema.Union(UnauthorizedError, InternalServerError),

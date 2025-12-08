@@ -12,14 +12,35 @@ declare global {
 }
 
 /**
+ * Check if we're in a development environment
+ */
+const isDev = () => {
+	try {
+		// Vite
+		if (typeof import.meta !== "undefined" && "env" in import.meta) {
+			return (import.meta as any).env?.DEV ?? false
+		}
+	} catch {
+		// Ignore
+	}
+	try {
+		// Node.js
+		return process.env.NODE_ENV === "development"
+	} catch {
+		return false
+	}
+}
+
+/**
  * Get or create the singleton event client
  */
 function getOrCreateClient(): EventClient<RpcDevtoolsEventMap, "effect-rpc"> {
 	if (!globalThis[GLOBAL_KEY]) {
+		const dev = isDev()
 		globalThis[GLOBAL_KEY] = new EventClient<RpcDevtoolsEventMap, "effect-rpc">({
 			pluginId: "effect-rpc",
-			debug: import.meta.env.DEV,
-			enabled: import.meta.env.DEV,
+			debug: dev,
+			enabled: dev,
 		})
 	}
 	return globalThis[GLOBAL_KEY]

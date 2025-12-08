@@ -1,8 +1,8 @@
+import { RpcDevtoolsPanel } from "@hazel/rpc-devtools/components"
 import { TanStackDevtools } from "@tanstack/react-devtools"
 import { createRootRouteWithContext, Outlet, useRouter } from "@tanstack/react-router"
 import { RouterProvider } from "react-aria-components"
 import { VersionCheck } from "~/components/version-check"
-import { RpcDevtoolsPanel } from "~/lib/devtools/rpc"
 
 export const Route = createRootRouteWithContext<{}>()({
 	component: () => {

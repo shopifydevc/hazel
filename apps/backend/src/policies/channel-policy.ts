@@ -1,4 +1,4 @@
-import { type ChannelId, type OrganizationId, policy, policyCompose, UnauthorizedError } from "@hazel/domain"
+import { type ChannelId, ErrorUtils, type OrganizationId, policy, policyCompose } from "@hazel/domain"
 import { Effect, pipe } from "effect"
 import { ChannelRepo } from "../repositories/channel-repo"
 import { OrganizationPolicy } from "./organization-policy"
@@ -12,7 +12,7 @@ export class ChannelPolicy extends Effect.Service<ChannelPolicy>()("ChannelPolic
 		const channelRepo = yield* ChannelRepo
 
 		const canCreate = (organizationId: OrganizationId) =>
-			UnauthorizedError.refail(
+			ErrorUtils.refailUnauthorized(
 				policyEntity,
 				"create",
 			)(
@@ -23,7 +23,7 @@ export class ChannelPolicy extends Effect.Service<ChannelPolicy>()("ChannelPolic
 			)
 
 		const canUpdate = (id: ChannelId) =>
-			UnauthorizedError.refail(
+			ErrorUtils.refailUnauthorized(
 				policyEntity,
 				"update",
 			)(
@@ -36,7 +36,7 @@ export class ChannelPolicy extends Effect.Service<ChannelPolicy>()("ChannelPolic
 			)
 
 		const canDelete = (id: ChannelId) =>
-			UnauthorizedError.refail(
+			ErrorUtils.refailUnauthorized(
 				policyEntity,
 				"delete",
 			)(

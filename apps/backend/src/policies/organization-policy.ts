@@ -1,4 +1,4 @@
-import { type OrganizationId, policy, UnauthorizedError, withSystemActor } from "@hazel/domain"
+import { ErrorUtils, type OrganizationId, policy, withSystemActor } from "@hazel/domain"
 import { Effect, Option } from "effect"
 import { isAdminOrOwner } from "../lib/policy-utils"
 import { OrganizationMemberRepo } from "../repositories/organization-member-repo"
@@ -10,13 +10,13 @@ export class OrganizationPolicy extends Effect.Service<OrganizationPolicy>()("Or
 		const organziationMemberRepo = yield* OrganizationMemberRepo
 
 		const canCreate = () =>
-			UnauthorizedError.refail(
+			ErrorUtils.refailUnauthorized(
 				policyEntity,
 				"create",
 			)(policy(policyEntity, "create", (_actor) => Effect.succeed(true)))
 
 		const canUpdate = (id: OrganizationId) =>
-			UnauthorizedError.refail(
+			ErrorUtils.refailUnauthorized(
 				policyEntity,
 				"update",
 			)(
@@ -40,7 +40,7 @@ export class OrganizationPolicy extends Effect.Service<OrganizationPolicy>()("Or
 			)
 
 		const isMember = (id: OrganizationId) =>
-			UnauthorizedError.refail(
+			ErrorUtils.refailUnauthorized(
 				policyEntity,
 				"isMember",
 			)(
@@ -58,7 +58,7 @@ export class OrganizationPolicy extends Effect.Service<OrganizationPolicy>()("Or
 			)
 
 		const canDelete = (id: OrganizationId) =>
-			UnauthorizedError.refail(
+			ErrorUtils.refailUnauthorized(
 				policyEntity,
 				"delete",
 			)(

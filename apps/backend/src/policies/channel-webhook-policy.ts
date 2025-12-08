@@ -1,9 +1,9 @@
 import {
 	type ChannelId,
 	type ChannelWebhookId,
+	ErrorUtils,
 	type OrganizationId,
 	policy,
-	UnauthorizedError,
 	type UserId,
 	withSystemActor,
 } from "@hazel/domain"
@@ -40,7 +40,7 @@ export class ChannelWebhookPolicy extends Effect.Service<ChannelWebhookPolicy>()
 
 			// Can create webhook on a channel (org admin only)
 			const canCreate = (channelId: ChannelId) =>
-				UnauthorizedError.refail(
+				ErrorUtils.refailUnauthorized(
 					policyEntity,
 					"create",
 				)(
@@ -57,7 +57,7 @@ export class ChannelWebhookPolicy extends Effect.Service<ChannelWebhookPolicy>()
 
 			// Can read webhooks for a channel (org admin only)
 			const canRead = (channelId: ChannelId) =>
-				UnauthorizedError.refail(
+				ErrorUtils.refailUnauthorized(
 					policyEntity,
 					"select",
 				)(
@@ -74,7 +74,7 @@ export class ChannelWebhookPolicy extends Effect.Service<ChannelWebhookPolicy>()
 
 			// Can update a webhook (org admin only)
 			const canUpdate = (webhookId: ChannelWebhookId) =>
-				UnauthorizedError.refail(
+				ErrorUtils.refailUnauthorized(
 					policyEntity,
 					"update",
 				)(
@@ -91,7 +91,7 @@ export class ChannelWebhookPolicy extends Effect.Service<ChannelWebhookPolicy>()
 
 			// Can delete a webhook (org admin only)
 			const canDelete = (webhookId: ChannelWebhookId) =>
-				UnauthorizedError.refail(
+				ErrorUtils.refailUnauthorized(
 					policyEntity,
 					"delete",
 				)(

@@ -1,9 +1,9 @@
 import {
+	ErrorUtils,
 	type OrganizationId,
 	type OrganizationMemberId,
 	policy,
 	policyCompose,
-	UnauthorizedError,
 	type UserId,
 	withSystemActor,
 } from "@hazel/domain"
@@ -18,7 +18,7 @@ export class OrganizationMemberPolicy extends Effect.Service<OrganizationMemberP
 			const policyEntity = "OrganizationMember" as const
 
 			const canCreate = (organizationId: OrganizationId) =>
-				UnauthorizedError.refail(
+				ErrorUtils.refailUnauthorized(
 					policyEntity,
 					"create",
 				)(
@@ -44,7 +44,7 @@ export class OrganizationMemberPolicy extends Effect.Service<OrganizationMemberP
 				)
 
 			const canUpdate = (id: OrganizationMemberId) =>
-				UnauthorizedError.refail(
+				ErrorUtils.refailUnauthorized(
 					policyEntity,
 					"update",
 				)(
@@ -74,7 +74,7 @@ export class OrganizationMemberPolicy extends Effect.Service<OrganizationMemberP
 				)
 
 			const canDelete = (id: OrganizationMemberId) =>
-				UnauthorizedError.refail(
+				ErrorUtils.refailUnauthorized(
 					policyEntity,
 					"delete",
 				)(

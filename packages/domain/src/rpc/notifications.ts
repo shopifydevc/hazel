@@ -1,4 +1,5 @@
-import { Rpc, RpcGroup } from "@effect/rpc"
+import { RpcGroup } from "@effect/rpc"
+import { Rpc } from "@hazel/rpc-devtools"
 import { Schema } from "effect"
 import { InternalServerError, UnauthorizedError } from "../errors"
 import { NotificationId } from "../ids"
@@ -38,7 +39,7 @@ export class NotificationRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("notification.create", {
+	Rpc.mutation("notification.create", {
 		payload: Notification.Model.jsonCreate,
 		success: NotificationResponse,
 		error: Schema.Union(UnauthorizedError, InternalServerError),
@@ -56,7 +57,7 @@ export class NotificationRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("notification.update", {
+	Rpc.mutation("notification.update", {
 		payload: Schema.Struct({
 			id: NotificationId,
 			...Notification.Model.jsonUpdate.fields,
@@ -77,7 +78,7 @@ export class NotificationRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("notification.delete", {
+	Rpc.mutation("notification.delete", {
 		payload: Schema.Struct({ id: NotificationId }),
 		success: Schema.Struct({ transactionId: TransactionId }),
 		error: Schema.Union(NotificationNotFoundError, UnauthorizedError, InternalServerError),

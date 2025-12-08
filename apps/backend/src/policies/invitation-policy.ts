@@ -1,9 +1,9 @@
 import {
+	ErrorUtils,
 	type InvitationId,
 	type OrganizationId,
 	policy,
 	policyCompose,
-	UnauthorizedError,
 	type UserId,
 	withSystemActor,
 } from "@hazel/domain"
@@ -25,7 +25,7 @@ export class InvitationPolicy extends Effect.Service<InvitationPolicy>()("Invita
 		const userRepo = yield* UserRepo
 
 		const canRead = (_invitationId: InvitationId) =>
-			UnauthorizedError.refail(
+			ErrorUtils.refailUnauthorized(
 				policyEntity,
 				"select",
 			)(
@@ -39,7 +39,7 @@ export class InvitationPolicy extends Effect.Service<InvitationPolicy>()("Invita
 			)
 
 		const canCreate = (organizationId: OrganizationId) =>
-			UnauthorizedError.refail(
+			ErrorUtils.refailUnauthorized(
 				policyEntity,
 				"create",
 			)(
@@ -62,7 +62,7 @@ export class InvitationPolicy extends Effect.Service<InvitationPolicy>()("Invita
 			)
 
 		const canUpdate = (id: InvitationId) =>
-			UnauthorizedError.refail(
+			ErrorUtils.refailUnauthorized(
 				policyEntity,
 				"update",
 			)(
@@ -92,7 +92,7 @@ export class InvitationPolicy extends Effect.Service<InvitationPolicy>()("Invita
 			)
 
 		const canDelete = (id: InvitationId) =>
-			UnauthorizedError.refail(
+			ErrorUtils.refailUnauthorized(
 				policyEntity,
 				"delete",
 			)(
@@ -122,7 +122,7 @@ export class InvitationPolicy extends Effect.Service<InvitationPolicy>()("Invita
 			)
 
 		const canAccept = (id: InvitationId) =>
-			UnauthorizedError.refail(
+			ErrorUtils.refailUnauthorized(
 				policyEntity,
 				"accept",
 			)(
@@ -151,7 +151,7 @@ export class InvitationPolicy extends Effect.Service<InvitationPolicy>()("Invita
 			)
 
 		const canList = (organizationId: OrganizationId) =>
-			UnauthorizedError.refail(
+			ErrorUtils.refailUnauthorized(
 				policyEntity,
 				"list",
 			)(

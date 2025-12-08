@@ -1,4 +1,5 @@
-import { Rpc, RpcGroup } from "@effect/rpc"
+import { RpcGroup } from "@effect/rpc"
+import { Rpc } from "@hazel/rpc-devtools"
 import { Schema } from "effect"
 import { InternalServerError, UnauthorizedError } from "../errors"
 import { InvitationId, OrganizationId } from "../ids"
@@ -62,7 +63,7 @@ export class InvitationRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("invitation.create", {
+	Rpc.mutation("invitation.create", {
 		payload: Schema.Struct({
 			organizationId: OrganizationId,
 			invites: Schema.Array(
@@ -88,7 +89,7 @@ export class InvitationRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("invitation.resend", {
+	Rpc.mutation("invitation.resend", {
 		payload: Schema.Struct({ invitationId: InvitationId }),
 		success: InvitationResponse,
 		error: Schema.Union(InvitationNotFoundError, UnauthorizedError, InternalServerError),
@@ -106,7 +107,7 @@ export class InvitationRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("invitation.revoke", {
+	Rpc.mutation("invitation.revoke", {
 		payload: Schema.Struct({ invitationId: InvitationId }),
 		success: Schema.Struct({ transactionId: TransactionId }),
 		error: Schema.Union(InvitationNotFoundError, UnauthorizedError, InternalServerError),
@@ -124,7 +125,7 @@ export class InvitationRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("invitation.update", {
+	Rpc.mutation("invitation.update", {
 		payload: Schema.Struct({
 			id: InvitationId,
 			...Invitation.Model.jsonUpdate.fields,
@@ -145,7 +146,7 @@ export class InvitationRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("invitation.delete", {
+	Rpc.mutation("invitation.delete", {
 		payload: Schema.Struct({ id: InvitationId }),
 		success: Schema.Struct({ transactionId: TransactionId }),
 		error: Schema.Union(InvitationNotFoundError, UnauthorizedError, InternalServerError),

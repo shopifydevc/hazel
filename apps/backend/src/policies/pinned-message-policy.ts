@@ -1,10 +1,4 @@
-import {
-	type ChannelId,
-	type PinnedMessageId,
-	policy,
-	UnauthorizedError,
-	withSystemActor,
-} from "@hazel/domain"
+import { type ChannelId, ErrorUtils, type PinnedMessageId, policy, withSystemActor } from "@hazel/domain"
 import { Effect, Option } from "effect"
 import { isAdminOrOwner } from "../lib/policy-utils"
 import { ChannelRepo } from "../repositories/channel-repo"
@@ -20,7 +14,7 @@ export class PinnedMessagePolicy extends Effect.Service<PinnedMessagePolicy>()("
 		const organizationMemberRepo = yield* OrganizationMemberRepo
 
 		const canUpdate = (id: PinnedMessageId) =>
-			UnauthorizedError.refail(
+			ErrorUtils.refailUnauthorized(
 				policyEntity,
 				"update",
 			)(
@@ -52,7 +46,7 @@ export class PinnedMessagePolicy extends Effect.Service<PinnedMessagePolicy>()("
 			)
 
 		const canCreate = (channelId: ChannelId) =>
-			UnauthorizedError.refail(
+			ErrorUtils.refailUnauthorized(
 				policyEntity,
 				"create",
 			)(
@@ -88,7 +82,7 @@ export class PinnedMessagePolicy extends Effect.Service<PinnedMessagePolicy>()("
 			)
 
 		const canDelete = (id: PinnedMessageId) =>
-			UnauthorizedError.refail(
+			ErrorUtils.refailUnauthorized(
 				policyEntity,
 				"delete",
 			)(

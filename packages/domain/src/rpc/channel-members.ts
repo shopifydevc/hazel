@@ -1,4 +1,5 @@
-import { Rpc, RpcGroup } from "@effect/rpc"
+import { RpcGroup } from "@effect/rpc"
+import { Rpc } from "@hazel/rpc-devtools"
 import { Schema } from "effect"
 import { InternalServerError, UnauthorizedError } from "../errors"
 import { ChannelId, ChannelMemberId } from "../ids"
@@ -75,7 +76,7 @@ export class ChannelMemberRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("channelMember.create", {
+	Rpc.mutation("channelMember.create", {
 		payload: ChannelMember.Model.jsonCreate,
 		success: ChannelMemberResponse,
 		error: Schema.Union(ChannelNotFoundError, UnauthorizedError, InternalServerError),
@@ -94,7 +95,7 @@ export class ChannelMemberRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("channelMember.update", {
+	Rpc.mutation("channelMember.update", {
 		payload: Schema.Struct({
 			id: ChannelMemberId,
 			...ChannelMember.Model.jsonUpdate.fields,
@@ -116,7 +117,7 @@ export class ChannelMemberRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("channelMember.delete", {
+	Rpc.mutation("channelMember.delete", {
 		payload: Schema.Struct({ id: ChannelMemberId }),
 		success: Schema.Struct({ transactionId: TransactionId }),
 		error: Schema.Union(ChannelMemberNotFoundError, UnauthorizedError, InternalServerError),
@@ -134,7 +135,7 @@ export class ChannelMemberRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user is not a member
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("channelMember.clearNotifications", {
+	Rpc.mutation("channelMember.clearNotifications", {
 		payload: Schema.Struct({ channelId: ChannelId }),
 		success: Schema.Struct({ transactionId: TransactionId }),
 		error: Schema.Union(ChannelNotFoundError, UnauthorizedError, InternalServerError),

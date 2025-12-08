@@ -1,8 +1,8 @@
 import {
+	ErrorUtils,
 	type NotificationId,
 	type OrganizationMemberId,
 	policy,
-	UnauthorizedError,
 	withSystemActor,
 } from "@hazel/domain"
 import { Effect, Option } from "effect"
@@ -18,7 +18,7 @@ export class NotificationPolicy extends Effect.Service<NotificationPolicy>()("No
 		const organizationMemberRepo = yield* OrganizationMemberRepo
 
 		const canCreate = (_memberId: OrganizationMemberId) =>
-			UnauthorizedError.refail(
+			ErrorUtils.refailUnauthorized(
 				policyEntity,
 				"create",
 			)(
@@ -34,7 +34,7 @@ export class NotificationPolicy extends Effect.Service<NotificationPolicy>()("No
 			)
 
 		const canView = (id: NotificationId) =>
-			UnauthorizedError.refail(
+			ErrorUtils.refailUnauthorized(
 				policyEntity,
 				"view",
 			)(
@@ -57,7 +57,7 @@ export class NotificationPolicy extends Effect.Service<NotificationPolicy>()("No
 			)
 
 		const canUpdate = (id: NotificationId) =>
-			UnauthorizedError.refail(
+			ErrorUtils.refailUnauthorized(
 				policyEntity,
 				"update",
 			)(
@@ -89,7 +89,7 @@ export class NotificationPolicy extends Effect.Service<NotificationPolicy>()("No
 			)
 
 		const canDelete = (id: NotificationId) =>
-			UnauthorizedError.refail(
+			ErrorUtils.refailUnauthorized(
 				policyEntity,
 				"delete",
 			)(
@@ -121,7 +121,7 @@ export class NotificationPolicy extends Effect.Service<NotificationPolicy>()("No
 			)
 
 		const canMarkAsRead = (id: NotificationId) =>
-			UnauthorizedError.refail(
+			ErrorUtils.refailUnauthorized(
 				policyEntity,
 				"markAsRead",
 			)(
@@ -153,7 +153,7 @@ export class NotificationPolicy extends Effect.Service<NotificationPolicy>()("No
 			)
 
 		const canMarkAllAsRead = (memberId: OrganizationMemberId) =>
-			UnauthorizedError.refail(
+			ErrorUtils.refailUnauthorized(
 				policyEntity,
 				"markAllAsRead",
 			)(

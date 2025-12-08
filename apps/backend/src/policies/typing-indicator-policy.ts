@@ -1,9 +1,9 @@
 import {
 	type ChannelId,
 	type ChannelMemberId,
+	ErrorUtils,
 	policy,
 	type TypingIndicatorId,
-	UnauthorizedError,
 	withSystemActor,
 } from "@hazel/domain"
 import { Effect, Option, pipe } from "effect"
@@ -20,13 +20,13 @@ export class TypingIndicatorPolicy extends Effect.Service<TypingIndicatorPolicy>
 			const typingIndicatorRepo = yield* TypingIndicatorRepo
 
 			const canRead = (_id: TypingIndicatorId) =>
-				UnauthorizedError.refail(
+				ErrorUtils.refailUnauthorized(
 					policyEntity,
 					"select",
 				)(policy(policyEntity, "select", () => Effect.succeed(true)))
 
 			const canCreate = (channelId: ChannelId) =>
-				UnauthorizedError.refail(
+				ErrorUtils.refailUnauthorized(
 					policyEntity,
 					"create",
 				)(
@@ -43,7 +43,7 @@ export class TypingIndicatorPolicy extends Effect.Service<TypingIndicatorPolicy>
 				)
 
 			const canUpdate = (id: TypingIndicatorId) =>
-				UnauthorizedError.refail(
+				ErrorUtils.refailUnauthorized(
 					policyEntity,
 					"update",
 				)(
@@ -60,7 +60,7 @@ export class TypingIndicatorPolicy extends Effect.Service<TypingIndicatorPolicy>
 				)
 
 			const canDelete = (data: { memberId: ChannelMemberId } | { id: TypingIndicatorId }) =>
-				UnauthorizedError.refail(
+				ErrorUtils.refailUnauthorized(
 					policyEntity,
 					"delete",
 				)(

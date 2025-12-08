@@ -23,6 +23,7 @@
 		"@hazel/backend": "workspace:*",
 		"@hazel/db": "workspace:*",
 		"@hazel/domain": "workspace:*",
+		"@hazel/rpc-devtools": "workspace:*",
 		"@hazel/effect-electric-db-collection": "workspace:*",
 		"@hazel/link-preview-worker": "workspace:*",
 		"@hazel/schema": "workspace:*",

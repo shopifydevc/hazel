@@ -1,4 +1,5 @@
-import { Rpc, RpcGroup } from "@effect/rpc"
+import { RpcGroup } from "@effect/rpc"
+import { Rpc } from "@hazel/rpc-devtools"
 import { Schema } from "effect"
 import { InternalServerError, UnauthorizedError } from "../errors"
 import { OrganizationMemberId } from "../ids"
@@ -73,7 +74,7 @@ export class OrganizationMemberRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("organizationMember.create", {
+	Rpc.mutation("organizationMember.create", {
 		payload: OrganizationMember.Model.jsonCreate,
 		success: OrganizationMemberResponse,
 		error: Schema.Union(OrganizationNotFoundError, UnauthorizedError, InternalServerError),
@@ -91,7 +92,7 @@ export class OrganizationMemberRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("organizationMember.update", {
+	Rpc.mutation("organizationMember.update", {
 		payload: Schema.Struct({
 			id: OrganizationMemberId,
 			...OrganizationMember.Model.jsonUpdate.fields,
@@ -112,7 +113,7 @@ export class OrganizationMemberRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("organizationMember.updateMetadata", {
+	Rpc.mutation("organizationMember.updateMetadata", {
 		payload: Schema.Struct({
 			id: OrganizationMemberId,
 			metadata: Schema.Struct({
@@ -136,7 +137,7 @@ export class OrganizationMemberRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("organizationMember.delete", {
+	Rpc.mutation("organizationMember.delete", {
 		payload: Schema.Struct({ id: OrganizationMemberId }),
 		success: Schema.Struct({ transactionId: TransactionId }),
 		error: Schema.Union(OrganizationMemberNotFoundError, UnauthorizedError, InternalServerError),

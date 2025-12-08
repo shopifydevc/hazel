@@ -1,4 +1,5 @@
-import { Rpc, RpcGroup } from "@effect/rpc"
+import { RpcGroup } from "@effect/rpc"
+import { Rpc } from "@hazel/rpc-devtools"
 import { Schema } from "effect"
 import { DmChannelAlreadyExistsError, InternalServerError, UnauthorizedError } from "../errors"
 import { ChannelId, UserId } from "../ids"
@@ -56,7 +57,7 @@ export class ChannelRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("channel.create", {
+	Rpc.mutation("channel.create", {
 		payload: CreateChannelRequest,
 		success: ChannelResponse,
 		error: Schema.Union(UnauthorizedError, InternalServerError),
@@ -74,7 +75,7 @@ export class ChannelRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("channel.update", {
+	Rpc.mutation("channel.update", {
 		payload: Schema.Struct({
 			id: ChannelId,
 		}).pipe(Schema.extend(Schema.partial(Channel.Model.jsonUpdate))),
@@ -94,7 +95,7 @@ export class ChannelRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("channel.delete", {
+	Rpc.mutation("channel.delete", {
 		payload: Schema.Struct({ id: ChannelId }),
 		success: Schema.Struct({ transactionId: TransactionId }),
 		error: Schema.Union(ChannelNotFoundError, UnauthorizedError, InternalServerError),
@@ -113,7 +114,7 @@ export class ChannelRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("channel.createDm", {
+	Rpc.mutation("channel.createDm", {
 		payload: CreateDmChannelRequest,
 		success: ChannelResponse,
 		error: Schema.Union(DmChannelAlreadyExistsError, UnauthorizedError, InternalServerError),

@@ -1,4 +1,5 @@
-import { Rpc, RpcGroup } from "@effect/rpc"
+import { RpcGroup } from "@effect/rpc"
+import { Rpc } from "@hazel/rpc-devtools"
 import { ChannelId, ChannelWebhookId } from "@hazel/schema"
 import { Schema } from "effect"
 import { InternalServerError, UnauthorizedError } from "../errors"
@@ -73,7 +74,7 @@ export class ChannelWebhookRpcs extends RpcGroup.make(
 	 * @throws ChannelNotFoundError if channel doesn't exist
 	 * @throws UnauthorizedError if user is not org admin
 	 */
-	Rpc.make("channelWebhook.create", {
+	Rpc.mutation("channelWebhook.create", {
 		payload: Schema.Struct({
 			channelId: ChannelId,
 			name: Schema.String.pipe(Schema.minLength(1), Schema.maxLength(100)),
@@ -96,7 +97,7 @@ export class ChannelWebhookRpcs extends RpcGroup.make(
 	 * @throws ChannelNotFoundError if channel doesn't exist
 	 * @throws UnauthorizedError if user is not org admin
 	 */
-	Rpc.make("channelWebhook.list", {
+	Rpc.query("channelWebhook.list", {
 		payload: Schema.Struct({ channelId: ChannelId }),
 		success: ChannelWebhookListResponse,
 		error: Schema.Union(ChannelNotFoundError, UnauthorizedError, InternalServerError),
@@ -112,7 +113,7 @@ export class ChannelWebhookRpcs extends RpcGroup.make(
 	 * @throws ChannelWebhookNotFoundError if webhook doesn't exist
 	 * @throws UnauthorizedError if user is not org admin
 	 */
-	Rpc.make("channelWebhook.update", {
+	Rpc.mutation("channelWebhook.update", {
 		payload: Schema.Struct({
 			id: ChannelWebhookId,
 			name: Schema.optional(Schema.String.pipe(Schema.minLength(1), Schema.maxLength(100))),
@@ -135,7 +136,7 @@ export class ChannelWebhookRpcs extends RpcGroup.make(
 	 * @throws ChannelWebhookNotFoundError if webhook doesn't exist
 	 * @throws UnauthorizedError if user is not org admin
 	 */
-	Rpc.make("channelWebhook.regenerateToken", {
+	Rpc.mutation("channelWebhook.regenerateToken", {
 		payload: Schema.Struct({ id: ChannelWebhookId }),
 		success: ChannelWebhookCreatedResponse,
 		error: Schema.Union(ChannelWebhookNotFoundError, UnauthorizedError, InternalServerError),
@@ -151,7 +152,7 @@ export class ChannelWebhookRpcs extends RpcGroup.make(
 	 * @throws ChannelWebhookNotFoundError if webhook doesn't exist
 	 * @throws UnauthorizedError if user is not org admin
 	 */
-	Rpc.make("channelWebhook.delete", {
+	Rpc.mutation("channelWebhook.delete", {
 		payload: Schema.Struct({ id: ChannelWebhookId }),
 		success: Schema.Struct({ transactionId: TransactionId }),
 		error: Schema.Union(ChannelWebhookNotFoundError, UnauthorizedError, InternalServerError),
@@ -166,7 +167,7 @@ export class ChannelWebhookRpcs extends RpcGroup.make(
 	 * @returns Array of webhooks across all channels in the organization
 	 * @throws UnauthorizedError if user is not authenticated
 	 */
-	Rpc.make("channelWebhook.listByOrganization", {
+	Rpc.query("channelWebhook.listByOrganization", {
 		payload: Schema.Struct({}),
 		success: ChannelWebhookListResponse,
 		error: Schema.Union(UnauthorizedError, InternalServerError),

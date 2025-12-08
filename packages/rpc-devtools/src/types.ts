@@ -18,6 +18,7 @@ export interface RpcDevtoolsEventMap {
 export interface RpcRequestEvent {
 	id: string
 	method: string
+	type?: "mutation" | "query"
 	payload: unknown
 	timestamp: number
 	headers: ReadonlyArray<[string, string]>
@@ -43,6 +44,8 @@ export interface CapturedRequest {
 	/** Original RPC protocol ID (for response matching) */
 	id: string
 	method: string
+	/** Whether this RPC is a mutation or query */
+	type?: "mutation" | "query"
 	payload: unknown
 	headers: ReadonlyArray<[string, string]>
 	timestamp: number

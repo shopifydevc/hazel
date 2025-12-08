@@ -1,4 +1,5 @@
-import { Rpc, RpcGroup } from "@effect/rpc"
+import { RpcGroup } from "@effect/rpc"
+import { Rpc } from "@hazel/rpc-devtools"
 import { Schema } from "effect"
 import { InternalServerError, UnauthorizedError } from "../errors"
 import { MessageId } from "../ids"
@@ -69,7 +70,7 @@ export class MessageRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("message.create", {
+	Rpc.mutation("message.create", {
 		payload: Message.Insert,
 		success: MessageResponse,
 		error: Schema.Union(ChannelNotFoundError, UnauthorizedError, InternalServerError),
@@ -87,7 +88,7 @@ export class MessageRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("message.update", {
+	Rpc.mutation("message.update", {
 		payload: Schema.Struct({
 			id: MessageId,
 			...Message.Model.jsonUpdate.fields,
@@ -108,7 +109,7 @@ export class MessageRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("message.delete", {
+	Rpc.mutation("message.delete", {
 		payload: Schema.Struct({ id: MessageId }),
 		success: Schema.Struct({ transactionId: TransactionId }),
 		error: Schema.Union(MessageNotFoundError, UnauthorizedError, InternalServerError),

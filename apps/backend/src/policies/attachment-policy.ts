@@ -1,4 +1,4 @@
-import { type AttachmentId, policy, UnauthorizedError, withSystemActor } from "@hazel/domain"
+import { type AttachmentId, ErrorUtils, policy, withSystemActor } from "@hazel/domain"
 import { Effect, Option } from "effect"
 import { isAdminOrOwner } from "../lib/policy-utils"
 import { AttachmentRepo } from "../repositories/attachment-repo"
@@ -18,7 +18,7 @@ export class AttachmentPolicy extends Effect.Service<AttachmentPolicy>()("Attach
 		const channelMemberRepo = yield* ChannelMemberRepo
 
 		const canCreate = () =>
-			UnauthorizedError.refail(
+			ErrorUtils.refailUnauthorized(
 				policyEntity,
 				"create",
 			)(
@@ -34,7 +34,7 @@ export class AttachmentPolicy extends Effect.Service<AttachmentPolicy>()("Attach
 			)
 
 		const canUpdate = (id: AttachmentId) =>
-			UnauthorizedError.refail(
+			ErrorUtils.refailUnauthorized(
 				policyEntity,
 				"update",
 			)(
@@ -51,7 +51,7 @@ export class AttachmentPolicy extends Effect.Service<AttachmentPolicy>()("Attach
 			)
 
 		const canDelete = (id: AttachmentId) =>
-			UnauthorizedError.refail(
+			ErrorUtils.refailUnauthorized(
 				policyEntity,
 				"delete",
 			)(
@@ -103,7 +103,7 @@ export class AttachmentPolicy extends Effect.Service<AttachmentPolicy>()("Attach
 			)
 
 		const canView = (id: AttachmentId) =>
-			UnauthorizedError.refail(
+			ErrorUtils.refailUnauthorized(
 				policyEntity,
 				"view",
 			)(

@@ -2,6 +2,7 @@ import { RpcClient } from "@effect/rpc"
 import type { FromClientEncoded, FromServerEncoded } from "@effect/rpc/RpcMessage"
 import { Effect, Layer } from "effect"
 import { rpcEventClient } from "./event-client"
+import { getRpcType } from "./rpc-type-resolver"
 
 /**
  * Map to track request timestamps for duration calculation
@@ -16,6 +17,16 @@ const requestTimestamps = new Map<string, number>()
  * - run() for incoming server responses
  *
  * No need to modify RPC definitions - this captures all traffic.
+ *
+ * @example
+ * ```typescript
+ * import { DevtoolsProtocolLayer } from "@hazel/rpc-devtools"
+ *
+ * // Add to your RPC client layer composition
+ * const ProtocolLive = import.meta.env.DEV
+ *   ? Layer.provideMerge(DevtoolsProtocolLayer, BaseProtocolLive)
+ *   : BaseProtocolLive
+ * ```
  */
 export const DevtoolsProtocolLayer = Layer.effect(
 	RpcClient.Protocol,
@@ -36,6 +47,7 @@ export const DevtoolsProtocolLayer = Layer.effect(
 					rpcEventClient.emit("request", {
 						id,
 						method: request.tag,
+						type: getRpcType(request.tag),
 						payload: request.payload,
 						timestamp,
 						headers: request.headers ?? [],

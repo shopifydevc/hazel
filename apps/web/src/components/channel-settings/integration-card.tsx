@@ -184,11 +184,7 @@ export function IntegrationCard({ provider, channelId, webhook, onWebhookChange 
 								stroke="currentColor"
 								strokeWidth={2.5}
 							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									d="M12 9v2m0 4h.01"
-								/>
+								<path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01" />
 							</svg>
 						</div>
 						<p className="text-amber-700 text-sm dark:text-amber-300">
@@ -266,7 +262,8 @@ export function IntegrationCard({ provider, channelId, webhook, onWebhookChange 
 						<p className="text-muted-fg text-sm">{config.description}</p>
 						{webhook.lastUsedAt && (
 							<p className="text-muted-fg text-xs">
-								Last alert {formatDistanceToNow(new Date(webhook.lastUsedAt), { addSuffix: true })}
+								Last alert{" "}
+								{formatDistanceToNow(new Date(webhook.lastUsedAt), { addSuffix: true })}
 							</p>
 						)}
 					</div>
@@ -290,7 +287,7 @@ export function IntegrationCard({ provider, channelId, webhook, onWebhookChange 
 					type="text"
 					value={`${webhookUrl}****${webhook.tokenSuffix}/${config.urlSuffix}`}
 					readOnly
-					className="flex-1 rounded-lg border border-border bg-secondary/30 px-3 py-2 font-mono text-xs text-muted-fg"
+					className="flex-1 rounded-lg border border-border bg-secondary/30 px-3 py-2 font-mono text-muted-fg text-xs"
 				/>
 				<Button
 					intent="outline"

@@ -179,7 +179,9 @@ function buildRailwayEmbed(payload: RailwayPayload): DbMessageEmbed {
 	// Commit info (if available)
 	if (details.commitHash) {
 		const shortHash = details.commitHash.slice(0, 7)
-		const commitValue = details.commitMessage ? `\`${shortHash}\` - ${details.commitMessage}` : `\`${shortHash}\``
+		const commitValue = details.commitMessage
+			? `\`${shortHash}\` - ${details.commitMessage}`
+			: `\`${shortHash}\``
 		fields.push({
 			name: "Commit",
 			value: commitValue,
@@ -525,10 +527,7 @@ export const HttpIncomingWebhookLive = HttpApiBuilder.group(HazelApi, "incoming-
 				}
 
 				// Get or create the Railway bot user for this organization
-				const botUser = yield* botService.getOrCreateWebhookBotUser(
-					"railway",
-					webhook.organizationId,
-				)
+				const botUser = yield* botService.getOrCreateWebhookBotUser("railway", webhook.organizationId)
 
 				// Build the embed based on the event
 				const embed = buildRailwayEmbed(payload)

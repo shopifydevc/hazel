@@ -1,10 +1,4 @@
-import {
-	type MessageId,
-	type MessageReactionId,
-	policy,
-	UnauthorizedError,
-	withSystemActor,
-} from "@hazel/domain"
+import { ErrorUtils, type MessageId, type MessageReactionId, policy, withSystemActor } from "@hazel/domain"
 import { Effect, Option } from "effect"
 import { isAdminOrOwner } from "../lib/policy-utils"
 import { ChannelMemberRepo } from "../repositories/channel-member-repo"
@@ -26,7 +20,7 @@ export class MessageReactionPolicy extends Effect.Service<MessageReactionPolicy>
 			const organizationMemberRepo = yield* OrganizationMemberRepo
 
 			const canList = (_id: MessageId) =>
-				UnauthorizedError.refail(
+				ErrorUtils.refailUnauthorized(
 					policyEntity,
 					"select",
 				)(
@@ -40,7 +34,7 @@ export class MessageReactionPolicy extends Effect.Service<MessageReactionPolicy>
 				)
 
 			const canUpdate = (id: MessageReactionId) =>
-				UnauthorizedError.refail(
+				ErrorUtils.refailUnauthorized(
 					policyEntity,
 					"update",
 				)(
@@ -57,7 +51,7 @@ export class MessageReactionPolicy extends Effect.Service<MessageReactionPolicy>
 				)
 
 			const canCreate = (messageId: MessageId) =>
-				UnauthorizedError.refail(
+				ErrorUtils.refailUnauthorized(
 					policyEntity,
 					"create",
 				)(
@@ -158,7 +152,7 @@ export class MessageReactionPolicy extends Effect.Service<MessageReactionPolicy>
 				)
 
 			const canDelete = (id: MessageReactionId) =>
-				UnauthorizedError.refail(
+				ErrorUtils.refailUnauthorized(
 					policyEntity,
 					"delete",
 				)(

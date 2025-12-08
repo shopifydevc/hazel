@@ -1,6 +1,5 @@
 import { HttpApiSchema } from "@effect/platform"
 import { Effect, Predicate, Schema } from "effect"
-import * as CurrentUser from "./current-user"
 
 export class UnauthorizedError extends Schema.TaggedError<UnauthorizedError>("UnauthorizedError")(
 	"UnauthorizedError",
@@ -14,25 +13,6 @@ export class UnauthorizedError extends Schema.TaggedError<UnauthorizedError>("Un
 ) {
 	static is(u: unknown): u is UnauthorizedError {
 		return Predicate.isTagged(u, "UnauthorizedError")
-	}
-
-	static refail(entity: string, action: string) {
-		return <A, E, R>(
-			effect: Effect.Effect<A, E, R>,
-		): Effect.Effect<A, UnauthorizedError, CurrentUser.Context | R> =>
-			Effect.catchIf(
-				effect,
-				(e) => !UnauthorizedError.is(e),
-				() =>
-					Effect.flatMap(CurrentUser.Context, (actor) =>
-						Effect.fail(
-							new UnauthorizedError({
-								message: `You can't ${action} this ${entity}`,
-								detail: `You are not authorized to perform ${action} on ${entity} for ${actor.id}`,
-							}),
-						),
-					),
-			) as Effect.Effect<A, UnauthorizedError, CurrentUser.Context | R>
 	}
 }
 

@@ -1,4 +1,5 @@
-import { Rpc, RpcGroup } from "@effect/rpc"
+import { RpcGroup } from "@effect/rpc"
+import { Rpc } from "@hazel/rpc-devtools"
 import { Schema } from "effect"
 import { InternalServerError, UnauthorizedError } from "../errors"
 import { OrganizationId } from "../ids"
@@ -38,13 +39,13 @@ export class OrganizationSlugAlreadyExistsError extends Schema.TaggedError<Organ
 ) {}
 
 export class OrganizationRpcs extends RpcGroup.make(
-	Rpc.make("organization.create", {
+	Rpc.mutation("organization.create", {
 		payload: Organization.Model.jsonCreate,
 		success: OrganizationResponse,
 		error: Schema.Union(OrganizationSlugAlreadyExistsError, UnauthorizedError, InternalServerError),
 	}).middleware(AuthMiddleware),
 
-	Rpc.make("organization.update", {
+	Rpc.mutation("organization.update", {
 		payload: Schema.Struct({
 			id: OrganizationId,
 			...Organization.Model.jsonUpdate.fields,
@@ -58,13 +59,13 @@ export class OrganizationRpcs extends RpcGroup.make(
 		),
 	}).middleware(AuthMiddleware),
 
-	Rpc.make("organization.delete", {
+	Rpc.mutation("organization.delete", {
 		payload: Schema.Struct({ id: OrganizationId }),
 		success: Schema.Struct({ transactionId: TransactionId }),
 		error: Schema.Union(OrganizationNotFoundError, UnauthorizedError, InternalServerError),
 	}).middleware(AuthMiddleware),
 
-	Rpc.make("organization.setSlug", {
+	Rpc.mutation("organization.setSlug", {
 		payload: Schema.Struct({
 			id: OrganizationId,
 			slug: Schema.String,

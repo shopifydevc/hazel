@@ -152,13 +152,12 @@ function IntegrationConfigPage() {
 				<div className="flex flex-col gap-8">
 					{isWebhookIntegration ? (
 						// Webhook-based integrations: Show channel-based webhook configuration
-						user?.organizationId && (
-							integrationId === "openstatus" ? (
-								<OpenStatusIntegrationContent organizationId={user.organizationId} />
-							) : integrationId === "railway" ? (
-								<RailwayIntegrationContent organizationId={user.organizationId} />
-							) : null
-						)
+						user?.organizationId &&
+						(integrationId === "openstatus" ? (
+							<OpenStatusIntegrationContent organizationId={user.organizationId} />
+						) : integrationId === "railway" ? (
+							<RailwayIntegrationContent organizationId={user.organizationId} />
+						) : null)
 					) : (
 						<>
 							{/* OAuth-based integration: Connection card */}

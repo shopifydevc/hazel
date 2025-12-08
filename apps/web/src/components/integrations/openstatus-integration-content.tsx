@@ -56,23 +56,20 @@ export function OpenStatusIntegrationContent({ organizationId }: OpenStatusInteg
 	const channels = channelsData ?? []
 
 	// Fetch webhooks (isInitial = false for refetches to avoid remount)
-	const fetchWebhooks = useCallback(
-		async (isInitial = false) => {
-			if (isInitial) setIsLoading(true)
-			const exit = await listWebhooksRef.current({ payload: {} })
+	const fetchWebhooks = useCallback(async (isInitial = false) => {
+		if (isInitial) setIsLoading(true)
+		const exit = await listWebhooksRef.current({ payload: {} })
 
-			Exit.match(exit, {
-				onSuccess: (result) => {
-					setWebhooks(result.data)
-				},
-				onFailure: (cause) => {
-					console.error("Failed to fetch webhooks:", cause)
-				},
-			})
-			if (isInitial) setIsLoading(false)
-		},
-		[],
-	)
+		Exit.match(exit, {
+			onSuccess: (result) => {
+				setWebhooks(result.data)
+			},
+			onFailure: (cause) => {
+				console.error("Failed to fetch webhooks:", cause)
+			},
+		})
+		if (isInitial) setIsLoading(false)
+	}, [])
 
 	// Fetch webhooks on mount
 	useEffect(() => {

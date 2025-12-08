@@ -1,4 +1,5 @@
-import { Rpc, RpcGroup } from "@effect/rpc"
+import { RpcGroup } from "@effect/rpc"
+import { Rpc } from "@hazel/rpc-devtools"
 import { Schema } from "effect"
 import { InternalServerError, UnauthorizedError } from "../errors"
 import { MessageReactionId } from "../ids"
@@ -43,7 +44,7 @@ export class MessageReactionRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("messageReaction.toggle", {
+	Rpc.mutation("messageReaction.toggle", {
 		payload: Schema.Struct({
 			messageId: MessageReaction.Insert.fields.messageId,
 			channelId: MessageReaction.Insert.fields.channelId,
@@ -69,7 +70,7 @@ export class MessageReactionRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("messageReaction.create", {
+	Rpc.mutation("messageReaction.create", {
 		payload: MessageReaction.Insert,
 		success: MessageReactionResponse,
 		error: Schema.Union(MessageNotFoundError, UnauthorizedError, InternalServerError),
@@ -87,7 +88,7 @@ export class MessageReactionRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("messageReaction.update", {
+	Rpc.mutation("messageReaction.update", {
 		payload: Schema.Struct({
 			id: MessageReactionId,
 			...MessageReaction.Model.jsonUpdate.fields,
@@ -108,7 +109,7 @@ export class MessageReactionRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("messageReaction.delete", {
+	Rpc.mutation("messageReaction.delete", {
 		payload: Schema.Struct({ id: MessageReactionId }),
 		success: Schema.Struct({ transactionId: TransactionId }),
 		error: Schema.Union(MessageReactionNotFoundError, UnauthorizedError, InternalServerError),

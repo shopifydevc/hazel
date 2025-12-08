@@ -38,7 +38,11 @@ function IntegrationsPage() {
 		const openStatus = webhooks.find((w) => w.name === "OpenStatus")
 		const railway = webhooks.find((w) => w.name === "Railway")
 		const regular = webhooks.filter((w) => w.name !== "OpenStatus" && w.name !== "Railway")
-		return { openStatusWebhook: openStatus ?? null, railwayWebhook: railway ?? null, regularWebhooks: regular }
+		return {
+			openStatusWebhook: openStatus ?? null,
+			railwayWebhook: railway ?? null,
+			regularWebhooks: regular,
+		}
 	}, [webhooks])
 
 	const listWebhooks = useAtomSet(listChannelWebhooksMutation, {
@@ -111,7 +115,9 @@ function IntegrationsPage() {
 										<Badge intent="secondary">{regularWebhooks.length}</Badge>
 									)}
 								</div>
-								<p className="text-muted-fg text-sm">Allow external services to post messages</p>
+								<p className="text-muted-fg text-sm">
+									Allow external services to post messages
+								</p>
 							</div>
 						</div>
 					</div>
@@ -226,7 +232,11 @@ function CompactWebhookItem({ webhook, onDelete }: { webhook: WebhookData; onDel
 	return (
 		<div className="flex items-center gap-3 rounded-lg border border-border bg-bg p-3 transition-colors hover:border-border-hover">
 			{webhook.avatarUrl ? (
-				<img src={webhook.avatarUrl} alt={webhook.name} className="size-8 rounded-full object-cover" />
+				<img
+					src={webhook.avatarUrl}
+					alt={webhook.name}
+					className="size-8 rounded-full object-cover"
+				/>
 			) : (
 				<div className="flex size-8 items-center justify-center rounded-full bg-secondary">
 					<IconWebhook className="size-4 text-muted-fg" />

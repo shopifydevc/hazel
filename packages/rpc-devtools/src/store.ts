@@ -48,12 +48,32 @@ const subscribe = (callback: () => void): (() => void) => {
 const getSnapshot = (): CapturedRequest[] => requests
 
 /**
- * Get server snapshot (same as client for this store)
+ * Get server snapshot (empty for client-only store)
  */
 const getServerSnapshot = (): CapturedRequest[] => []
 
+/**
+ * Check if we're in a development environment
+ */
+const isDev = () => {
+	try {
+		// Vite
+		if (typeof import.meta !== "undefined" && "env" in import.meta) {
+			return (import.meta as any).env?.DEV ?? false
+		}
+	} catch {
+		// Ignore
+	}
+	try {
+		// Node.js
+		return process.env.NODE_ENV === "development"
+	} catch {
+		return false
+	}
+}
+
 // Initialize event subscriptions only once (survives HMR)
-if (import.meta.env.DEV && !globalThis[STORE_INITIALIZED_KEY]) {
+if (isDev() && !globalThis[STORE_INITIALIZED_KEY]) {
 	globalThis[STORE_INITIALIZED_KEY] = true
 
 	// Listen for request events
@@ -63,6 +83,7 @@ if (import.meta.env.DEV && !globalThis[STORE_INITIALIZED_KEY]) {
 			captureId: crypto.randomUUID(),
 			id: payload.id,
 			method: payload.method,
+			type: payload.type,
 			payload: payload.payload,
 			headers: payload.headers,
 			timestamp: payload.timestamp,

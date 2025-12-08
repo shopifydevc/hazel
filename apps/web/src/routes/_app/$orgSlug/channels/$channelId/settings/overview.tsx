@@ -91,12 +91,7 @@ function ChannelSettingsForm({
 				<Label>Channel Icon</Label>
 				<div className="flex items-center gap-2">
 					<EmojiPickerDialog onEmojiSelect={(emoji) => handleIconChange(emoji.emoji)}>
-						<Button
-							intent="outline"
-							size="sq-md"
-							type="button"
-							className="text-xl"
-						>
+						<Button intent="outline" size="sq-md" type="button" className="text-xl">
 							<ChannelIcon icon={icon} />
 						</Button>
 					</EmojiPickerDialog>
@@ -137,9 +132,7 @@ function ChannelSettingsForm({
 			/>
 
 			<div>
-				<form.Subscribe
-					selector={(state) => [state.canSubmit, state.isSubmitting, state.isDirty]}
-				>
+				<form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting, state.isDirty]}>
 					{([canSubmit, isSubmitting, isDirty]) => (
 						<Button
 							intent="primary"

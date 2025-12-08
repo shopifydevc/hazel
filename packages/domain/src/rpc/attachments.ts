@@ -1,4 +1,5 @@
-import { Rpc, RpcGroup } from "@effect/rpc"
+import { RpcGroup } from "@effect/rpc"
+import { Rpc } from "@hazel/rpc-devtools"
 import { Schema } from "effect"
 import { InternalServerError, UnauthorizedError } from "../errors"
 import { AttachmentId } from "../ids"
@@ -46,7 +47,7 @@ export class AttachmentRpcs extends RpcGroup.make(
 	 * @throws UnauthorizedError if user lacks permission
 	 * @throws InternalServerError for unexpected errors
 	 */
-	Rpc.make("attachment.delete", {
+	Rpc.mutation("attachment.delete", {
 		payload: Schema.Struct({ id: AttachmentId }),
 		success: Schema.Struct({ transactionId: TransactionId }),
 		error: Schema.Union(AttachmentNotFoundError, UnauthorizedError, InternalServerError),

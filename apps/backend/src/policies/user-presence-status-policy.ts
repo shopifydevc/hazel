@@ -1,4 +1,4 @@
-import { policy, UnauthorizedError } from "@hazel/domain"
+import { ErrorUtils, policy } from "@hazel/domain"
 import { Effect } from "effect"
 
 export class UserPresenceStatusPolicy extends Effect.Service<UserPresenceStatusPolicy>()(
@@ -8,25 +8,25 @@ export class UserPresenceStatusPolicy extends Effect.Service<UserPresenceStatusP
 			const policyEntity = "UserPresenceStatus" as const
 
 			const canCreate = () =>
-				UnauthorizedError.refail(
+				ErrorUtils.refailUnauthorized(
 					policyEntity,
 					"create",
 				)(policy(policyEntity, "create", (_actor) => Effect.succeed(true)))
 
 			const canRead = () =>
-				UnauthorizedError.refail(
+				ErrorUtils.refailUnauthorized(
 					policyEntity,
 					"select",
 				)(policy(policyEntity, "select", (_actor) => Effect.succeed(true)))
 
 			const canUpdate = () =>
-				UnauthorizedError.refail(
+				ErrorUtils.refailUnauthorized(
 					policyEntity,
 					"update",
 				)(policy(policyEntity, "update", (_actor) => Effect.succeed(true)))
 
 			const canDelete = () =>
-				UnauthorizedError.refail(
+				ErrorUtils.refailUnauthorized(
 					policyEntity,
 					"delete",
 				)(policy(policyEntity, "delete", (_actor) => Effect.succeed(true)))

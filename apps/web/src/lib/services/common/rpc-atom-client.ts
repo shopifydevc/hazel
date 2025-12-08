@@ -19,9 +19,8 @@ import {
 	UserPresenceStatusRpcs,
 	UserRpcs,
 } from "@hazel/domain/rpc"
+import { createRpcTypeResolver, DevtoolsProtocolLayer, setRpcTypeResolver } from "@hazel/rpc-devtools"
 import { Layer } from "effect"
-// Static import - Vite will tree-shake in production build
-import { DevtoolsProtocolLayer } from "~/lib/devtools/rpc/protocol-interceptor"
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL
 const wsUrl = `${backendUrl.replace(/^http/, "ws")}/rpc`
@@ -57,6 +56,11 @@ const AllRpcs = MessageRpcs.merge(
 	AttachmentRpcs,
 	UserPresenceStatusRpcs,
 )
+
+// Configure RPC type resolver for devtools (only in dev mode)
+if (import.meta.env.DEV) {
+	setRpcTypeResolver(createRpcTypeResolver([AllRpcs]))
+}
 
 export class HazelRpcClient extends AtomRpc.Tag<HazelRpcClient>()("HazelRpcClient", {
 	group: AllRpcs,
