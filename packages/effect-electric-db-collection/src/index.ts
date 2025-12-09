@@ -50,6 +50,7 @@ export {
 } from "./service"
 // Types
 export type {
+	BackoffConfig,
 	EffectDeleteHandler,
 	EffectElectricCollectionConfig,
 	EffectInsertHandler,

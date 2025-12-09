@@ -49,6 +49,41 @@ export type EffectDeleteHandler<
 > = (params: DeleteMutationFnParams<T, TKey, TUtils>) => Effect.Effect<{ txid: Txid | Array<Txid> }, E, R>
 
 /**
+ * Configuration for exponential backoff on connection errors
+ */
+export interface BackoffConfig {
+	/**
+	 * Initial delay in milliseconds before first retry
+	 * @default 1000
+	 */
+	initialDelayMs?: number
+
+	/**
+	 * Maximum delay in milliseconds between retries
+	 * @default 30000
+	 */
+	maxDelayMs?: number
+
+	/**
+	 * Multiplier for exponential backoff (delay = delay * multiplier)
+	 * @default 2
+	 */
+	multiplier?: number
+
+	/**
+	 * Maximum number of retries before giving up. Set to Infinity for unlimited retries.
+	 * @default Infinity
+	 */
+	maxRetries?: number
+
+	/**
+	 * Whether to add random jitter to delays (helps prevent thundering herd)
+	 * @default true
+	 */
+	jitter?: boolean
+}
+
+/**
  * Configuration for Electric collection with Effect-based handlers
  */
 export interface EffectElectricCollectionConfig<
@@ -132,4 +167,15 @@ export interface EffectElectricCollectionConfig<
 	 * Optional function to compare two items
 	 */
 	compare?: (x: T, y: T) => number
+
+	/**
+	 * Configuration for exponential backoff on connection errors.
+	 * When enabled (default), errors will be retried with increasing delays
+	 * instead of immediately retrying.
+	 *
+	 * Set to `false` to disable backoff entirely.
+	 *
+	 * @default { initialDelayMs: 1000, maxDelayMs: 30000, multiplier: 2, maxRetries: Infinity, jitter: true }
+	 */
+	backoff?: BackoffConfig | false
 }

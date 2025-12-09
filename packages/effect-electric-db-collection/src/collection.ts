@@ -1,4 +1,4 @@
-import type { Row } from "@electric-sql/client"
+import type { Row, ShapeStreamOptions } from "@electric-sql/client"
 import type { StandardSchemaV1 } from "@standard-schema/spec"
 import type { Collection, CollectionConfig } from "@tanstack/db"
 import type { ElectricCollectionUtils, Txid } from "@tanstack/electric-db-collection"
@@ -7,7 +7,96 @@ import { createCollection as tanstackCreateCollection } from "@tanstack/react-db
 import { Effect, type ManagedRuntime, Schema } from "effect"
 import { InvalidTxIdError, TxIdTimeoutError } from "./errors"
 import { convertDeleteHandler, convertInsertHandler, convertUpdateHandler } from "./handlers"
-import type { EffectElectricCollectionConfig } from "./types"
+import type { BackoffConfig, EffectElectricCollectionConfig } from "./types"
+
+/**
+ * Type for the ShapeStream onError handler
+ * Returns void to stop syncing, or an object to continue with modified params/headers
+ */
+type OnErrorHandler = NonNullable<ShapeStreamOptions<unknown>["onError"]>
+
+/**
+ * Default backoff configuration
+ */
+const DEFAULT_BACKOFF_CONFIG: Required<BackoffConfig> = {
+	initialDelayMs: 1000,
+	maxDelayMs: 30000,
+	multiplier: 2,
+	maxRetries: Number.POSITIVE_INFINITY,
+	jitter: true,
+}
+
+/**
+ * Creates an onError handler with exponential backoff
+ */
+function createBackoffOnError(
+	collectionId: string | undefined,
+	backoffConfig: Required<BackoffConfig>,
+	userOnError?: OnErrorHandler,
+): OnErrorHandler {
+	let retryCount = 0
+	let currentDelay = backoffConfig.initialDelayMs
+	let resetTimeout: ReturnType<typeof setTimeout> | null = null
+
+	// Reset backoff state after a period of successful operation
+	const scheduleReset = () => {
+		if (resetTimeout) {
+			clearTimeout(resetTimeout)
+		}
+		// Reset after 60 seconds of no errors
+		resetTimeout = setTimeout(() => {
+			retryCount = 0
+			currentDelay = backoffConfig.initialDelayMs
+		}, 60000)
+	}
+
+	return async (error) => {
+		retryCount++
+
+		const prefix = collectionId ? `[${collectionId}]` : "[electric]"
+
+		// Check if max retries exceeded
+		if (retryCount > backoffConfig.maxRetries) {
+			console.error(
+				`${prefix} Max retries (${backoffConfig.maxRetries}) exceeded, stopping sync`,
+				error,
+			)
+			// Return undefined to stop syncing
+			return
+		}
+
+		// Calculate delay with optional jitter
+		const delay = backoffConfig.jitter
+			? currentDelay * (0.5 + Math.random()) // Jitter between 50-150% of delay
+			: currentDelay
+
+		console.warn(
+			`${prefix} Connection error, retrying in ${Math.round(delay)}ms (attempt ${retryCount}/${backoffConfig.maxRetries === Number.POSITIVE_INFINITY ? "∞" : backoffConfig.maxRetries})`,
+			error,
+		)
+
+		// Wait for the delay
+		await new Promise((resolve) => setTimeout(resolve, delay))
+
+		// Increase delay for next retry (exponential backoff)
+		currentDelay = Math.min(currentDelay * backoffConfig.multiplier, backoffConfig.maxDelayMs)
+
+		// Schedule reset of backoff state
+		scheduleReset()
+
+		// Call user's onError handler if provided
+		if (userOnError) {
+			const result = await userOnError(error)
+			// If user handler returns a result, use it
+			if (result !== undefined) {
+				return result
+			}
+		}
+
+		// Return empty object to continue syncing with same params
+		return {}
+	}
+}
 
 type InferSchemaOutput<T> = T extends StandardSchemaV1
 	? StandardSchemaV1.InferOutput<T> extends Row<unknown>
@@ -103,8 +192,27 @@ export function effectElectricCollectionOptions(
 	const promiseOnUpdate = convertUpdateHandler(config.onUpdate, config.runtime)
 	const promiseOnDelete = convertDeleteHandler(config.onDelete, config.runtime)
 
+	// Handle backoff configuration
+	const backoffEnabled = config.backoff !== false
+	const backoffConfig: Required<BackoffConfig> = backoffEnabled
+		? { ...DEFAULT_BACKOFF_CONFIG, ...(typeof config.backoff === "object" ? config.backoff : {}) }
+		: DEFAULT_BACKOFF_CONFIG // Won't be used when disabled
+
+	// Create modified shapeOptions with backoff-wrapped onError
+	const modifiedShapeOptions = backoffEnabled
+		? {
+				...config.shapeOptions,
+				onError: createBackoffOnError(
+					config.id,
+					backoffConfig,
+					config.shapeOptions.onError,
+				),
+			}
+		: config.shapeOptions
+
 	const standardConfig = electricCollectionOptions({
 		...config,
+		shapeOptions: modifiedShapeOptions,
 		onInsert: promiseOnInsert,
 		onUpdate: promiseOnUpdate,
 		onDelete: promiseOnDelete,
