@@ -255,13 +255,10 @@ export const OrganizationRpcLive = OrganizationRpcs.toLayer(
 				db
 					.transaction(
 						Effect.gen(function* () {
-							console.log("setSlug", id, slug)
 							const updatedOrganization = yield* OrganizationRepo.update({
 								id,
 								slug,
 							}).pipe(policyUse(OrganizationPolicy.canUpdate(id)))
-
-							console.log("updatedOrganization", updatedOrganization)
 
 							const txid = yield* generateTransactionId()
 

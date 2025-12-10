@@ -43,8 +43,6 @@ export const organizationCollection = createEffectCollection({
 		Effect.gen(function* () {
 			const { modified: newOrganization } = transaction.mutations[0]
 
-			console.log(newOrganization)
-
 			const client = yield* HazelRpcClient
 
 			const results = yield* client("organization.update", newOrganization)

@@ -57,8 +57,6 @@ function AppearanceSettings() {
 			className="flex flex-col gap-6 px-4 lg:px-8"
 			onSubmit={(e) => {
 				e.preventDefault()
-				const data = Object.fromEntries(new FormData(e.currentTarget))
-				console.log("Form data:", data)
 			}}
 		>
 			<SectionHeader.Root>

@@ -11,6 +11,7 @@ import { SectionHeader } from "~/components/ui/section-header"
 import { SectionLabel } from "~/components/ui/section-label"
 import { Switch, SwitchLabel } from "~/components/ui/switch"
 import { useIntegrationConnection } from "~/db/hooks"
+import { useOrganization } from "~/hooks/use-organization"
 import { useAuth } from "~/lib/auth"
 import { HazelApiClient } from "~/lib/services/common/atom-client"
 import {
@@ -36,6 +37,7 @@ function IntegrationConfigPage() {
 	const { orgSlug, integrationId } = Route.useParams()
 	const navigate = useNavigate()
 	const { user } = useAuth()
+	const { organizationId } = useOrganization()
 	const integration = getIntegrationById(integrationId)
 	const [isConnecting, setIsConnecting] = useState(false)
 	const [isDisconnecting, setIsDisconnecting] = useState(false)
@@ -43,7 +45,7 @@ function IntegrationConfigPage() {
 	// Query connection from TanStack DB collection (real-time sync via Electric)
 	// Only used for OAuth-based integrations (not OpenStatus)
 	const { connection, isConnected } = useIntegrationConnection(
-		user?.organizationId ?? null,
+		organizationId ?? null,
 		integrationId as IntegrationProvider,
 	)
 
@@ -62,10 +64,10 @@ function IntegrationConfigPage() {
 	const externalAccountName = connection?.externalAccountName ?? null
 
 	const handleConnect = async () => {
-		if (!user?.organizationId) return
+		if (!organizationId) return
 		setIsConnecting(true)
 		const exit = await getOAuthUrl({
-			path: { orgId: user.organizationId, provider: integrationId as IntegrationProvider },
+			path: { orgId: organizationId, provider: integrationId as IntegrationProvider },
 		})
 
 		Exit.match(exit, {
@@ -81,10 +83,10 @@ function IntegrationConfigPage() {
 	}
 
 	const handleDisconnect = async () => {
-		if (!user?.organizationId) return
+		if (!organizationId) return
 		setIsDisconnecting(true)
 		const exit = await disconnectMutation({
-			path: { orgId: user.organizationId, provider: integrationId as IntegrationProvider },
+			path: { orgId: organizationId, provider: integrationId as IntegrationProvider },
 		})
 
 		Exit.match(exit, {
@@ -154,11 +156,11 @@ function IntegrationConfigPage() {
 				<div className="flex flex-col gap-8">
 					{isWebhookIntegration ? (
 						// Webhook-based integrations: Show channel-based webhook configuration
-						user?.organizationId &&
+						organizationId &&
 						(integrationId === "openstatus" ? (
-							<OpenStatusIntegrationContent organizationId={user.organizationId} />
+							<OpenStatusIntegrationContent organizationId={organizationId} />
 						) : integrationId === "railway" ? (
-							<RailwayIntegrationContent organizationId={user.organizationId} />
+							<RailwayIntegrationContent organizationId={organizationId} />
 						) : null)
 					) : (
 						<>
