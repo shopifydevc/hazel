@@ -1,8 +1,9 @@
 import { Database } from "@hazel/db"
-import { CurrentUser, policyUse, withRemapDbErrors, withSystemActor } from "@hazel/domain"
+import { CurrentUser, policyUse, withRemapDbErrors } from "@hazel/domain"
 import { MessageRpcs } from "@hazel/domain/rpc"
 import { Effect } from "effect"
 import { generateTransactionId } from "../../lib/create-transactionId"
+import { AttachmentPolicy } from "../../policies/attachment-policy"
 import { MessagePolicy } from "../../policies/message-policy"
 import { AttachmentRepo } from "../../repositories/attachment-repo"
 import { MessageRepo } from "../../repositories/message-repo"
@@ -52,7 +53,7 @@ export const MessageRpcLive = MessageRpcs.toLayer(
 										AttachmentRepo.update({
 											id: attachmentId,
 											messageId: createdMessage.id,
-										}).pipe(withSystemActor),
+										}).pipe(policyUse(AttachmentPolicy.canUpdate(attachmentId))),
 									)
 								}
 
