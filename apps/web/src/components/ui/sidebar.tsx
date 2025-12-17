@@ -411,14 +411,14 @@ const SidebarItem = ({ isCurrent, tooltip, children, badge, className, ref, ...p
 						(state !== "collapsed" ? (
 							<span
 								data-slot="sidebar-badge"
-								className="-translate-y-1/2 absolute inset-ring-1 inset-ring-sidebar-border inset-y-1/2 right-1.5 h-5.5 w-auto rounded-full bg-fg/5 px-2 text-[10px]/5.5 transition-all group-hover/sidebar-item:inset-ring-muted-fg/30 group-hover/sidebar-item:right-8 group-data-current:inset-ring-transparent"
+								className="-translate-y-1/2 absolute inset-y-1/2 right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 font-semibold text-[11px] text-primary-fg tabular-nums transition-all group-hover/sidebar-item:right-8"
 							>
 								{badge}
 							</span>
 						) : (
 							<div
 								aria-hidden
-								className="absolute top-1 right-1 size-1.5 rounded-full bg-primary"
+								className="absolute top-0.5 right-0.5 size-2.5 rounded-full bg-primary ring-2 ring-sidebar"
 							/>
 						))}
 				</>
