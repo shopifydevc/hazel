@@ -1,4 +1,3 @@
-import { OtlpTracer } from "@effect/opentelemetry"
 import {
 	FetchHttpClient,
 	HttpApiScalar,
@@ -9,6 +8,7 @@ import {
 import { BunHttpServer, BunRuntime } from "@effect/platform-bun"
 import { RpcSerialization, RpcServer } from "@effect/rpc"
 import { S3 } from "@hazel/effect-bun"
+import { createTracingLayer } from "@hazel/effect-bun/Telemetry"
 import { GitHub } from "@hazel/integrations"
 import { Config, Layer } from "effect"
 import { HazelApi } from "./api"
@@ -91,12 +91,7 @@ const AllRoutes = Layer.mergeAll(HttpApiRoutes, HealthRouter, DocsRoute, RpcRout
 	),
 )
 
-const TracerLive = OtlpTracer.layer({
-	url: "http://localhost:4318/v1/traces",
-	resource: {
-		serviceName: "hazel-backend",
-	},
-}).pipe(Layer.provide(FetchHttpClient.layer))
+const TracerLive = createTracingLayer("hazel-backend")
 
 const RepoLive = Layer.mergeAll(
 	MessageRepo.Default,

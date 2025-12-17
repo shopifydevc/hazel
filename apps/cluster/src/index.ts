@@ -13,6 +13,7 @@ import {
 } from "@hazel/backend-core"
 import { Database } from "@hazel/db"
 import { Cluster } from "@hazel/domain"
+import { createTracingLayer } from "@hazel/effect-bun/Telemetry"
 import { Config, Effect, Layer, Logger, Redacted } from "effect"
 import { PresenceCleanupCronLayer } from "./cron/presence-cleanup-cron.ts"
 import { UploadCleanupCronLayer } from "./cron/upload-cleanup-cron.ts"
@@ -39,6 +40,9 @@ const DatabaseLayer = Database.layer({
 	url: Redacted.make(process.env.DATABASE_URL as string)!,
 	ssl: !process.env.IS_DEV,
 })
+
+// OpenTelemetry tracing layer
+const TracerLive = createTracingLayer("hazel-cluster")
 
 // Health check endpoint
 const HealthLive = HttpApiBuilder.group(Cluster.WorkflowApi, "health", (handlers) =>
@@ -86,6 +90,7 @@ const ServerLayer = HttpApiBuilder.serve(
 	Layer.provide(WorkflowApiLive),
 	Layer.provide(AllWorkflows),
 	Layer.provide(AllCronJobs),
+	Layer.provide(TracerLive),
 	Layer.provide(Logger.pretty),
 	Layer.provide(
 		BunHttpServer.layerConfig(
