@@ -82,7 +82,15 @@ export const createTracingLayer = (otelServiceName: string) =>
 			const environment = yield* Config.string("OTEL_ENVIRONMENT").pipe(Config.withDefault("local"))
 			const commitSha = yield* Config.string("COMMIT_SHA").pipe(Config.withDefault("unknown"))
 
+			const nodeEnv = yield* Config.string("NODE_ENV").pipe(Config.withDefault("development"))
+
 			if (environment === "local") {
+				if (nodeEnv === "production") {
+					return yield* Effect.die(
+						"NODE_ENV is set to production, but OTEL_ENVIRONMENT is set to local",
+					)
+				}
+
 				return DevTools.layerWebSocket().pipe(Layer.provide(BunSocket.layerWebSocketConstructor))
 			}
 
