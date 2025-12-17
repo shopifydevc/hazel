@@ -233,6 +233,20 @@
         "typescript": "^5.9.3",
       },
     },
+    "experimental/effect-otel": {
+      "name": "@hazel/effect-otel",
+      "version": "0.0.0",
+      "dependencies": {
+        "@effect/opentelemetry": "catalog:effect",
+        "@effect/platform": "catalog:effect",
+        "effect": "catalog:effect",
+      },
+      "devDependencies": {
+        "@effect/language-service": "catalog:effect",
+        "@types/bun": "latest",
+        "typescript": "^5.9.3",
+      },
+    },
     "libs/effect-electric-db-collection": {
       "name": "@hazel/effect-electric-db-collection",
       "version": "0.0.0",
@@ -330,6 +344,7 @@
         "@effect/opentelemetry": "catalog:effect",
         "@effect/platform": "catalog:effect",
         "@effect/platform-bun": "catalog:effect",
+        "@hazel/effect-otel": "workspace:*",
         "effect": "catalog:effect",
       },
       "devDependencies": {
@@ -652,6 +667,8 @@
     "@hazel/effect-bun": ["@hazel/effect-bun@workspace:packages/effect-bun"],
 
     "@hazel/effect-electric-db-collection": ["@hazel/effect-electric-db-collection@workspace:libs/effect-electric-db-collection"],
+
+    "@hazel/effect-otel": ["@hazel/effect-otel@workspace:experimental/effect-otel"],
 
     "@hazel/electric-proxy": ["@hazel/electric-proxy@workspace:apps/electric-proxy"],
 
