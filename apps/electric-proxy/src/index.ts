@@ -1,6 +1,7 @@
 import { Database } from "@hazel/db"
 import { Effect, Layer, Logger, Runtime } from "effect"
 import { type BotAuthenticationError, validateBotToken } from "./auth/bot-auth"
+import { TracerLive } from "./observability/tracer"
 import { type AuthenticationError, validateSession } from "./auth/user-auth"
 import { AccessContextCacheLive, type AccessContextCacheService, RedisPersistenceLive } from "./cache"
 import { ProxyConfigLive, ProxyConfigService } from "./config"
@@ -314,6 +315,7 @@ const MainLive = DatabaseLive.pipe(
 	Layer.provideMerge(ProxyConfigLive),
 	Layer.provideMerge(LoggerLive),
 	Layer.provideMerge(CacheLive),
+	Layer.provideMerge(TracerLive),
 )
 
 // =============================================================================

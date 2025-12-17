@@ -42,7 +42,7 @@ const DatabaseLayer = Database.layer({
 })
 
 // OpenTelemetry tracing layer
-const TracerLive = createTracingLayer("hazel-cluster")
+const TracerLive = createTracingLayer("cluster")
 
 // Health check endpoint
 const HealthLive = HttpApiBuilder.group(Cluster.WorkflowApi, "health", (handlers) =>

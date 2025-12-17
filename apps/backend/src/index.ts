@@ -91,7 +91,7 @@ const AllRoutes = Layer.mergeAll(HttpApiRoutes, HealthRouter, DocsRoute, RpcRout
 	),
 )
 
-const TracerLive = createTracingLayer("hazel-backend")
+const TracerLive = createTracingLayer("api")
 
 const RepoLive = Layer.mergeAll(
 	MessageRepo.Default,
