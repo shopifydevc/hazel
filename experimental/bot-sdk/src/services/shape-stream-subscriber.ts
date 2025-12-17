@@ -73,14 +73,17 @@ export class ShapeStreamSubscriber extends Effect.Service<ShapeStreamSubscriber>
 							}),
 						},
 						offset: !subscription.startFromNow ? undefined : "now",
-						fetchClient: (input: string | URL | Request, init?: RequestInit) =>
-							fetch(input, {
-								...init,
-								headers: {
-									...init?.headers,
-									Authorization: `Bearer ${config.botToken}`,
-								},
-							}),
+						fetchClient: Object.assign(
+							(input: string | URL | Request, init?: RequestInit) =>
+								fetch(input, {
+									...init,
+									headers: {
+										...init?.headers,
+										Authorization: `Bearer ${config.botToken}`,
+									},
+								}),
+							{ preconnect: fetch.preconnect },
+						),
 					})
 
 					const unsubscribe = stream.subscribe((messages) => {
