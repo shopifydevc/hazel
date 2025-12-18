@@ -69,14 +69,16 @@ export const MessageNotificationWorkflowLayer = Cluster.MessageNotificationWorkf
 								),
 						)
 						.pipe(
-							Effect.mapError(
-								(cause) =>
-									new Cluster.GetChannelMembersError({
-										channelId: payload.channelId,
-										message: "Failed to query channel members",
-										cause,
-									}),
-							),
+							Effect.catchTags({
+								DatabaseError: (err) =>
+									Effect.fail(
+										new Cluster.GetChannelMembersError({
+											channelId: payload.channelId,
+											message: "Failed to query channel members",
+											cause: err,
+										}),
+									),
+							}),
 						)
 
 					yield* Effect.log(`Found ${channelMembers.length} members to notify (all members mode)`)
@@ -105,14 +107,16 @@ export const MessageNotificationWorkflowLayer = Cluster.MessageNotificationWorkf
 								.limit(1),
 						)
 						.pipe(
-							Effect.mapError(
-								(cause) =>
-									new Cluster.GetChannelMembersError({
-										channelId: payload.channelId,
-										message: "Failed to query reply-to message author",
-										cause,
-									}),
-							),
+							Effect.catchTags({
+								DatabaseError: (err) =>
+									Effect.fail(
+										new Cluster.GetChannelMembersError({
+											channelId: payload.channelId,
+											message: "Failed to query reply-to message author",
+											cause: err,
+										}),
+									),
+							}),
 						)
 
 					if (replyToMessage.length > 0 && replyToMessage[0]!.authorId !== payload.authorId) {
@@ -167,14 +171,16 @@ export const MessageNotificationWorkflowLayer = Cluster.MessageNotificationWorkf
 							),
 					)
 					.pipe(
-						Effect.mapError(
-							(cause) =>
-								new Cluster.GetChannelMembersError({
-									channelId: payload.channelId,
-									message: "Failed to query channel members for mentions",
-									cause,
-								}),
-						),
+						Effect.catchTags({
+							DatabaseError: (err) =>
+								Effect.fail(
+									new Cluster.GetChannelMembersError({
+										channelId: payload.channelId,
+										message: "Failed to query channel members for mentions",
+										cause: err,
+									}),
+								),
+						}),
 					)
 
 				yield* Effect.log(`Found ${channelMembers.length} members to notify (smart mode)`)
@@ -232,15 +238,17 @@ export const MessageNotificationWorkflowLayer = Cluster.MessageNotificationWorkf
 								.limit(1),
 						)
 						.pipe(
-							Effect.mapError(
-								(cause) =>
-									new Cluster.CreateNotificationError({
-										messageId: payload.messageId,
-										userId: member.userId,
-										message: "Failed to query organization member",
-										cause,
-									}),
-							),
+							Effect.catchTags({
+								DatabaseError: (err) =>
+									Effect.fail(
+										new Cluster.CreateNotificationError({
+											messageId: payload.messageId,
+											userId: member.userId,
+											message: "Failed to query organization member",
+											cause: err,
+										}),
+									),
+							}),
 						)
 
 					if (orgMemberResult.length === 0) {
@@ -266,15 +274,17 @@ export const MessageNotificationWorkflowLayer = Cluster.MessageNotificationWorkf
 								.returning({ id: schema.notificationsTable.id }),
 						)
 						.pipe(
-							Effect.mapError(
-								(cause) =>
-									new Cluster.CreateNotificationError({
-										messageId: payload.messageId,
-										memberId: orgMemberId,
-										message: "Failed to insert notification",
-										cause,
-									}),
-							),
+							Effect.catchTags({
+								DatabaseError: (err) =>
+									Effect.fail(
+										new Cluster.CreateNotificationError({
+											messageId: payload.messageId,
+											memberId: orgMemberId,
+											message: "Failed to insert notification",
+											cause: err,
+										}),
+									),
+							}),
 						)
 
 					const notificationId = notificationResult[0]!.id
@@ -291,15 +301,17 @@ export const MessageNotificationWorkflowLayer = Cluster.MessageNotificationWorkf
 								.where(eq(schema.channelMembersTable.id, member.id)),
 						)
 						.pipe(
-							Effect.mapError(
-								(cause) =>
-									new Cluster.CreateNotificationError({
-										messageId: payload.messageId,
-										memberId: orgMemberId,
-										message: "Failed to increment notification count",
-										cause,
-									}),
-							),
+							Effect.catchTags({
+								DatabaseError: (err) =>
+									Effect.fail(
+										new Cluster.CreateNotificationError({
+											messageId: payload.messageId,
+											memberId: orgMemberId,
+											message: "Failed to increment notification count",
+											cause: err,
+										}),
+									),
+							}),
 						)
 
 					yield* Effect.log(`Created notification ${notificationId} for member ${member.userId}`)

@@ -42,13 +42,15 @@ export const CleanupUploadsWorkflowLayer = Cluster.CleanupUploadsWorkflow.toLaye
 							),
 					)
 					.pipe(
-						Effect.mapError(
-							(cause) =>
-								new Cluster.FindStaleUploadsError({
-									message: "Failed to find stale uploads",
-									cause,
-								}),
-						),
+						Effect.catchTags({
+							DatabaseError: (err) =>
+								Effect.fail(
+									new Cluster.FindStaleUploadsError({
+										message: "Failed to find stale uploads",
+										cause: err,
+									}),
+								),
+						}),
 					)
 
 				const uploads = staleUploads.map((upload) => ({
@@ -97,13 +99,15 @@ export const CleanupUploadsWorkflowLayer = Cluster.CleanupUploadsWorkflow.toLaye
 								),
 						)
 						.pipe(
-							Effect.mapError(
-								(cause) =>
-									new Cluster.MarkUploadsFailedError({
-										message: `Failed to mark upload ${upload.id} as failed`,
-										cause,
-									}),
-							),
+							Effect.catchTags({
+								DatabaseError: (err) =>
+									Effect.fail(
+										new Cluster.MarkUploadsFailedError({
+											message: `Failed to mark upload ${upload.id} as failed`,
+											cause: err,
+										}),
+									),
+							}),
 						)
 
 					failedIds.push(upload.id)

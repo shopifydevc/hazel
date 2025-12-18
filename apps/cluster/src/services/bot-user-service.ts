@@ -41,14 +41,16 @@ export class BotUserService extends Effect.Service<BotUserService>()("BotUserSer
 							.limit(1),
 					)
 					.pipe(
-						Effect.mapError(
-							(cause) =>
-								new Cluster.BotUserQueryError({
-									provider,
-									message: `Failed to query bot user for ${provider}`,
-									cause,
-								}),
-						),
+						Effect.catchTags({
+							DatabaseError: (err) =>
+								Effect.fail(
+									new Cluster.BotUserQueryError({
+										provider,
+										message: `Failed to query bot user for ${provider}`,
+										cause: err,
+									}),
+								),
+						}),
 					)
 
 				if (results.length === 0) {

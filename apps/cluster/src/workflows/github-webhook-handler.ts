@@ -47,14 +47,16 @@ export const GitHubWebhookWorkflowLayer = Cluster.GitHubWebhookWorkflow.toLayer(
 							),
 					)
 					.pipe(
-						Effect.mapError(
-							(cause) =>
-								new Cluster.GetGitHubSubscriptionsError({
-									repositoryId: payload.repositoryId,
-									message: "Failed to query GitHub subscriptions",
-									cause,
-								}),
-						),
+						Effect.catchTags({
+							DatabaseError: (err) =>
+								Effect.fail(
+									new Cluster.GetGitHubSubscriptionsError({
+										repositoryId: payload.repositoryId,
+										message: "Failed to query GitHub subscriptions",
+										cause: err,
+									}),
+								),
+						}),
 					)
 
 				yield* Effect.log(
@@ -151,14 +153,16 @@ export const GitHubWebhookWorkflowLayer = Cluster.GitHubWebhookWorkflow.toLayer(
 								.returning({ id: schema.messagesTable.id }),
 						)
 						.pipe(
-							Effect.mapError(
-								(cause) =>
-									new Cluster.CreateGitHubMessageError({
-										channelId: subscription.channelId,
-										message: "Failed to create GitHub message",
-										cause,
-									}),
-							),
+							Effect.catchTags({
+								DatabaseError: (err) =>
+									Effect.fail(
+										new Cluster.CreateGitHubMessageError({
+											channelId: subscription.channelId,
+											message: "Failed to create GitHub message",
+											cause: err,
+										}),
+									),
+							}),
 						)
 
 					if (messageResult.length > 0) {
