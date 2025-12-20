@@ -1,9 +1,7 @@
 import { useAtomValue } from "@effect-atom/atom-react"
-import type { PinnedMessageId } from "@hazel/schema"
 import { format } from "date-fns"
 import { memo, useRef } from "react"
 import { useHover } from "react-aria"
-import { toast } from "sonner"
 import type { MessageWithPinned } from "~/atoms/chat-query-atoms"
 import { processedReactionsAtomFamily } from "~/atoms/message-atoms"
 import IconPin from "~/components/icons/icon-pin"
@@ -249,54 +247,6 @@ export const MessageItem = memo(function MessageItem({
 		</div>
 	)
 })
-
-// Export handlers for use by MessageList's shared toolbar
-export function useMessageHandlers(message: MessageWithPinned | null) {
-	const { setReplyToMessageId, deleteMessage, pinMessage, unpinMessage, createThread } = useChat()
-	const { user: currentUser } = useAuth()
-
-	const handleDelete = () => {
-		if (!message) return
-		deleteMessage(message.id)
-	}
-
-	const handleCopy = () => {
-		if (!message) return
-
-		navigator.clipboard.writeText(message.content)
-		toast.success("Copied!", {
-			description: "Message content has been copied to your clipboard.",
-		})
-	}
-
-	const handleReply = () => {
-		if (!message) return
-		setReplyToMessageId(message.id)
-	}
-
-	const handleThread = () => {
-		if (!message) return
-		createThread(message.id, message.threadChannelId)
-	}
-
-	const handlePin = (isPinned: boolean, pinnedMessageId?: string) => {
-		if (!message) return
-		if (isPinned && pinnedMessageId) {
-			unpinMessage(pinnedMessageId as PinnedMessageId)
-		} else if (!isPinned) {
-			pinMessage(message.id)
-		}
-	}
-
-	return {
-		isOwnMessage: currentUser?.id === message?.authorId,
-		handleDelete,
-		handleCopy,
-		handleReply,
-		handleThread,
-		handlePin,
-	}
-}
 
 export const MessageAuthorHeader = ({
 	message,

@@ -36,10 +36,7 @@ const contentStyles = tv({
 })
 
 const panelStyles = tv({
-	base: [
-		"relative flex h-full flex-shrink-0 flex-col overflow-hidden",
-		"border-border bg-bg",
-	],
+	base: ["relative flex h-full flex-shrink-0 flex-col overflow-hidden", "border-border bg-bg"],
 	variants: {
 		position: {
 			left: "border-r",

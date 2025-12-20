@@ -1,4 +1,6 @@
+import type { PinnedMessageId } from "@hazel/schema"
 import { useState } from "react"
+import { toast } from "sonner"
 import type { MessageWithPinned } from "~/atoms/chat-query-atoms"
 import { EmojiPickerDialog } from "~/components/emoji-picker"
 import { Button } from "~/components/ui/button"
@@ -8,6 +10,7 @@ import { Toolbar } from "~/components/ui/toolbar"
 import { Tooltip, TooltipContent } from "~/components/ui/tooltip"
 import { useChat } from "~/hooks/use-chat"
 import { useEmojiStats } from "~/hooks/use-emoji-stats"
+import { useAuth } from "~/lib/auth"
 import IconCopy from "../icons/icon-copy"
 import IconDotsVertical from "../icons/icon-dots-vertical"
 import IconEmojiAdd from "../icons/icon-emoji-add"
@@ -16,7 +19,6 @@ import IconStar from "../icons/icon-star"
 import IconThread from "../icons/icon-thread"
 import IconTrash from "../icons/icon-trash"
 import { DeleteMessageModal } from "./delete-message-modal"
-import { useMessageHandlers } from "./message-item"
 
 interface MessageToolbarProps {
 	message: MessageWithPinned
@@ -24,15 +26,14 @@ interface MessageToolbarProps {
 }
 
 export function MessageToolbar({ message, onMenuOpenChange }: MessageToolbarProps) {
-	const { addReaction } = useChat()
+	const { addReaction, setReplyToMessageId, deleteMessage, pinMessage, unpinMessage, createThread } =
+		useChat()
 	const { topEmojis, trackEmojiUsage } = useEmojiStats()
+	const { user: currentUser } = useAuth()
 	const [deleteModalOpen, setDeleteModalOpen] = useState(false)
 
-	// Get message-specific handlers
-	const messageHandlers = useMessageHandlers(message)
-
 	// Derived state
-	const isOwnMessage = messageHandlers.isOwnMessage
+	const isOwnMessage = currentUser?.id === message.authorId
 	const isPinned = message.pinnedMessage?.id !== undefined
 
 	const handleReaction = (emoji: string | { emoji: string; label: string }) => {
@@ -41,8 +42,31 @@ export function MessageToolbar({ message, onMenuOpenChange }: MessageToolbarProp
 		addReaction(message.id, message.channelId, emojiString)
 	}
 
+	const handleCopy = () => {
+		navigator.clipboard.writeText(message.content)
+		toast.success("Copied!", {
+			description: "Message content has been copied to your clipboard.",
+		})
+	}
+
+	const handleReply = () => {
+		setReplyToMessageId(message.id)
+	}
+
+	const handleThread = () => {
+		createThread(message.id, message.threadChannelId)
+	}
+
 	const handlePin = () => {
-		messageHandlers.handlePin(isPinned, message.pinnedMessage?.id)
+		if (isPinned && message.pinnedMessage?.id) {
+			unpinMessage(message.pinnedMessage.id as PinnedMessageId)
+		} else {
+			pinMessage(message.id)
+		}
+	}
+
+	const handleDelete = () => {
+		deleteMessage(message.id)
 	}
 
 	const handleDeleteModalChange = (open: boolean) => {
@@ -89,7 +113,7 @@ export function MessageToolbar({ message, onMenuOpenChange }: MessageToolbarProp
 				<Button
 					size="sq-sm"
 					intent="plain"
-					onPress={messageHandlers.handleCopy}
+					onPress={handleCopy}
 					aria-label="Copy message"
 					className="!p-1.5 hover:bg-secondary"
 				>
@@ -103,7 +127,7 @@ export function MessageToolbar({ message, onMenuOpenChange }: MessageToolbarProp
 				<Button
 					size="sq-sm"
 					intent="plain"
-					onPress={messageHandlers.handleReply}
+					onPress={handleReply}
 					aria-label="Reply"
 					className="!p-1.5 hover:bg-secondary"
 				>
@@ -138,7 +162,7 @@ export function MessageToolbar({ message, onMenuOpenChange }: MessageToolbarProp
 						<IconDotsVertical className="size-3.5" />
 					</MenuTrigger>
 					<MenuContent placement="bottom end">
-						<MenuItem onAction={messageHandlers.handleThread}>
+						<MenuItem onAction={handleThread}>
 							<IconThread data-slot="icon" />
 							<MenuLabel>Reply in thread</MenuLabel>
 						</MenuItem>
@@ -155,7 +179,7 @@ export function MessageToolbar({ message, onMenuOpenChange }: MessageToolbarProp
 			<DeleteMessageModal
 				isOpen={deleteModalOpen}
 				onOpenChange={handleDeleteModalChange}
-				onConfirm={messageHandlers.handleDelete}
+				onConfirm={handleDelete}
 			/>
 		</Toolbar>
 	)

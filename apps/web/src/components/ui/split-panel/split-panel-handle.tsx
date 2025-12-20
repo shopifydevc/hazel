@@ -72,7 +72,11 @@ export function SplitPanelHandle({
 	className,
 }: SplitPanelHandleProps) {
 	return (
-		<div {...handleProps} className={handleStyles({ position, isDragging, className })} data-dragging={isDragging}>
+		<div
+			{...handleProps}
+			className={handleStyles({ position, isDragging, className })}
+			data-dragging={isDragging}
+		>
 			<div className={indicatorStyles({ position, isDragging })} />
 		</div>
 	)
