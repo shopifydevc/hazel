@@ -1,13 +1,16 @@
-import { useSyncExternalStore } from "react"
+import { useCallback, useSyncExternalStore } from "react"
 
 export const useMediaQuery = (query: string) => {
-	return useSyncExternalStore(
-		(callback) => {
+	const subscribe = useCallback(
+		(callback: () => void) => {
 			const result = matchMedia(query)
 			result.addEventListener("change", callback)
 			return () => result.removeEventListener("change", callback)
 		},
-		() => matchMedia(query).matches,
-		() => false, // Server-side snapshot
+		[query],
 	)
+
+	const getSnapshot = useCallback(() => matchMedia(query).matches, [query])
+
+	return useSyncExternalStore(subscribe, getSnapshot, () => false)
 }

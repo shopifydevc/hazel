@@ -97,7 +97,7 @@ function ChatLayout() {
 }
 
 function RouteComponent() {
-	const { id, orgSlug } = Route.useParams()
+	const { id } = Route.useParams()
 	const { organizationId } = useOrganization()
 	const messageListRef = useRef<MessageListRef>(null)
 
@@ -111,7 +111,8 @@ function RouteComponent() {
 
 	useEffect(() => {
 		clearNotifications({ payload: { channelId: id as ChannelId } })
-	}, [id, clearNotifications])
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [id])
 
 	return (
 		<ChatProvider
