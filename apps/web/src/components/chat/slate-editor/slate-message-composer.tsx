@@ -52,6 +52,7 @@ export const SlateMessageComposer = ({ placeholder = "Type a message..." }: Slat
 		addUploadingFile,
 		updateUploadingFileProgress,
 		removeUploadingFile,
+		activeThreadChannelId,
 	} = useChat()
 
 	const editorRef = useRef<SlateMessageEditorRef>(null)
@@ -324,6 +325,9 @@ export const SlateMessageComposer = ({ placeholder = "Type a message..." }: Slat
 								onUpdate={handleUpdate}
 								isUploading={isUploading}
 								hasAttachments={attachmentIds.length > 0}
+								disableGlobalKeyboardFocus={
+									!!activeThreadChannelId && channelId !== activeThreadChannelId
+								}
 							/>
 							<MessageComposerActions onEmojiSelect={handleEmojiSelect} />
 						</div>

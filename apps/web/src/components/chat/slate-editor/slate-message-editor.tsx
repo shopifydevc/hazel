@@ -94,6 +94,8 @@ interface SlateMessageEditorProps {
 	onUpdate?: (content: string) => void
 	isUploading?: boolean
 	hasAttachments?: boolean
+	/** Disable global keyboard focus capture (e.g., when a thread panel is open) */
+	disableGlobalKeyboardFocus?: boolean
 }
 
 // Autoformat plugin to convert markdown shortcuts to block types
@@ -306,6 +308,7 @@ export const SlateMessageEditor = forwardRef<SlateMessageEditorRef, SlateMessage
 			onUpdate,
 			isUploading = false,
 			hasAttachments = false,
+			disableGlobalKeyboardFocus = false,
 		},
 		ref,
 	) => {
@@ -954,6 +957,7 @@ export const SlateMessageEditor = forwardRef<SlateMessageEditorRef, SlateMessage
 		// Global keydown listener to focus editor on typing
 		useGlobalKeyboardFocus({
 			onInsertText: focusAndInsertTextInternal,
+			when: !disableGlobalKeyboardFocus,
 		})
 
 		// Custom decorator that handles both markdown and code syntax highlighting
