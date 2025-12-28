@@ -252,7 +252,7 @@ function IntegrationConfigPage() {
 							{/* OAuth-based integration: Connection card */}
 							<div className="overflow-hidden rounded-xl border border-border bg-bg">
 								<div className="border-border border-b bg-bg-muted/30 px-5 py-3">
-									<h3 className="font-medium text-fg text-sm">Connection</h3>
+									<h3 className="font-semibold text-fg text-sm">Connection</h3>
 								</div>
 								<div className="p-5">
 									{isVerifying ? (
@@ -279,7 +279,7 @@ function IntegrationConfigPage() {
 							{isConnected && (
 								<div className="overflow-hidden rounded-xl border border-border bg-bg">
 									<div className="border-border border-b bg-bg-muted/30 px-5 py-3">
-										<h3 className="font-medium text-fg text-sm">Configuration</h3>
+										<h3 className="font-semibold text-fg text-sm">Configuration</h3>
 									</div>
 									<div className="flex flex-col divide-y divide-border">
 										{integration.configOptions.map((option) => (
@@ -301,7 +301,7 @@ function IntegrationConfigPage() {
 				<div className="lg:sticky lg:top-6 lg:self-start">
 					<div className="overflow-hidden rounded-xl border border-border bg-bg">
 						<div className="border-border border-b bg-bg-muted/30 px-5 py-3">
-							<h3 className="font-medium text-fg text-sm">Features</h3>
+							<h3 className="font-semibold text-fg text-sm">Features</h3>
 						</div>
 						<div className="p-5">
 							<p className="mb-4 text-muted-fg text-sm leading-relaxed">
@@ -567,7 +567,7 @@ function GitHubRepositoryAccessSection({ organizationId }: { organizationId: Org
 		return (
 			<div className="overflow-hidden rounded-xl border border-border bg-bg">
 				<div className="border-border border-b bg-bg-muted/30 px-5 py-3">
-					<h3 className="font-medium text-fg text-sm">Repository Access</h3>
+					<h3 className="font-semibold text-fg text-sm">Repository Access</h3>
 				</div>
 				<div className="flex items-center justify-center p-8">
 					<div className="flex items-center gap-3 text-muted-fg">
@@ -598,7 +598,7 @@ function GitHubRepositoryAccessSection({ organizationId }: { organizationId: Org
 		return (
 			<div className="overflow-hidden rounded-xl border border-border bg-bg">
 				<div className="border-border border-b bg-bg-muted/30 px-5 py-3">
-					<h3 className="font-medium text-fg text-sm">Repository Access</h3>
+					<h3 className="font-semibold text-fg text-sm">Repository Access</h3>
 				</div>
 				<div className="flex flex-col items-center justify-center px-5 py-8 text-center">
 					<p className="text-muted-fg text-sm">Unable to load repositories</p>
@@ -618,8 +618,8 @@ function GitHubRepositoryAccessSection({ organizationId }: { organizationId: Org
 		<div className="overflow-hidden rounded-xl border border-border bg-bg">
 			<div className="flex items-center justify-between border-border border-b bg-bg-muted/30 px-5 py-3">
 				<div className="flex items-center gap-2">
-					<h3 className="font-medium text-fg text-sm">Repository Access</h3>
-					<span className="rounded-full bg-bg-muted px-2 py-0.5 text-muted-fg text-xs">
+					<h3 className="font-semibold text-fg text-sm">Repository Access</h3>
+					<span className="rounded-full bg-secondary px-2 py-0.5 text-muted-fg text-xs">
 						{totalCount}
 					</span>
 				</div>

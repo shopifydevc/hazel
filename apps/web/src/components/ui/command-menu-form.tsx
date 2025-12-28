@@ -77,7 +77,7 @@ export function CommandMenuFormHeader({
 				</Button>
 			)}
 			<div className="min-w-0 flex-1">
-				<h2 className="truncate font-medium text-fg text-sm">{title}</h2>
+				<h2 className="truncate font-semibold text-fg text-sm">{title}</h2>
 				{subtitle && <p className="truncate text-muted-fg text-xs">{subtitle}</p>}
 			</div>
 			<Button

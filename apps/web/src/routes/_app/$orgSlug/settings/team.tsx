@@ -151,7 +151,7 @@ function TeamSettings() {
 		<>
 			<div className="flex flex-col gap-6 px-4 lg:px-8">
 				<div className="overflow-hidden rounded-xl border border-border bg-bg shadow-sm">
-					<div className="border-border border-b bg-bg px-4 py-5 md:px-6">
+					<div className="border-border border-b bg-bg-muted/30 px-4 py-5 md:px-6">
 						<div className="flex flex-col items-start gap-4 md:flex-row">
 							<div className="flex flex-1 flex-col gap-0.5">
 								<div className="flex items-center gap-2">
