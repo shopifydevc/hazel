@@ -106,6 +106,27 @@ export const GitHubSubscriptionRpcLive = GitHubSubscriptionRpcs.toLayer(
 					withRemapDbErrors("GitHubSubscription", "select"),
 				),
 
+			"githubSubscription.listByOrganization": () =>
+				Effect.gen(function* () {
+					const user = yield* CurrentUser.Context
+
+					// If no organization, return empty list
+					if (!user.organizationId) {
+						return new GitHubSubscriptionListResponse({ data: [] })
+					}
+
+					const organizationId = user.organizationId
+
+					const subscriptions = yield* subscriptionRepo
+						.findByOrganization(organizationId)
+						.pipe(
+							withSystemActor,
+							policyUse(GitHubSubscriptionPolicy.canReadByOrganization(organizationId)),
+						)
+
+					return new GitHubSubscriptionListResponse({ data: subscriptions })
+				}).pipe(withRemapDbErrors("GitHubSubscription", "select")),
+
 			"githubSubscription.update": ({ id, ...payload }) =>
 				db
 					.transaction(

@@ -20,6 +20,14 @@ export const createGitHubSubscriptionMutation = HazelRpcClient.mutation("githubS
 export const listGitHubSubscriptionsMutation = HazelRpcClient.mutation("githubSubscription.list")
 
 /**
+ * Mutation atom for listing all GitHub subscriptions for an organization.
+ * Used by the organization-level integration settings page.
+ */
+export const listOrganizationGitHubSubscriptionsMutation = HazelRpcClient.mutation(
+	"githubSubscription.listByOrganization",
+)
+
+/**
  * Mutation atom for updating a GitHub subscription.
  * Can update enabled events, branch filter, and enabled status.
  */

@@ -106,7 +106,22 @@ export class GitHubSubscriptionPolicy extends Effect.Service<GitHubSubscriptionP
 					),
 				)
 
-			return { canCreate, canRead, canUpdate, canDelete } as const
+			// Can read subscriptions for an organization (org admin only)
+			const canReadByOrganization = (organizationId: OrganizationId) =>
+				ErrorUtils.refailUnauthorized(
+					policyEntity,
+					"select",
+				)(
+					policy(
+						policyEntity,
+						"select",
+						Effect.fn(`${policyEntity}.selectByOrganization`)(function* (actor) {
+							return yield* isOrgAdmin(organizationId, actor.id)
+						}),
+					),
+				)
+
+			return { canCreate, canRead, canReadByOrganization, canUpdate, canDelete } as const
 		}),
 		dependencies: [ChannelRepo.Default, GitHubSubscriptionRepo.Default, OrganizationMemberRepo.Default],
 		accessors: true,

@@ -5,6 +5,7 @@ import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router"
 import { Exit, Option } from "effect"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
+import { GitHubSubscriptionsSection } from "~/components/integrations/github-subscriptions-section"
 import { OpenStatusIntegrationContent } from "~/components/integrations/openstatus-integration-content"
 import { RailwayIntegrationContent } from "~/components/integrations/railway-integration-content"
 import { Button, buttonStyles } from "~/components/ui/button"
@@ -292,6 +293,11 @@ function IntegrationConfigPage() {
 							{/* GitHub Repository Access */}
 							{isConnected && integrationId === "github" && organizationId && (
 								<GitHubRepositoryAccessSection organizationId={organizationId} />
+							)}
+
+							{/* GitHub Channel Subscriptions */}
+							{isConnected && integrationId === "github" && organizationId && (
+								<GitHubSubscriptionsSection organizationId={organizationId} />
 							)}
 						</>
 					)}

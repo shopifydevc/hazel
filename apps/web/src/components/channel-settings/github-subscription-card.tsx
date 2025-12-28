@@ -8,6 +8,7 @@ import {
 } from "~/atoms/github-subscription-atoms"
 import { IconCirclePause } from "~/components/icons/icon-circle-pause"
 import IconDotsVertical from "~/components/icons/icon-dots-vertical"
+import IconEdit from "~/components/icons/icon-edit"
 import IconTrash from "~/components/icons/icon-trash"
 import { resolvedThemeAtom } from "~/components/theme-provider"
 import { Badge } from "~/components/ui/badge"
@@ -29,9 +30,14 @@ const EVENT_LABELS: Record<string, string> = {
 interface GitHubSubscriptionItemProps {
 	subscription: GitHubSubscriptionData
 	onUpdate: () => void
+	onEdit?: (subscription: GitHubSubscriptionData) => void
 }
 
-export function GitHubSubscriptionItem({ subscription, onUpdate }: GitHubSubscriptionItemProps) {
+export function GitHubSubscriptionItem({
+	subscription,
+	onUpdate,
+	onEdit,
+}: GitHubSubscriptionItemProps) {
 	const [confirmDelete, setConfirmDelete] = useState(false)
 	const [isDeleting, setIsDeleting] = useState(false)
 	const [isToggling, setIsToggling] = useState(false)
@@ -134,6 +140,12 @@ export function GitHubSubscriptionItem({ subscription, onUpdate }: GitHubSubscri
 						<IconDotsVertical className="size-4" />
 					</Button>
 					<MenuContent placement="bottom end">
+						{onEdit && (
+							<MenuItem onAction={() => onEdit(subscription)}>
+								<IconEdit className="size-4" />
+								<MenuLabel>Edit</MenuLabel>
+							</MenuItem>
+						)}
 						<MenuItem onAction={handleToggle} isDisabled={isToggling}>
 							{subscription.isEnabled ? (
 								<IconCirclePause className="size-4" />

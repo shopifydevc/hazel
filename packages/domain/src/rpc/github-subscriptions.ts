@@ -119,6 +119,21 @@ export class GitHubSubscriptionRpcs extends RpcGroup.make(
 	}).middleware(AuthMiddleware),
 
 	/**
+	 * githubSubscription.listByOrganization
+	 *
+	 * Lists all GitHub subscriptions for the user's organization.
+	 * Used by the organization-level integration settings page.
+	 *
+	 * @returns Array of subscriptions across all channels in the organization
+	 * @throws UnauthorizedError if user is not authenticated
+	 */
+	Rpc.query("githubSubscription.listByOrganization", {
+		payload: Schema.Struct({}),
+		success: GitHubSubscriptionListResponse,
+		error: Schema.Union(UnauthorizedError, InternalServerError),
+	}).middleware(AuthMiddleware),
+
+	/**
 	 * githubSubscription.update
 	 *
 	 * Updates a GitHub subscription's settings.
