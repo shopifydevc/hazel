@@ -3,6 +3,7 @@ import { WorkflowProxy } from "@effect/workflow"
 import { Schema } from "effect"
 import {
 	CleanupUploadsWorkflow,
+	GitHubInstallationWorkflow,
 	GitHubWebhookWorkflow,
 	MessageNotificationWorkflow,
 	ThreadNamingWorkflow,
@@ -12,6 +13,7 @@ import {
 export const workflows = [
 	MessageNotificationWorkflow,
 	CleanupUploadsWorkflow,
+	GitHubInstallationWorkflow,
 	GitHubWebhookWorkflow,
 	ThreadNamingWorkflow,
 ] as const

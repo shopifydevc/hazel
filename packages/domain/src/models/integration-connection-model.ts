@@ -9,7 +9,7 @@ export type IntegrationProvider = Schema.Schema.Type<typeof IntegrationProvider>
 export const ConnectionLevel = Schema.Literal("organization", "user")
 export type ConnectionLevel = Schema.Schema.Type<typeof ConnectionLevel>
 
-export const ConnectionStatus = Schema.Literal("active", "expired", "revoked", "error")
+export const ConnectionStatus = Schema.Literal("active", "expired", "revoked", "error", "suspended")
 export type ConnectionStatus = Schema.Schema.Type<typeof ConnectionStatus>
 
 export class Model extends M.Class<Model>("IntegrationConnection")({

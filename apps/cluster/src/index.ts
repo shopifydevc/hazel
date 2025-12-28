@@ -22,6 +22,7 @@ import { BotUserServiceLive } from "./services/bot-user-service.ts"
 import { OpenRouterLanguageModelLayer } from "./services/openrouter-service.ts"
 import {
 	CleanupUploadsWorkflowLayer,
+	GitHubInstallationWorkflowLayer,
 	GitHubWebhookWorkflowLayer,
 	MessageNotificationWorkflowLayer,
 	ThreadNamingWorkflowLayer,
@@ -54,6 +55,7 @@ const HealthLive = HttpApiBuilder.group(Cluster.WorkflowApi, "health", (handlers
 const AllWorkflows = Layer.mergeAll(
 	MessageNotificationWorkflowLayer,
 	CleanupUploadsWorkflowLayer,
+	GitHubInstallationWorkflowLayer,
 	GitHubWebhookWorkflowLayer,
 	ThreadNamingWorkflowLayer.pipe(Layer.provide(OpenRouterLanguageModelLayer)),
 ).pipe(Layer.provide(BotUserServiceLive), Layer.provide(DatabaseLayer))

@@ -16,7 +16,13 @@ export const integrationProviderEnum = pgEnum("integration_provider", ["linear",
 
 export const connectionLevelEnum = pgEnum("connection_level", ["organization", "user"])
 
-export const connectionStatusEnum = pgEnum("connection_status", ["active", "expired", "revoked", "error"])
+export const connectionStatusEnum = pgEnum("connection_status", [
+	"active",
+	"expired",
+	"revoked",
+	"error",
+	"suspended",
+])
 
 export const integrationConnectionsTable = pgTable(
 	"integration_connections",

@@ -22,5 +22,6 @@ export {
 export * from "./bot-activities.ts"
 export * from "./cleanup-activities.ts"
 export * from "./github-activities.ts"
+export * from "./github-installation-activities.ts"
 export * from "./message-activities.ts"
 export * from "./thread-naming-activities.ts"

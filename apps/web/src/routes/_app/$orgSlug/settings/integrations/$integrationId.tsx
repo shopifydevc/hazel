@@ -3,7 +3,8 @@ import type { OrganizationId } from "@hazel/domain"
 import type { IntegrationConnection } from "@hazel/domain/models"
 import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router"
 import { Exit, Option } from "effect"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { toast } from "sonner"
 import { OpenStatusIntegrationContent } from "~/components/integrations/openstatus-integration-content"
 import { RailwayIntegrationContent } from "~/components/integrations/railway-integration-content"
 import { Button, buttonStyles } from "~/components/ui/button"
@@ -26,8 +27,42 @@ import {
 
 type IntegrationProvider = IntegrationConnection.IntegrationProvider
 
+/**
+ * Search params for OAuth callback redirect
+ */
+interface IntegrationSearchParams {
+	connection_status?: "success" | "error"
+	error_code?: string
+	provider?: string
+}
+
+/**
+ * Get user-friendly error message from error code
+ */
+const getErrorMessageFromCode = (errorCode?: string): string => {
+	switch (errorCode) {
+		case "token_exchange_failed":
+			return "Could not authenticate with the provider. Please try again."
+		case "account_info_failed":
+			return "Could not fetch your account information."
+		case "db_error":
+			return "A database error occurred. Please try again."
+		case "encryption_error":
+			return "A security error occurred. Please try again."
+		case "invalid_state":
+			return "The connection request expired. Please try again."
+		default:
+			return "An unexpected error occurred. Please try again."
+	}
+}
+
 export const Route = createFileRoute("/_app/$orgSlug/settings/integrations/$integrationId")({
 	component: IntegrationConfigPage,
+	validateSearch: (search: Record<string, unknown>): IntegrationSearchParams => ({
+		connection_status: search.connection_status as IntegrationSearchParams["connection_status"],
+		error_code: search.error_code as string | undefined,
+		provider: search.provider as string | undefined,
+	}),
 	beforeLoad: ({ params }) => {
 		if (!validIntegrationIds.includes(params.integrationId)) {
 			throw notFound()
@@ -37,12 +72,14 @@ export const Route = createFileRoute("/_app/$orgSlug/settings/integrations/$inte
 
 function IntegrationConfigPage() {
 	const { orgSlug, integrationId } = Route.useParams()
+	const { connection_status, error_code } = Route.useSearch()
 	const navigate = useNavigate()
 	const { user } = useAuth()
 	const { organizationId } = useOrganization()
 	const integration = getIntegrationById(integrationId)
 	const [isConnecting, setIsConnecting] = useState(false)
 	const [isDisconnecting, setIsDisconnecting] = useState(false)
+	const [isVerifying, setIsVerifying] = useState(false)
 
 	// Query connection from TanStack DB collection (real-time sync via Electric)
 	// Only used for OAuth-based integrations (not OpenStatus)
@@ -50,6 +87,42 @@ function IntegrationConfigPage() {
 		organizationId ?? null,
 		integrationId as IntegrationProvider,
 	)
+
+	// Handle OAuth callback result from URL params
+	useEffect(() => {
+		if (!connection_status || !integration) return
+
+		const handleCallbackResult = async () => {
+			if (connection_status === "success") {
+				setIsVerifying(true)
+
+				// Show success toast - the backend confirmed success via the URL param
+				toast.success(`Connected to ${integration.name}`, {
+					description: "Your account has been successfully connected.",
+				})
+
+				// Wait for Electric sync to catch up before hiding verifying state
+				// This ensures the UI shows the connected state after the toast
+				await new Promise((resolve) => setTimeout(resolve, 1500))
+				setIsVerifying(false)
+			} else if (connection_status === "error") {
+				const errorMessage = getErrorMessageFromCode(error_code)
+				toast.error(`Failed to connect to ${integration.name}`, {
+					description: errorMessage,
+				})
+			}
+
+			// Clear search params
+			navigate({
+				to: "/$orgSlug/settings/integrations/$integrationId",
+				params: { orgSlug, integrationId },
+				search: {},
+				replace: true,
+			})
+		}
+
+		handleCallbackResult()
+	}, [connection_status, error_code, integration, orgSlug, integrationId, navigate])
 
 	// Mutations for OAuth flow and disconnect
 	const getOAuthUrl = useAtomSet(HazelApiClient.mutation("integrations", "getOAuthUrl"), {
@@ -182,7 +255,9 @@ function IntegrationConfigPage() {
 									<h3 className="font-medium text-fg text-sm">Connection</h3>
 								</div>
 								<div className="p-5">
-									{isConnected ? (
+									{isVerifying ? (
+										<VerifyingState integration={integration} />
+									) : isConnected ? (
 										<ConnectedState
 											integration={integration}
 											connection={connection}
@@ -354,6 +429,36 @@ function DisconnectedState({
 	)
 }
 
+function VerifyingState({ integration }: { integration: Integration }) {
+	return (
+		<div className="flex flex-col items-center gap-4 py-4 text-center">
+			<div className="flex size-14 items-center justify-center rounded-full bg-bg-muted">
+				<svg className="size-6 animate-spin text-muted-fg" fill="none" viewBox="0 0 24 24">
+					<circle
+						className="opacity-25"
+						cx="12"
+						cy="12"
+						r="10"
+						stroke="currentColor"
+						strokeWidth="4"
+					/>
+					<path
+						className="opacity-75"
+						fill="currentColor"
+						d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+					/>
+				</svg>
+			</div>
+			<div className="flex flex-col gap-1">
+				<p className="font-medium text-fg text-sm">Verifying connection...</p>
+				<p className="text-muted-fg text-sm">
+					Please wait while we verify your {integration.name} connection.
+				</p>
+			</div>
+		</div>
+	)
+}
+
 function ConnectedState({
 	integration,
 	connection,
@@ -367,7 +472,6 @@ function ConnectedState({
 	isDisconnecting: boolean
 	onDisconnect: () => void
 }) {
-	console.log(connection)
 	// GitHub App installation settings URL - allows users to manage permissions or uninstall
 	const gitHubConfigureUrl =
 		integration.id === "github" && connection?.metadata?.installationId

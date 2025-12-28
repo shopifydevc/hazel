@@ -387,8 +387,109 @@ export const HttpWebhookLive = HttpApiBuilder.group(HazelApi, "webhooks", (handl
 					eventType,
 					deliveryId,
 					repository: payload.repository?.full_name,
+					action: payload.action,
 				})
 
+				// Get cluster URL and create client once
+				const clusterUrl = yield* Config.string("CLUSTER_URL").pipe(Effect.orDie)
+				const client = yield* HttpApiClient.make(Cluster.WorkflowApi, {
+					baseUrl: clusterUrl,
+				})
+
+				// Handle installation lifecycle events (uninstall, suspend, unsuspend)
+				if (eventType === "installation") {
+					const installation = payload.installation as
+						| { id: number; account: { login: string; type: string } }
+						| undefined
+					const action = payload.action as string | undefined
+					const sender = payload.sender as { login: string } | undefined
+
+					// Validate required fields for installation events
+					if (
+						!installation?.id ||
+						!installation?.account ||
+						!action ||
+						!["created", "deleted", "suspend", "unsuspend"].includes(action)
+					) {
+						yield* Effect.logDebug("Skipping installation webhook - missing fields or unsupported action", {
+							hasInstallation: !!installation?.id,
+							hasAccount: !!installation?.account,
+							action,
+						})
+						return new GitHubWebhookResponse({ processed: false })
+					}
+
+					yield* Effect.logInfo("Processing GitHub installation event", {
+						deliveryId,
+						action,
+						installationId: installation.id,
+						accountLogin: installation.account.login,
+						accountType: installation.account.type,
+						senderLogin: sender?.login,
+					})
+
+					yield* client.workflows
+						.GitHubInstallationWorkflow({
+							payload: {
+								deliveryId,
+								action: action as "created" | "deleted" | "suspend" | "unsuspend",
+								installationId: installation.id,
+								accountLogin: installation.account.login,
+								accountType: installation.account.type as "User" | "Organization",
+								senderLogin: sender?.login ?? "unknown",
+							},
+						})
+						.pipe(
+							Effect.tapError((err) =>
+								Effect.logError("Failed to execute GitHub installation workflow", {
+									error: err.message,
+									deliveryId,
+									action,
+									installationId: installation.id,
+								}),
+							),
+							Effect.catchTags({
+								HttpApiDecodeError: (err) =>
+									Effect.fail(
+										new WorkflowInitializationError({
+											message: "Failed to execute GitHub installation workflow",
+											cause: err.message,
+										}),
+									),
+								ParseError: (err) =>
+									Effect.fail(
+										new WorkflowInitializationError({
+											message: "Failed to execute GitHub installation workflow",
+											cause: String(err),
+										}),
+									),
+								RequestError: (err) =>
+									Effect.fail(
+										new WorkflowInitializationError({
+											message: "Failed to execute GitHub installation workflow",
+											cause: err.message,
+										}),
+									),
+								ResponseError: (err) =>
+									Effect.fail(
+										new WorkflowInitializationError({
+											message: "Failed to execute GitHub installation workflow",
+											cause: err.message,
+										}),
+									),
+							}),
+						)
+
+					yield* Effect.logInfo("GitHub installation event processed successfully", {
+						deliveryId,
+						action,
+						installationId: installation.id,
+					})
+
+					return new GitHubWebhookResponse({ processed: true })
+				}
+
+				// Handle repository-based events (push, pull_request, issues, etc.)
 				// Extract required info from payload
 				const installationId = payload.installation?.id as number | undefined
 				const repositoryId = payload.repository?.id as number | undefined
@@ -402,12 +503,6 @@ export const HttpWebhookLive = HttpApiBuilder.group(HazelApi, "webhooks", (handl
 					})
 					return new GitHubWebhookResponse({ processed: false })
 				}
-
-				// Get cluster URL and trigger the workflow
-				const clusterUrl = yield* Config.string("CLUSTER_URL").pipe(Effect.orDie)
-				const client = yield* HttpApiClient.make(Cluster.WorkflowApi, {
-					baseUrl: clusterUrl,
-				})
 
 				yield* client.workflows
 					.GitHubWebhookWorkflow({

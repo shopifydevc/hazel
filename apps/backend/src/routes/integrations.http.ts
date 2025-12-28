@@ -13,7 +13,7 @@ import {
 	InvalidOAuthStateError,
 } from "@hazel/domain/http"
 import type { IntegrationConnection } from "@hazel/domain/models"
-import { Config, Effect, Option, Schema } from "effect"
+import { Config, Effect, Option, Schedule, Schema } from "effect"
 import { HazelApi } from "../api"
 import { IntegrationConnectionRepo } from "../repositories/integration-connection-repo"
 import { OrganizationRepo } from "../repositories/organization-repo"
@@ -27,11 +27,61 @@ import { OAuthProviderRegistry } from "../services/oauth"
 const OAuthState = Schema.Struct({
 	organizationId: Schema.String,
 	userId: Schema.String,
-	/** Full URL to redirect after OAuth completes (e.g., http://localhost:3000/org/settings/integrations) */
+	/** Full URL to redirect after OAuth completes (e.g., http://localhost:3000/org/settings/integrations/github) */
 	returnTo: Schema.String,
 	/** Environment that initiated the OAuth flow. Used to redirect back to localhost for local dev. */
 	environment: Schema.optional(Schema.Literal("local", "production")),
 })
+
+/**
+ * Retry schedule for OAuth operations.
+ * Retries up to 3 times with exponential backoff (100ms, 200ms, 400ms)
+ */
+const oauthRetrySchedule = Schedule.exponential("100 millis").pipe(Schedule.intersect(Schedule.recurs(3)))
+
+/**
+ * Error codes for OAuth callback failures (used in redirect URL params)
+ */
+type OAuthErrorCode =
+	| "token_exchange_failed"
+	| "account_info_failed"
+	| "db_error"
+	| "encryption_error"
+	| "invalid_state"
+
+/**
+ * Check if an error is retryable (network error, rate limit, or server error)
+ */
+const isRetryableError = (error: { message: string; cause?: unknown }): boolean => {
+	const message = error.message.toLowerCase()
+	if (message.includes("network error") || message.includes("timeout")) {
+		return true
+	}
+	// Check for status code in cause
+	const cause = error.cause as { status?: number } | undefined
+	if (cause?.status) {
+		return cause.status === 429 || cause.status >= 500
+	}
+	return false
+}
+
+/**
+ * Build redirect URL with connection status query params
+ */
+const buildRedirectUrl = (
+	returnTo: string,
+	provider: string,
+	status: "success" | "error",
+	errorCode?: OAuthErrorCode,
+): string => {
+	const url = new URL(returnTo)
+	url.searchParams.set("connection_status", status)
+	url.searchParams.set("provider", provider)
+	if (errorCode) {
+		url.searchParams.set("error_code", errorCode)
+	}
+	return url.toString()
+}
 
 /**
  * Get OAuth authorization URL for a provider.
@@ -91,7 +141,7 @@ const handleGetOAuthUrl = Effect.fn("integrations.getOAuthUrl")(function* (path:
 		JSON.stringify({
 			organizationId: orgId,
 			userId: currentUser.id,
-			returnTo: `${frontendUrl}/${org.slug}/settings/integrations`,
+			returnTo: `${frontendUrl}/${org.slug}/settings/integrations/${provider}`,
 			environment,
 		}),
 	)
@@ -121,6 +171,15 @@ const handleOAuthCallback = Effect.fn("integrations.oauthCallback")(function* (
 	const { provider } = path
 	const { code, state: encodedState, installation_id, setup_action } = urlParams
 
+	yield* Effect.logInfo("OAuth callback received", {
+		event: "integration_callback_start",
+		provider,
+		hasState: !!encodedState,
+		hasInstallationId: !!installation_id,
+		hasCode: !!code,
+		setupAction: setup_action,
+	})
+
 	// Handle update callbacks that don't have state (GitHub sends these when permissions change)
 	if (!encodedState && installation_id && setup_action === "update") {
 		const connectionRepo = yield* IntegrationConnectionRepo
@@ -135,6 +194,7 @@ const handleOAuthCallback = Effect.fn("integrations.oauthCallback")(function* (
 		if (Option.isNone(connectionOption)) {
 			// No connection found - redirect to root
 			yield* Effect.logWarning("GitHub update callback for unknown installation", {
+				event: "integration_callback_update_unknown",
 				installationId: installation_id,
 			})
 			return HttpServerResponse.redirect(frontendUrl)
@@ -150,6 +210,7 @@ const handleOAuthCallback = Effect.fn("integrations.oauthCallback")(function* (
 
 		if (Option.isNone(orgOption)) {
 			yield* Effect.logWarning("GitHub update callback: organization not found", {
+				event: "integration_callback_update_org_not_found",
 				organizationId: connection.organizationId,
 			})
 			return HttpServerResponse.redirect(frontendUrl)
@@ -157,12 +218,24 @@ const handleOAuthCallback = Effect.fn("integrations.oauthCallback")(function* (
 
 		const org = orgOption.value
 
-		// Redirect to the organization's GitHub integration settings
-		return HttpServerResponse.redirect(`${frontendUrl}/${org.slug}/settings/integrations/github`)
+		yield* Effect.logInfo("GitHub update callback processed", {
+			event: "integration_callback_update_success",
+			installationId: installation_id,
+			organizationId: connection.organizationId,
+		})
+
+		// Redirect to the organization's GitHub integration settings with success status
+		return HttpServerResponse.redirect(
+			buildRedirectUrl(`${frontendUrl}/${org.slug}/settings/integrations/github`, provider, "success"),
+		)
 	}
 
 	// For fresh installs and other callbacks, state is required
 	if (!encodedState) {
+		yield* Effect.logError("OAuth callback missing state", {
+			event: "integration_callback_missing_state",
+			provider,
+		})
 		return yield* Effect.fail(new InvalidOAuthStateError({ message: "Missing OAuth state" }))
 	}
 
@@ -170,7 +243,25 @@ const handleOAuthCallback = Effect.fn("integrations.oauthCallback")(function* (
 	const parsedState = yield* Effect.try({
 		try: () => Schema.decodeUnknownSync(OAuthState)(JSON.parse(decodeURIComponent(encodedState))),
 		catch: () => new InvalidOAuthStateError({ message: "Invalid OAuth state" }),
+	}).pipe(
+		Effect.tapError(() =>
+			Effect.logError("OAuth callback invalid state", {
+				event: "integration_callback_invalid_state",
+				provider,
+			}),
+		),
+	)
+
+	yield* Effect.logInfo("OAuth callback state parsed", {
+		event: "integration_callback_state_parsed",
+		provider,
+		organizationId: parsedState.organizationId,
+		environment: parsedState.environment,
 	})
+
+	// Helper to redirect with error
+	const redirectWithError = (errorCode: OAuthErrorCode) =>
+		HttpServerResponse.redirect(buildRedirectUrl(parsedState.returnTo, provider, "error", errorCode))
 
 	// Check if we need to redirect to local environment
 	// This happens when production receives a callback for a local dev flow
@@ -178,6 +269,10 @@ const handleOAuthCallback = Effect.fn("integrations.oauthCallback")(function* (
 	const isProduction = nodeEnv !== "development"
 
 	if (isProduction && parsedState.environment === "local") {
+		yield* Effect.logInfo("OAuth callback redirecting to local environment", {
+			event: "integration_callback_local_redirect",
+			provider,
+		})
 		// Redirect to localhost with all params preserved
 		const localUrl = new URL(`http://localhost:3003/integrations/${provider}/callback`)
 		if (installation_id) localUrl.searchParams.set("installation_id", installation_id)
@@ -193,6 +288,13 @@ const handleOAuthCallback = Effect.fn("integrations.oauthCallback")(function* (
 	// Get the OAuth provider from registry
 	const registry = yield* OAuthProviderRegistry
 	const oauthProvider = yield* registry.getProvider(provider).pipe(
+		Effect.tapError((error) =>
+			Effect.logError("OAuth provider not available", {
+				event: "integration_callback_provider_unavailable",
+				provider,
+				error: error._tag,
+			}),
+		),
 		Effect.mapError(
 			(error) =>
 				new InvalidOAuthStateError({
@@ -212,40 +314,92 @@ const handleOAuthCallback = Effect.fn("integrations.oauthCallback")(function* (
 	const authCode = isGitHubAppCallback ? installation_id : code
 
 	if (!authCode) {
-		return yield* Effect.fail(
-			new InvalidOAuthStateError({
-				message: "Missing authorization code or installation ID",
-			}),
-		)
+		yield* Effect.logError("OAuth callback missing auth code", {
+			event: "integration_callback_missing_code",
+			provider,
+			isGitHubApp: isGitHubAppCallback,
+		})
+		return redirectWithError("invalid_state")
 	}
 
-	// Exchange code for tokens using the provider
-	// For GitHub App, this generates an installation token using JWT
-	const tokens = yield* oauthProvider.exchangeCodeForTokens(authCode).pipe(
-		Effect.mapError(
-			(error) =>
-				new InvalidOAuthStateError({
-					message: error.message,
-				}),
-		),
+	// Exchange code for tokens using the provider (with retry for transient failures)
+	yield* Effect.logInfo("OAuth token exchange starting", {
+		event: "integration_token_exchange_attempt",
+		provider,
+		isGitHubApp: isGitHubAppCallback,
+	})
+
+	const tokensResult = yield* oauthProvider.exchangeCodeForTokens(authCode).pipe(
+		Effect.retry({
+			schedule: oauthRetrySchedule,
+			while: isRetryableError,
+		}),
+		Effect.either,
 	)
 
-	// Get account info from provider
-	const accountInfo = yield* oauthProvider.getAccountInfo(tokens.accessToken).pipe(
-		Effect.mapError(
-			(error) =>
-				new InvalidOAuthStateError({
-					message: error.message,
-				}),
-		),
+	if (tokensResult._tag === "Left") {
+		const error = tokensResult.left
+		yield* Effect.logError("OAuth token exchange failed", {
+			event: "integration_token_exchange_failed",
+			provider,
+			error: error.message,
+			isGitHubApp: isGitHubAppCallback,
+		})
+		return redirectWithError("token_exchange_failed")
+	}
+
+	const tokens = tokensResult.right
+	yield* Effect.logInfo("OAuth token exchange succeeded", {
+		event: "integration_token_exchange_success",
+		provider,
+		hasRefreshToken: !!tokens.refreshToken,
+		expiresAt: tokens.expiresAt?.toISOString(),
+	})
+
+	// Get account info from provider (with retry for transient failures)
+	yield* Effect.logInfo("OAuth account info fetch starting", {
+		event: "integration_account_info_attempt",
+		provider,
+	})
+
+	const accountInfoResult = yield* oauthProvider.getAccountInfo(tokens.accessToken).pipe(
+		Effect.retry({
+			schedule: oauthRetrySchedule,
+			while: isRetryableError,
+		}),
+		Effect.either,
 	)
+
+	if (accountInfoResult._tag === "Left") {
+		const error = accountInfoResult.left
+		yield* Effect.logError("OAuth account info fetch failed", {
+			event: "integration_account_info_failed",
+			provider,
+			error: error.message,
+		})
+		return redirectWithError("account_info_failed")
+	}
+
+	const accountInfo = accountInfoResult.right
+	yield* Effect.logInfo("OAuth account info fetch succeeded", {
+		event: "integration_account_info_success",
+		provider,
+		externalAccountId: accountInfo.externalAccountId,
+		externalAccountName: accountInfo.externalAccountName,
+	})
 
 	// Prepare connection metadata
 	// For GitHub App, store the installation ID for token regeneration
 	const metadata = isGitHubAppCallback ? { installationId: installation_id } : null
 
 	// Create or update connection
-	const connection = yield* connectionRepo
+	yield* Effect.logInfo("OAuth database upsert starting", {
+		event: "integration_db_upsert_attempt",
+		provider,
+		organizationId: parsedState.organizationId,
+	})
+
+	const connectionResult = yield* connectionRepo
 		.upsertByOrgAndProvider({
 			provider,
 			organizationId: parsedState.organizationId as OrganizationId,
@@ -261,14 +415,54 @@ const handleOAuthCallback = Effect.fn("integrations.oauthCallback")(function* (
 			lastUsedAt: null,
 			deletedAt: null,
 		})
-		.pipe(withSystemActor)
+		.pipe(withSystemActor, Effect.either)
+
+	if (connectionResult._tag === "Left") {
+		yield* Effect.logError("OAuth database upsert failed", {
+			event: "integration_db_upsert_failed",
+			provider,
+			error: String(connectionResult.left),
+		})
+		return redirectWithError("db_error")
+	}
+
+	const connection = connectionResult.right
+	yield* Effect.logInfo("OAuth database upsert succeeded", {
+		event: "integration_db_upsert_success",
+		provider,
+		connectionId: connection.id,
+	})
 
 	// Store encrypted tokens
-	yield* tokenService.storeTokens(connection.id, {
-		accessToken: tokens.accessToken,
-		refreshToken: tokens.refreshToken,
-		expiresAt: tokens.expiresAt,
-		scope: tokens.scope,
+	yield* Effect.logInfo("OAuth token storage starting", {
+		event: "integration_token_storage_attempt",
+		provider,
+		connectionId: connection.id,
+	})
+
+	const storeResult = yield* tokenService
+		.storeTokens(connection.id, {
+			accessToken: tokens.accessToken,
+			refreshToken: tokens.refreshToken,
+			expiresAt: tokens.expiresAt,
+			scope: tokens.scope,
+		})
+		.pipe(Effect.either)
+
+	if (storeResult._tag === "Left") {
+		yield* Effect.logError("OAuth token storage failed", {
+			event: "integration_token_storage_failed",
+			provider,
+			connectionId: connection.id,
+			error: String(storeResult.left),
+		})
+		return redirectWithError("encryption_error")
+	}
+
+	yield* Effect.logInfo("OAuth token storage succeeded", {
+		event: "integration_token_storage_success",
+		provider,
+		connectionId: connection.id,
 	})
 
 	yield* Effect.logInfo("AUDIT: Integration connected", {
@@ -280,15 +474,19 @@ const handleOAuthCallback = Effect.fn("integrations.oauthCallback")(function* (
 		externalAccountId: accountInfo.externalAccountId,
 		externalAccountName: accountInfo.externalAccountName,
 		isGitHubApp: isGitHubAppCallback,
+		connectionId: connection.id,
 	})
 
-	// Redirect back to the settings page
-	return HttpServerResponse.empty({
-		status: 302,
-		headers: {
-			Location: parsedState.returnTo,
-		},
+	// Redirect back to the settings page with success status
+	const successUrl = buildRedirectUrl(parsedState.returnTo, provider, "success")
+	yield* Effect.logInfo("OAuth callback redirecting with success", {
+		event: "integration_callback_redirect",
+		provider,
+		status: "success",
+		redirectUrl: successUrl,
 	})
+
+	return HttpServerResponse.redirect(successUrl)
 })
 
 /**
@@ -365,28 +563,14 @@ export const HttpIntegrationLive = HttpApiBuilder.group(HazelApi, "integrations"
 		.handle("getOAuthUrl", ({ path }) => handleGetOAuthUrl(path))
 		.handle("oauthCallback", ({ path, urlParams }) =>
 			handleOAuthCallback(path, urlParams).pipe(
-				Effect.catchTags({
-					DatabaseError: (error) =>
-						Effect.fail(
-							new InternalServerError({
-								message: "Database error during OAuth callback",
-								detail: String(error),
-							}),
-						),
-					ParseError: (error) =>
-						Effect.fail(
-							new InvalidOAuthStateError({
-								message: `Failed to parse response: ${String(error)}`,
-							}),
-						),
-					IntegrationEncryptionError: (error) =>
-						Effect.fail(
-							new InternalServerError({
-								message: "Failed to encrypt tokens",
-								detail: String(error),
-							}),
-						),
-				}),
+				Effect.catchTag("DatabaseError", (error) =>
+					Effect.fail(
+						new InternalServerError({
+							message: "Database error during OAuth callback",
+							detail: String(error),
+						}),
+					),
+				),
 			),
 		)
 		.handle("getConnectionStatus", ({ path }) =>
