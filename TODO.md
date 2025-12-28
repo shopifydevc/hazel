@@ -3,7 +3,6 @@
 - test github subscribe to channel stuff
 - fix icons to all be outline or fill
 - setup sequin locally with config as code
-- fix tabs active state not working in my settings
 
 # Bugs
 
