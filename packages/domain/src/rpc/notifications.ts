@@ -2,7 +2,7 @@ import { RpcGroup } from "@effect/rpc"
 import { Schema } from "effect"
 import { Rpc } from "effect-rpc-tanstack-devtools"
 import { InternalServerError, UnauthorizedError } from "../errors"
-import { NotificationId } from "../ids"
+import { ChannelId, MessageId, NotificationId } from "../ids"
 import { Notification } from "../models"
 import { TransactionId } from "../transaction-id"
 import { AuthMiddleware } from "./middleware"
@@ -82,5 +82,28 @@ export class NotificationRpcs extends RpcGroup.make(
 		payload: Schema.Struct({ id: NotificationId }),
 		success: Schema.Struct({ transactionId: TransactionId }),
 		error: Schema.Union(NotificationNotFoundError, UnauthorizedError, InternalServerError),
+	}).middleware(AuthMiddleware),
+
+	/**
+	 * NotificationDeleteByMessageIds
+	 *
+	 * Bulk deletes notifications for the current user by message IDs.
+	 * Used when messages become visible in the viewport to clear their notifications.
+	 *
+	 * @param payload - Array of message IDs and channel ID for context
+	 * @returns Number of deleted notifications and transaction ID
+	 * @throws UnauthorizedError if user lacks permission
+	 * @throws InternalServerError for unexpected errors
+	 */
+	Rpc.mutation("notification.deleteByMessageIds", {
+		payload: Schema.Struct({
+			messageIds: Schema.Array(MessageId),
+			channelId: ChannelId,
+		}),
+		success: Schema.Struct({
+			deletedCount: Schema.Number,
+			transactionId: TransactionId,
+		}),
+		error: Schema.Union(UnauthorizedError, InternalServerError),
 	}).middleware(AuthMiddleware),
 ) {}

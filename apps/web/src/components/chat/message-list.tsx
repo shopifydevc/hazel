@@ -1,9 +1,11 @@
-import { LegendList, type LegendListRef } from "@legendapp/list"
+import { LegendList, type LegendListRef, type ViewToken } from "@legendapp/list"
+import type { ChannelId } from "@hazel/schema"
 import { useLiveInfiniteQuery } from "@tanstack/react-db"
 import { memo, useCallback, useImperativeHandle, useMemo, useRef, useState } from "react"
 import { useOverlayPosition } from "react-aria"
 import { createPortal } from "react-dom"
 import type { MessageWithPinned, ProcessedMessage } from "~/atoms/chat-query-atoms"
+import { useVisibleMessageNotificationCleaner } from "~/hooks/use-visible-message-notification-cleaner"
 
 import { Route } from "~/routes/_app/$orgSlug/chat/$id"
 import { MessageItem } from "./message-item"
@@ -19,6 +21,7 @@ interface MessageVirtualListProps {
 	onHoverChange: (messageId: string | null, ref: HTMLDivElement | null) => void
 	hasNextPage: boolean
 	fetchNextPage: () => void
+	onViewableItemsChanged?: (info: { viewableItems: ViewToken<MessageRow>[] }) => void
 }
 
 const MessageVirtualList = memo(
@@ -28,6 +31,7 @@ const MessageVirtualList = memo(
 		onHoverChange,
 		hasNextPage,
 		fetchNextPage,
+		onViewableItemsChanged,
 		ref,
 	}: MessageVirtualListProps & { ref: React.Ref<LegendListRef> }) => {
 		return (
@@ -48,6 +52,11 @@ const MessageVirtualList = memo(
 				keyExtractor={(it) => it.id}
 				initialScrollIndex={messageRows.length - 1}
 				stickyHeaderIndices={stickyIndices}
+				viewabilityConfig={{
+					itemVisiblePercentThreshold: 50,
+					minimumViewTime: 300,
+				}}
+				onViewableItemsChanged={onViewableItemsChanged}
 				renderItem={(props) =>
 					props.item.type === "header" ? (
 						<div className="sticky top-0 z-0 my-4 flex items-center justify-center">
@@ -80,6 +89,7 @@ export interface MessageListRef {
 
 export function MessageList({ ref }: { ref?: React.Ref<MessageListRef> }) {
 	const { messagesInfiniteQuery } = Route.useLoaderData()
+	const { id: channelId } = Route.useParams()
 
 	const legendListRef = useRef<LegendListRef>(null)
 	const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null)
@@ -88,6 +98,24 @@ export function MessageList({ ref }: { ref?: React.Ref<MessageListRef> }) {
 	const isToolbarHoveredRef = useRef(false)
 	const overlayRef = useRef<HTMLDivElement>(null)
 	const hideTimeoutRef = useRef<number | null>(null)
+
+	// Hook for clearing notifications when messages become visible
+	const { onVisibleMessagesChange } = useVisibleMessageNotificationCleaner({
+		channelId: channelId as ChannelId,
+	})
+
+	// Handle viewable items changes from LegendList
+	const handleViewableItemsChanged = useCallback(
+		({ viewableItems }: { viewableItems: ViewToken<MessageRow>[] }) => {
+			// Extract message IDs from viewable items (exclude headers)
+			const visibleMessageIds = viewableItems
+				.filter((item) => item.item?.type === "row")
+				.map((item) => item.item.id)
+
+			onVisibleMessagesChange(visibleMessageIds)
+		},
+		[onVisibleMessagesChange],
+	)
 
 	useImperativeHandle(ref, () => ({
 		scrollToBottom: () => {
@@ -234,6 +262,7 @@ export function MessageList({ ref }: { ref?: React.Ref<MessageListRef> }) {
 				onHoverChange={handleHoverChange}
 				hasNextPage={hasNextPage}
 				fetchNextPage={fetchNextPage}
+				onViewableItemsChanged={handleViewableItemsChanged}
 			/>
 
 			{(hoveredMessageId || isToolbarMenuOpen) &&
