@@ -478,29 +478,33 @@ const handleOAuthCallback = Effect.fn("integrations.oauthCallback")(function* (
 		connectionId: connection.id,
 	})
 
-	// Create bot user for GitHub so it's ready when webhooks arrive
+	// Add seeded bot to org for all OAuth integration providers
+	// Bot user should already exist from seed script - this just adds org membership
 	// This is best-effort - OAuth has already succeeded, so we just log and continue on error
-	if (provider === "github") {
-		yield* IntegrationBotService.getOrCreateBotUser(
-			"github",
-			parsedState.organizationId as OrganizationId,
-		).pipe(
-			Effect.provide(IntegrationBotService.Default),
-			Effect.tap(() =>
-				Effect.logInfo("GitHub bot user created/verified", {
-					event: "github_bot_user_created",
-					organizationId: parsedState.organizationId,
-				}),
-			),
-			Effect.catchAll((error) =>
-				Effect.logWarning("Failed to create GitHub bot user (non-critical)", {
-					event: "github_bot_user_creation_failed",
-					organizationId: parsedState.organizationId,
-					error: String(error),
-				}),
-			),
-		)
-	}
+	yield* IntegrationBotService.addBotToOrg(provider, parsedState.organizationId as OrganizationId).pipe(
+		Effect.provide(IntegrationBotService.Default),
+		Effect.tap((result) =>
+			Option.isSome(result)
+				? Effect.logInfo("Integration bot added to organization", {
+						event: "integration_bot_added_to_org",
+						provider,
+						organizationId: parsedState.organizationId,
+					})
+				: Effect.logWarning("Integration bot not found - run seed script", {
+						event: "integration_bot_not_seeded",
+						provider,
+						organizationId: parsedState.organizationId,
+					}),
+		),
+		Effect.catchAll((error) =>
+			Effect.logWarning("Failed to add integration bot to org (non-critical)", {
+				event: "integration_bot_add_failed",
+				provider,
+				organizationId: parsedState.organizationId,
+				error: String(error),
+			}),
+		),
+	)
 
 	// Redirect back to the settings page with success status
 	const successUrl = buildRedirectUrl(parsedState.returnTo, provider, "success")

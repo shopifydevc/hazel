@@ -1,9 +1,11 @@
 import { HttpLayerRouter } from "@effect/platform"
 import { Layer } from "effect"
 import { HazelApi } from "./api"
+import { HttpMessagesApiLive } from "./routes/api-v1"
 import { HttpAttachmentLive } from "./routes/attachments.http"
 import { HttpAuthLive } from "./routes/auth.http"
 import { HttpAvatarLive } from "./routes/avatars.http"
+import { HttpBotCommandsLive } from "./routes/bot-commands.http"
 import { HttpIncomingWebhookLive } from "./routes/incoming-webhooks.http"
 import { HttpIntegrationCommandLive } from "./routes/integration-commands.http"
 import { HttpIntegrationResourceLive } from "./routes/integration-resources.http"
@@ -17,6 +19,8 @@ export const HttpApiRoutes = HttpLayerRouter.addHttpApi(HazelApi).pipe(
 	Layer.provide(HttpRootLive),
 	Layer.provide(HttpAuthLive),
 	Layer.provide(HttpAvatarLive),
+	Layer.provide(HttpMessagesApiLive),
+	Layer.provide(HttpBotCommandsLive),
 	Layer.provide(HttpIntegrationLive),
 	Layer.provide(HttpIntegrationCommandLive),
 	Layer.provide(HttpIntegrationResourceLive),

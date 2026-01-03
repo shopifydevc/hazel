@@ -7,7 +7,7 @@ import {
 } from "@effect/platform"
 import { BunHttpServer, BunRuntime } from "@effect/platform-bun"
 import { RpcSerialization, RpcServer } from "@effect/rpc"
-import { S3 } from "@hazel/effect-bun"
+import { Redis, S3 } from "@hazel/effect-bun"
 import { createTracingLayer } from "@hazel/effect-bun/Telemetry"
 import { GitHub } from "@hazel/integrations"
 import { Config, Layer } from "effect"
@@ -33,6 +33,9 @@ import { AttachmentRepo } from "./repositories/attachment-repo"
 import { ChannelMemberRepo } from "./repositories/channel-member-repo"
 import { ChannelRepo } from "./repositories/channel-repo"
 import { ChannelWebhookRepo } from "./repositories/channel-webhook-repo"
+import { BotCommandRepo } from "./repositories/bot-command-repo"
+import { BotInstallationRepo } from "./repositories/bot-installation-repo"
+import { BotRepo } from "./repositories/bot-repo"
 import { GitHubSubscriptionRepo } from "./repositories/github-subscription-repo"
 import { IntegrationConnectionRepo } from "./repositories/integration-connection-repo"
 import { IntegrationTokenRepo } from "./repositories/integration-token-repo"
@@ -50,7 +53,6 @@ import { AllRpcs, RpcServerLive } from "./rpc/server"
 import { AuthorizationLive } from "./services/auth"
 import { DatabaseLive } from "./services/database"
 import { IntegrationTokenService } from "./services/integration-token-service"
-import { CommandRegistry } from "./services/integrations/command-registry"
 import { IntegrationBotService } from "./services/integrations/integration-bot-service"
 import { MockDataGenerator } from "./services/mock-data-generator"
 import { OAuthProviderRegistry } from "./services/oauth"
@@ -75,13 +77,21 @@ const DocsRoute = HttpApiScalar.layerHttpLayerRouter({
 	path: "/docs",
 })
 
+// WebSocket RPC for web frontend
 const RpcRoute = RpcServer.layerHttpRouter({
 	group: AllRpcs,
 	path: "/rpc",
 	protocol: "websocket",
 }).pipe(Layer.provide(RpcSerialization.layerNdjson), Layer.provide(RpcServerLive))
 
-const AllRoutes = Layer.mergeAll(HttpApiRoutes, HealthRouter, DocsRoute, RpcRoute).pipe(
+// HTTP RPC for bot SDK (simpler, doesn't require persistent connection)
+const RpcRouteHttp = RpcServer.layerHttpRouter({
+	group: AllRpcs,
+	path: "/rpc-http",
+	protocol: "http",
+}).pipe(Layer.provide(RpcSerialization.layerNdjson), Layer.provide(RpcServerLive))
+
+const AllRoutes = Layer.mergeAll(HttpApiRoutes, HealthRouter, DocsRoute, RpcRoute, RpcRouteHttp).pipe(
 	Layer.provide(
 		HttpLayerRouter.cors({
 			allowedOrigins: ["http://localhost:3000", "https://app.hazel.sh"],
@@ -111,6 +121,9 @@ const RepoLive = Layer.mergeAll(
 	IntegrationTokenRepo.Default,
 	ChannelWebhookRepo.Default,
 	GitHubSubscriptionRepo.Default,
+	BotRepo.Default,
+	BotCommandRepo.Default,
+	BotInstallationRepo.Default,
 )
 
 const PolicyLive = Layer.mergeAll(
@@ -142,11 +155,11 @@ const MainLive = Layer.mergeAll(
 	WorkOSWebhookVerifier.Default,
 	DatabaseLive,
 	S3.Default,
+	Redis.Default,
 	GitHub.GitHubAppJWTService.Default,
 	GitHub.GitHubApiClient.Default,
 	IntegrationTokenService.Default,
 	OAuthProviderRegistry.Default,
-	CommandRegistry.Default,
 	IntegrationBotService.Default,
 	WebhookBotService.Default,
 	RateLimiter.Default,

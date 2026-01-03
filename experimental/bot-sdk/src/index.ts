@@ -43,10 +43,15 @@
 // Generic bot SDK (for custom schemas and advanced use cases)
 export * from "./auth.ts"
 export * from "./bot-client.ts"
+export * from "./command.ts"
 export * from "./config.ts"
 export * from "./errors.ts"
+export * from "./retry.ts"
 // Hazel-specific convenience layer (recommended for Hazel integrations)
 export * from "./hazel-bot-sdk.ts"
+// Bot runner helper (simplified entry point)
+export * from "./bot-config.ts"
+export * from "./run-bot.ts"
 export * from "./layers.ts"
 // RPC client for API calls
 export * from "./rpc/index.ts"

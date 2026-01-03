@@ -1,4 +1,6 @@
-import { Effect } from "effect"
+import { FetchHttpClient, HttpApiClient, HttpClient, HttpClientRequest } from "@effect/platform"
+import { HazelApi } from "@hazel/domain/http"
+import { Duration, Effect, Schedule } from "effect"
 import { AuthenticationError } from "./errors.ts"
 
 /**
@@ -9,6 +11,11 @@ export interface BotAuthContext {
 	 * Bot ID
 	 */
 	readonly botId: string
+
+	/**
+	 * User ID associated with this bot (used as authorId for messages)
+	 */
+	readonly userId: string
 
 	/**
 	 * Channel IDs the bot has access to
@@ -47,20 +54,50 @@ export class BotAuth extends Effect.Service<BotAuth>()("BotAuth", {
 }) {}
 
 /**
- * Helper to create auth context from bot token
- * In a real implementation, this would decode the JWT or call an API
+ * Helper to create auth context from bot token by calling the backend API
+ * This validates the token and retrieves the real bot ID.
+ * Retries with exponential backoff if the backend is not yet available.
  */
 export const createAuthContextFromToken = (
 	token: string,
+	backendUrl: string,
 ): Effect.Effect<BotAuthContext, AuthenticationError> =>
 	Effect.gen(function* () {
-		// TODO: In production, validate token against backend
-		// For now, create a simple context
-		const botId = `bot_temp_id`
+		yield* Effect.log(`Waiting for backend at ${backendUrl}...`)
+
+		// Create typed HttpApiClient with Bearer token auth
+		const client = yield* HttpApiClient.make(HazelApi, {
+			baseUrl: backendUrl,
+			transformClient: (httpClient) =>
+				httpClient.pipe(HttpClient.mapRequest(HttpClientRequest.bearerToken(token))),
+		})
+
+		// Call /bot-commands/me to validate token and get bot info
+		// Retry with exponential backoff until backend is available
+		const response = yield* client["bot-commands"].getBotMe().pipe(
+			Effect.retry(
+				Schedule.exponential("1 second", 2).pipe(
+					Schedule.jittered,
+					Schedule.whileOutput((duration) =>
+						Duration.lessThanOrEqualTo(duration, Duration.seconds(30)),
+					),
+				),
+			),
+			Effect.mapError(
+				(error) =>
+					new AuthenticationError({
+						message: "Failed to authenticate bot",
+						cause: String(error),
+					}),
+			),
+		)
+
+		yield* Effect.log(`Bot authenticated: ${response.name} (${response.botId})`)
 
 		return {
-			botId,
+			botId: response.botId,
+			userId: response.userId,
 			channelIds: [],
 			token,
 		}
-	})
+	}).pipe(Effect.provide(FetchHttpClient.layer))

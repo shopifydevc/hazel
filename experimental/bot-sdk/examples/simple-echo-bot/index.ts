@@ -11,12 +11,13 @@
  * - Connecting to Electric SQL for real-time events
  * - Listening for message events
  * - Sending messages via RPC
+ * - Typesafe slash commands with /echo
  * - Error handling
  * - Graceful shutdown
  */
 
-import { Effect } from "effect"
-import { createHazelBot, HazelBotClient } from "../../src/hazel-bot-sdk.ts"
+import { Effect, Schema } from "effect"
+import { Command, CommandGroup, createHazelBot, HazelBotClient } from "../../src/hazel-bot-sdk.ts"
 
 /**
  * Validate that required environment variables are present
@@ -29,6 +30,26 @@ if (!botToken) {
 }
 
 /**
+ * Define typesafe slash commands using Command.make
+ * Each command has a name, description, and optional typed arguments
+ */
+const EchoCommand = Command.make("echo", {
+	description: "Echo back a message",
+	args: {
+		text: Schema.String,
+	},
+	usageExample: "/echo Hello world!",
+})
+
+const PingCommand = Command.make("ping", {
+	description: "Check if the bot is alive XD",
+	usageExample: "/ping",
+})
+
+// Group commands together for type inference
+const commands = CommandGroup.make(EchoCommand, PingCommand)
+
+/**
  * Create a Hazel bot runtime
  * All Hazel domain schemas are pre-configured automatically!
  * No need to define subscriptions - they're baked into HazelBotSDK
@@ -36,13 +57,18 @@ if (!botToken) {
  * Configuration options:
  * - electricUrl: Electric SQL proxy URL (defaults to https://electric.hazel.sh/v1/shape)
  * - backendUrl: Backend API URL for RPC calls (defaults to https://api.hazel.sh)
+ * - redisUrl: Redis URL for receiving slash commands (defaults to redis://localhost:6379)
  * - botToken: Your bot's authentication token (required)
+ * - commands: Typesafe CommandGroup for slash commands (optional)
  */
 const runtime = createHazelBot({
 	botToken,
 	// For local development, override the URLs:
 	electricUrl: process.env.ELECTRIC_URL ?? "http://localhost:8787/v1/shape",
 	backendUrl: process.env.BACKEND_URL ?? "http://localhost:3003",
+	redisUrl: process.env.REDIS_URL ?? "redis://localhost:6379",
+	// Pass the typesafe command group
+	commands,
 })
 
 /**
@@ -62,6 +88,30 @@ const program = Effect.gen(function* () {
 	// Log startup
 	yield* Effect.log("Starting Simple Echo Bot...")
 
+	// Register typesafe slash command handlers
+	// Pass the command definition to get full type inference for ctx.args
+	yield* bot.onCommand(EchoCommand, (ctx) =>
+		Effect.gen(function* () {
+			yield* Effect.log(`📨 Received /echo command from ${ctx.userId}`)
+			// ctx.args.text is typed as string!
+			yield* bot.message.send(ctx.channelId, `Echo: ${ctx.args.text}`).pipe(
+				Effect.tap((msg) => Effect.log(`✅ Sent echo response: ${msg.id}`)),
+				Effect.catchAll((error) => Effect.logError(`Failed to send echo: ${error}`)),
+			)
+		}),
+	)
+
+	yield* bot.onCommand(PingCommand, (ctx) =>
+		Effect.gen(function* () {
+			yield* Effect.log(`🏓 Received /ping command from ${ctx.userId}`)
+			// ctx.args is typed as {} (empty object) since PingCommand has no args
+			yield* bot.message.send(ctx.channelId, "Pong! 🏓").pipe(
+				Effect.tap(() => Effect.log("✅ Sent pong response")),
+				Effect.catchAll((error) => Effect.logError(`Failed to send pong: ${error}`)),
+			)
+		}),
+	)
+
 	// Register a handler for new messages using the convenient onMessage method
 	// ✨ Type safety is AUTOMATIC - message parameter is typed as MessageType!
 	yield* bot.onMessage((message) =>
@@ -75,7 +125,7 @@ const program = Effect.gen(function* () {
 
 			// Don't respond to our own messages (prevent infinite loops)
 			// You might want to check against your bot's user ID here
-			if (message.content.startsWith("Echo:")) {
+			if (message.content.startsWith("Echo:") || message.content.startsWith("Pong!")) {
 				return
 			}
 
@@ -103,11 +153,12 @@ const program = Effect.gen(function* () {
 	// yield* bot.onChannelCreated((channel) => { ... })
 	// yield* bot.onChannelMemberAdded((member) => { ... })
 
-	// Start the bot (begins listening for events)
+	// Start the bot (syncs commands to backend, begins listening for events)
 	// This must be called after registering all handlers
 	yield* bot.start
 
 	yield* Effect.log("✅ Bot is now running and listening for messages!")
+	yield* Effect.log("📝 Slash commands synced: /echo, /ping")
 	yield* Effect.log("Press Ctrl+C to stop")
 
 	// Keep the bot running

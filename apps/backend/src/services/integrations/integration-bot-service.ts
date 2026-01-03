@@ -1,6 +1,8 @@
 import { Integrations, type OrganizationId, withSystemActor } from "@hazel/domain"
 import type { IntegrationConnection } from "@hazel/domain/models"
 import { Effect, Option } from "effect"
+import { BotInstallationRepo } from "../../repositories/bot-installation-repo"
+import { BotRepo } from "../../repositories/bot-repo"
 import { OrganizationMemberRepo } from "../../repositories/organization-member-repo"
 import { UserRepo } from "../../repositories/user-repo"
 
@@ -15,6 +17,8 @@ export class IntegrationBotService extends Effect.Service<IntegrationBotService>
 	effect: Effect.gen(function* () {
 		const userRepo = yield* UserRepo
 		const orgMemberRepo = yield* OrganizationMemberRepo
+		const botRepo = yield* BotRepo
+		const botInstallationRepo = yield* BotInstallationRepo
 
 		/**
 		 * Get or create a global bot user for an OAuth integration provider.
@@ -123,7 +127,82 @@ export class IntegrationBotService extends Effect.Service<IntegrationBotService>
 				return botUser
 			})
 
-		return { getOrCreateBotUser, getOrCreateWebhookBotUser }
+		/**
+		 * Add an existing seeded bot to an organization.
+		 * Unlike getOrCreateBotUser, this does NOT create the bot user - it must already exist from seeding.
+		 * Creates org membership and bot installation.
+		 * Returns Option.some(botUser) if found and added, Option.none() if bot not found.
+		 */
+		const addBotToOrg = (
+			provider: IntegrationConnection.IntegrationProvider,
+			organizationId: OrganizationId,
+		) =>
+			Effect.gen(function* () {
+				const externalId = `internal-bot-${provider}`
+
+				// Find existing bot user (must already exist from seed script)
+				const existingUser = yield* userRepo.findByExternalId(externalId).pipe(withSystemActor)
+
+				if (Option.isNone(existingUser)) {
+					yield* Effect.logWarning("Bot user not found - has seed script been run?", {
+						provider,
+						externalId,
+					})
+					return Option.none()
+				}
+
+				const botUser = existingUser.value
+
+				// Find the bot record
+				const existingBot = yield* botRepo.findByUserId(botUser.id).pipe(withSystemActor)
+
+				if (Option.isNone(existingBot)) {
+					yield* Effect.logWarning("Bot record not found for user - has seed script been run?", {
+						provider,
+						userId: botUser.id,
+					})
+					return Option.none()
+				}
+
+				const bot = existingBot.value
+
+				// Add bot to org membership (so it shows in Electric sync)
+				yield* orgMemberRepo
+					.upsertByOrgAndUser({
+						organizationId,
+						userId: botUser.id,
+						role: "member",
+						nickname: null,
+						joinedAt: new Date(),
+						invitedBy: null,
+						deletedAt: null,
+					})
+					.pipe(withSystemActor)
+
+				// Create bot installation (idempotent - check if exists first)
+				const existingInstallation = yield* botInstallationRepo
+					.findByBotAndOrg(bot.id, organizationId)
+					.pipe(withSystemActor)
+
+				if (Option.isNone(existingInstallation)) {
+					yield* botInstallationRepo
+						.insert({
+							botId: bot.id,
+							organizationId,
+							installedBy: botUser.id,
+						})
+						.pipe(withSystemActor)
+				}
+
+				return Option.some(botUser)
+			})
+
+		return { getOrCreateBotUser, getOrCreateWebhookBotUser, addBotToOrg }
 	}),
-	dependencies: [UserRepo.Default, OrganizationMemberRepo.Default],
+	dependencies: [
+		UserRepo.Default,
+		OrganizationMemberRepo.Default,
+		BotRepo.Default,
+		BotInstallationRepo.Default,
+	],
 }) {}

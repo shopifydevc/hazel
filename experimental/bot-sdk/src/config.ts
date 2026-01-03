@@ -1,4 +1,3 @@
-import { Schema } from "effect"
 import type { EventDispatcherConfig, EventQueueConfig, ShapeSubscriptionConfig } from "./services/index.ts"
 
 /**
@@ -7,10 +6,13 @@ import type { EventDispatcherConfig, EventQueueConfig, ShapeSubscriptionConfig }
  */
 export interface BotConfig {
 	readonly electricUrl: string
+	readonly backendUrl: string
 	readonly botToken: string
 	readonly subscriptions?: readonly ShapeSubscriptionConfig[]
 	readonly queueConfig?: EventQueueConfig
 	readonly dispatcherConfig?: EventDispatcherConfig
+	/** Service name for tracing (defaults to "bot") */
+	readonly serviceName?: string
 }
 
 /**
