@@ -86,29 +86,35 @@ export function buildPullRequestEmbed(payload: GitHubPullRequestPayload): Messag
 		badge = "Draft"
 	} else if (action === "ready_for_review") {
 		color = GITHUB_COLORS.pr_ready
-		badge = "Ready for Review"
+		badge = "Ready"
 	} else {
 		color = GITHUB_COLORS.pr_opened
 		badge = action.charAt(0).toUpperCase() + action.slice(1)
 	}
 
-	// Build fields
+	// Build fields with improved formatting
 	const fields = []
+
+	// Diff stats with colored text
 	if (pr.additions !== undefined && pr.deletions !== undefined) {
+		const totalChanges = pr.additions + pr.deletions
 		fields.push({
-			name: "Changes",
-			value: `+${pr.additions} / -${pr.deletions}`,
+			name: "Diff",
+			value: `{green:+${pr.additions}} {red:-${pr.deletions}} (${totalChanges} lines)`,
 			inline: true,
 		})
 	}
+
+	// Labels with GitHub colors encoded
 	if (pr.labels && pr.labels.length > 0) {
 		const labelText = pr.labels
 			.slice(0, 3)
-			.map((l: GitHubLabelType) => l.name)
-			.join(", ")
+			.map((l: GitHubLabelType) => `\`${l.name}\``)
+			.join(" ")
+		const moreCount = pr.labels.length > 3 ? ` +${pr.labels.length - 3}` : ""
 		fields.push({
 			name: "Labels",
-			value: labelText,
+			value: labelText + moreCount,
 			inline: true,
 		})
 	}
@@ -158,16 +164,17 @@ export function buildIssueEmbed(payload: GitHubIssuesPayload): MessageEmbed {
 		badge = action.charAt(0).toUpperCase() + action.slice(1)
 	}
 
-	// Build fields
+	// Build fields with improved formatting
 	const fields = []
 	if (issue.labels && issue.labels.length > 0) {
 		const labelText = issue.labels
 			.slice(0, 3)
-			.map((l: GitHubLabelType) => l.name)
-			.join(", ")
+			.map((l: GitHubLabelType) => `\`${l.name}\``)
+			.join(" ")
+		const moreCount = issue.labels.length > 3 ? ` +${issue.labels.length - 3}` : ""
 		fields.push({
 			name: "Labels",
-			value: labelText,
+			value: labelText + moreCount,
 			inline: true,
 		})
 	}
@@ -192,7 +199,7 @@ export function buildIssueEmbed(payload: GitHubIssuesPayload): MessageEmbed {
 		},
 		fields: fields.length > 0 ? fields : undefined,
 		timestamp: new Date().toISOString(),
-		badge: { text: `Issue ${badge}`, color },
+		badge: { text: badge, color },
 	}
 }
 
@@ -300,14 +307,25 @@ export function buildWorkflowRunEmbed(payload: GitHubWorkflowRunPayload): Messag
 
 	const conclusion = workflowRun.conclusion
 	let color: number
+	let badgeText: string
+	let statusIcon: string
+
 	if (conclusion === "success") {
 		color = GITHUB_COLORS.workflow_success
+		badgeText = "Passed"
+		statusIcon = "passed"
 	} else if (conclusion === "failure") {
 		color = GITHUB_COLORS.workflow_failure
+		badgeText = "Failed"
+		statusIcon = "failed"
 	} else if (conclusion === "cancelled") {
 		color = GITHUB_COLORS.workflow_cancelled
+		badgeText = "Cancelled"
+		statusIcon = "cancelled"
 	} else {
 		color = GITHUB_COLORS.workflow_pending
+		badgeText = workflowRun.status === "in_progress" ? "Running" : "Pending"
+		statusIcon = "pending"
 	}
 
 	// Format duration if available
@@ -321,9 +339,31 @@ export function buildWorkflowRunEmbed(payload: GitHubWorkflowRunPayload): Messag
 		duration = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`
 	}
 
+	// Build fields
+	const fields = []
+	if (workflowRun.head_branch) {
+		fields.push({
+			name: "Branch",
+			value: `\`${workflowRun.head_branch}\``,
+			inline: true,
+		})
+	}
+	if (duration) {
+		fields.push({
+			name: "Duration",
+			value: duration,
+			inline: true,
+		})
+	}
+	fields.push({
+		name: "Run",
+		value: `#${workflowRun.run_number}`,
+		inline: true,
+	})
+
 	return {
 		title: workflowRun.name,
-		description: `Run #${workflowRun.run_number} ${conclusion || workflowRun.status}`,
+		description: `Workflow ${statusIcon === "passed" ? "completed successfully" : statusIcon === "failed" ? "failed" : statusIcon === "cancelled" ? "was cancelled" : "is running"}`,
 		url: workflowRun.html_url,
 		color,
 		author: sender
@@ -337,29 +377,23 @@ export function buildWorkflowRunEmbed(payload: GitHubWorkflowRunPayload): Messag
 			text: `${repository.full_name}`,
 			iconUrl: githubConfig.avatarUrl,
 		},
-		fields: [
-			...(workflowRun.head_branch
-				? [
-						{
-							name: "Branch",
-							value: workflowRun.head_branch,
-							inline: true,
-						},
-					]
-				: []),
-			...(duration
-				? [
-						{
-							name: "Duration",
-							value: duration,
-							inline: true,
-						},
-					]
-				: []),
-		],
+		fields,
 		timestamp: new Date().toISOString(),
-		badge: { text: conclusion || workflowRun.status, color },
+		badge: { text: badgeText, color },
 	}
+}
+
+/**
+ * Format a number with compact notation (e.g., 1.2k, 5.4M)
+ */
+function formatCompactNumber(num: number): string {
+	if (num >= 1000000) {
+		return `${(num / 1000000).toFixed(1).replace(/\.0$/, "")}M`
+	}
+	if (num >= 1000) {
+		return `${(num / 1000).toFixed(1).replace(/\.0$/, "")}k`
+	}
+	return num.toString()
 }
 
 /**
@@ -369,15 +403,50 @@ export function buildStarEmbed(payload: GitHubStarPayload): MessageEmbed {
 	const repository = payload.repository
 	const sender = payload.sender
 	const action = payload.action
+	const starCount = repository.stargazers_count
 
 	// Only show "created" (starred) events, not "deleted" (unstarred)
 	const isStarred = action === "created"
 
+	// Build description with star count if available
+	let description: string
+	if (isStarred) {
+		if (starCount !== undefined) {
+			description = `**${sender?.login ?? "Someone"}** starred this repository\nNow at **${formatCompactNumber(starCount)}** stars`
+		} else {
+			description = `**${sender?.login ?? "Someone"}** starred this repository`
+		}
+	} else {
+		description = `**${sender?.login ?? "Someone"}** unstarred this repository`
+	}
+
+	// Build fields
+	const fields = []
+	if (starCount !== undefined) {
+		fields.push({
+			name: "Total Stars",
+			value: formatCompactNumber(starCount),
+			inline: true,
+		})
+	}
+	if (repository.forks_count !== undefined) {
+		fields.push({
+			name: "Forks",
+			value: formatCompactNumber(repository.forks_count),
+			inline: true,
+		})
+	}
+	if (repository.language) {
+		fields.push({
+			name: "Language",
+			value: repository.language,
+			inline: true,
+		})
+	}
+
 	return {
 		title: repository.full_name,
-		description: isStarred
-			? `Repository starred by **${sender?.login ?? "someone"}**`
-			: `Repository unstarred by **${sender?.login ?? "someone"}**`,
+		description,
 		url: repository.html_url,
 		color: GITHUB_COLORS.star,
 		author: sender
@@ -391,6 +460,7 @@ export function buildStarEmbed(payload: GitHubStarPayload): MessageEmbed {
 			text: "GitHub",
 			iconUrl: githubConfig.avatarUrl,
 		},
+		fields: fields.length > 0 ? fields : undefined,
 		timestamp: new Date().toISOString(),
 		badge: { text: isStarred ? "Starred" : "Unstarred", color: GITHUB_COLORS.star },
 	}

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppLayoutRouteImport } from './routes/_app/layout'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as DevEmbedsRouteImport } from './routes/dev/embeds'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AppOrgSlugLayoutRouteImport } from './routes/_app/$orgSlug/layout'
 import { Route as AppSelectOrganizationIndexRouteImport } from './routes/_app/select-organization/index'
@@ -47,6 +48,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppLayoutRoute,
+} as any)
+const DevEmbedsRoute = DevEmbedsRouteImport.update({
+  id: '/dev/embeds',
+  path: '/dev/embeds',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthLoginRoute = AuthLoginRouteImport.update({
   id: '/auth/login',
@@ -202,6 +208,7 @@ const AppOrgSlugChannelsChannelIdSettingsIntegrationsRoute =
 export interface FileRoutesByFullPath {
   '/$orgSlug': typeof AppOrgSlugLayoutRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
+  '/dev/embeds': typeof DevEmbedsRoute
   '/': typeof AppIndexRoute
   '/$orgSlug/my-settings': typeof AppOrgSlugMySettingsLayoutRouteWithChildren
   '/$orgSlug/settings': typeof AppOrgSlugSettingsLayoutRouteWithChildren
@@ -231,6 +238,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/auth/login': typeof AuthLoginRoute
+  '/dev/embeds': typeof DevEmbedsRoute
   '/': typeof AppIndexRoute
   '/$orgSlug/notifications': typeof AppOrgSlugNotificationsRoute
   '/$orgSlug': typeof AppOrgSlugIndexRoute
@@ -259,6 +267,7 @@ export interface FileRoutesById {
   '/_app': typeof AppLayoutRouteWithChildren
   '/_app/$orgSlug': typeof AppOrgSlugLayoutRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
+  '/dev/embeds': typeof DevEmbedsRoute
   '/_app/': typeof AppIndexRoute
   '/_app/$orgSlug/my-settings': typeof AppOrgSlugMySettingsLayoutRouteWithChildren
   '/_app/$orgSlug/settings': typeof AppOrgSlugSettingsLayoutRouteWithChildren
@@ -291,6 +300,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/$orgSlug'
     | '/auth/login'
+    | '/dev/embeds'
     | '/'
     | '/$orgSlug/my-settings'
     | '/$orgSlug/settings'
@@ -320,6 +330,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth/login'
+    | '/dev/embeds'
     | '/'
     | '/$orgSlug/notifications'
     | '/$orgSlug'
@@ -347,6 +358,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/_app/$orgSlug'
     | '/auth/login'
+    | '/dev/embeds'
     | '/_app/'
     | '/_app/$orgSlug/my-settings'
     | '/_app/$orgSlug/settings'
@@ -378,6 +390,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AppLayoutRoute: typeof AppLayoutRouteWithChildren
   AuthLoginRoute: typeof AuthLoginRoute
+  DevEmbedsRoute: typeof DevEmbedsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -395,6 +408,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppLayoutRoute
+    }
+    '/dev/embeds': {
+      id: '/dev/embeds'
+      path: '/dev/embeds'
+      fullPath: '/dev/embeds'
+      preLoaderRoute: typeof DevEmbedsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/auth/login': {
       id: '/auth/login'
@@ -716,6 +736,7 @@ const AppLayoutRouteWithChildren = AppLayoutRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   AppLayoutRoute: AppLayoutRouteWithChildren,
   AuthLoginRoute: AuthLoginRoute,
+  DevEmbedsRoute: DevEmbedsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

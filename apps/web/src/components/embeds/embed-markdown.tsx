@@ -11,10 +11,27 @@ export interface EmbedMarkdownProps {
 }
 
 interface ParsedSegment {
-	type: "text" | "bold" | "italic" | "strikethrough" | "code" | "link" | "url"
+	type: "text" | "bold" | "italic" | "strikethrough" | "code" | "link" | "url" | "colored"
 	content: string
 	url?: string
+	color?: string
 	children?: ParsedSegment[]
+}
+
+/** Map of color names to Tailwind classes */
+const colorMap: Record<string, string> = {
+	red: "text-red-500",
+	green: "text-green-500",
+	yellow: "text-yellow-500",
+	blue: "text-blue-500",
+	purple: "text-purple-500",
+	orange: "text-orange-500",
+	gray: "text-gray-500",
+	// Semantic aliases
+	success: "text-green-500",
+	error: "text-red-500",
+	warning: "text-yellow-500",
+	info: "text-blue-500",
 }
 
 /**
@@ -26,6 +43,8 @@ function parseInlineMarkdown(text: string): ParsedSegment[] {
 
 	// Combined regex for all patterns - order matters (more specific first)
 	const patterns = [
+		// Colored text: {color:text}
+		{ regex: /^\{(\w+):([^}]+)\}/, type: "colored" as const },
 		// Bold: **text** or __text__
 		{ regex: /^\*\*(.+?)\*\*/, type: "bold" as const },
 		{ regex: /^__(.+?)__/, type: "bold" as const },
@@ -49,7 +68,14 @@ function parseInlineMarkdown(text: string): ParsedSegment[] {
 			const match = remaining.match(pattern.regex)
 			if (match && match[1] !== undefined) {
 				const capturedContent = match[1]
-				if (pattern.type === "link" && match[2] !== undefined) {
+				if (pattern.type === "colored" && match[2] !== undefined) {
+					// {color:text} - first capture is color, second is content
+					segments.push({
+						type: "colored",
+						color: capturedContent,
+						content: match[2],
+					})
+				} else if (pattern.type === "link" && match[2] !== undefined) {
 					segments.push({
 						type: "link",
 						content: capturedContent,
@@ -133,6 +159,14 @@ function renderSegments(segments: ParsedSegment[]): ReactNode[] {
 						{segment.content}
 					</code>
 				)
+			case "colored": {
+				const colorClass = colorMap[segment.color ?? ""] ?? "text-fg"
+				return (
+					<span key={key} className={colorClass}>
+						{segment.content}
+					</span>
+				)
+			}
 			case "link":
 			case "url":
 				return (
@@ -155,6 +189,7 @@ function renderSegments(segments: ParsedSegment[]): ReactNode[] {
 
 /**
  * Renders inline markdown text with support for:
+ * - Colored text: {red:text}, {green:text}, {success:text}, etc.
  * - Bold: **text** or __text__
  * - Italic: *text* or _text_
  * - Strikethrough: ~~text~~

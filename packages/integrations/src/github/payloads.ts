@@ -17,6 +17,11 @@ export const GitHubRepository = Schema.Struct({
 	name: Schema.String,
 	full_name: Schema.String,
 	html_url: Schema.optional(Schema.String),
+	stargazers_count: Schema.optional(Schema.Number),
+	description: Schema.optional(Schema.NullOr(Schema.String)),
+	language: Schema.optional(Schema.NullOr(Schema.String)),
+	forks_count: Schema.optional(Schema.Number),
+	open_issues_count: Schema.optional(Schema.Number),
 })
 
 export const GitHubLabel = Schema.Struct({
