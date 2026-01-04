@@ -33,9 +33,7 @@ function RouteComponent() {
 			<div className="mx-auto max-w-2xl space-y-8">
 				<div className="space-y-2">
 					<h1 className="font-bold text-2xl text-fg">Embed Previews</h1>
-					<p className="text-muted-fg">
-						Development preview pages for webhook embed cards.
-					</p>
+					<p className="text-muted-fg">Development preview pages for webhook embed cards.</p>
 				</div>
 
 				<div className="grid gap-4">

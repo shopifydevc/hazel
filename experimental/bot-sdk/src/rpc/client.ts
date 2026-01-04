@@ -68,20 +68,22 @@ export const BotRpcClientLive = Layer.scoped(
  * @param config - Client configuration (backendUrl, botToken)
  * @returns Effect that creates the RPC client
  */
-export const makeBotRpcClient = Effect.fn("BotRpcClient.makeBotRpcClient")(function* (config: BotRpcClientConfig) {
-		// Use HTTP endpoint for bots (simpler, more reliable than WebSocket)
-		const rpcUrl = `${config.backendUrl}/rpc-http`
+export const makeBotRpcClient = Effect.fn("BotRpcClient.makeBotRpcClient")(function* (
+	config: BotRpcClientConfig,
+) {
+	// Use HTTP endpoint for bots (simpler, more reliable than WebSocket)
+	const rpcUrl = `${config.backendUrl}/rpc-http`
 
-		// Create HTTP protocol layer
-		const ProtocolLayer = RpcClient.layerProtocolHttp({
-			url: rpcUrl,
-		}).pipe(Layer.provide(Layer.mergeAll(FetchHttpClient.layer, RpcSerialization.layerNdjson)))
+	// Create HTTP protocol layer
+	const ProtocolLayer = RpcClient.layerProtocolHttp({
+		url: rpcUrl,
+	}).pipe(Layer.provide(Layer.mergeAll(FetchHttpClient.layer, RpcSerialization.layerNdjson)))
 
-		// Auth middleware adds Bearer token to each request
-		const AuthMiddlewareLayer = createBotAuthMiddleware(config.botToken)
+	// Auth middleware adds Bearer token to each request
+	const AuthMiddlewareLayer = createBotAuthMiddleware(config.botToken)
 
-		// Provide both protocol and auth middleware to the RPC client
-		return yield* RpcClient.make(BotRpcs).pipe(
-			Effect.provide(Layer.mergeAll(ProtocolLayer, AuthMiddlewareLayer)),
-		)
-	})
+	// Provide both protocol and auth middleware to the RPC client
+	return yield* RpcClient.make(BotRpcs).pipe(
+		Effect.provide(Layer.mergeAll(ProtocolLayer, AuthMiddlewareLayer)),
+	)
+})

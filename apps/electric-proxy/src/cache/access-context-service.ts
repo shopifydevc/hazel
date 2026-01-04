@@ -117,7 +117,9 @@ export class AccessContextCacheService extends Effect.Service<AccessContextCache
 								? yield* db
 										.execute((client) =>
 											client
-												.selectDistinct({ userId: schema.organizationMembersTable.userId })
+												.selectDistinct({
+													userId: schema.organizationMembersTable.userId,
+												})
 												.from(schema.organizationMembersTable)
 												.where(
 													and(
@@ -216,7 +218,8 @@ export class AccessContextCacheService extends Effect.Service<AccessContextCache
 						})),
 					),
 
-				invalidateUser: (userId: UserId) => userCache.invalidate(new UserAccessContextRequest({ userId })),
+				invalidateUser: (userId: UserId) =>
+					userCache.invalidate(new UserAccessContextRequest({ userId })),
 
 				invalidateBot: (botId: BotId) =>
 					// Note: We don't have userId here, but invalidation only uses the primary key (botId)
@@ -225,4 +228,3 @@ export class AccessContextCacheService extends Effect.Service<AccessContextCache
 		}),
 	},
 ) {}
-

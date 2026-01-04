@@ -51,10 +51,7 @@ export const DEFAULT_EVENT_CONFIG = { color: 0x3b82f6, label: "Unknown" }
 /**
  * Get Railway event config based on action.
  */
-export function getRailwayEventConfig(
-	action: string,
-	severity?: string,
-): { color: number; label: string } {
+export function getRailwayEventConfig(action: string, severity?: string): { color: number; label: string } {
 	// Normalize action: handle camelCase (oomKilled -> oomkilled)
 	const lowerAction = action.toLowerCase().replace(/[^a-z]/g, "")
 	const eventConfig = RAILWAY_EVENT_CONFIG[lowerAction as keyof typeof RAILWAY_EVENT_CONFIG]

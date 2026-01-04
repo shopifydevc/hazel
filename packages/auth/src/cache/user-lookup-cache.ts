@@ -32,7 +32,9 @@ export class UserLookupCache extends Effect.Service<UserLookupCache>()("@hazel/a
 			timeToLive: () => USER_LOOKUP_CACHE_TTL,
 		})
 
-		const get = (workosUserId: string): Effect.Effect<Option.Option<UserLookupResult>, UserLookupCacheError> =>
+		const get = (
+			workosUserId: string,
+		): Effect.Effect<Option.Option<UserLookupResult>, UserLookupCacheError> =>
 			Effect.gen(function* () {
 				const startTime = Date.now()
 
@@ -71,7 +73,10 @@ export class UserLookupCache extends Effect.Service<UserLookupCache>()("@hazel/a
 				return Option.none<UserLookupResult>()
 			}).pipe(Effect.withSpan("UserLookupCache.get"))
 
-		const set = (workosUserId: string, internalUserId: string): Effect.Effect<void, UserLookupCacheError> =>
+		const set = (
+			workosUserId: string,
+			internalUserId: string,
+		): Effect.Effect<void, UserLookupCacheError> =>
 			Effect.gen(function* () {
 				const startTime = Date.now()
 

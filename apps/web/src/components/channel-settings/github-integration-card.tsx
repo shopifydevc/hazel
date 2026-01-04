@@ -23,7 +23,12 @@ interface GitHubIntegrationCardProps {
 	orgSlug: string
 }
 
-export function GitHubIntegrationCard({ channelId, channelName, organizationId, orgSlug }: GitHubIntegrationCardProps) {
+export function GitHubIntegrationCard({
+	channelId,
+	channelName,
+	organizationId,
+	orgSlug,
+}: GitHubIntegrationCardProps) {
 	const [subscriptions, setSubscriptions] = useState<GitHubSubscriptionData[]>([])
 	const [isLoading, setIsLoading] = useState(true)
 	const [isModalOpen, setIsModalOpen] = useState(false)

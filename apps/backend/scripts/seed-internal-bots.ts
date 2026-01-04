@@ -83,101 +83,97 @@ async function hashToken(token: string): Promise<string> {
  * Seed a single internal bot
  */
 const seedBot = Effect.fn("seedInternalBots.seedBot")(function* (provider: InternalBotProvider) {
-		const config = INTERNAL_BOTS[provider]
-		const db = yield* Database.Database
+	const config = INTERNAL_BOTS[provider]
+	const db = yield* Database.Database
 
-		// Generate deterministic IDs
-		const botUserId = deterministicUUID(NAMESPACE_UUID, `internal-bot-user-${provider}`) as UserId
-		const botId = deterministicUUID(NAMESPACE_UUID, `internal-bot-${provider}`) as BotId
-		const externalId = `internal-bot-${provider}`
-		const botEmail = `${provider}-bot@internal.hazel.sh`
+	// Generate deterministic IDs
+	const botUserId = deterministicUUID(NAMESPACE_UUID, `internal-bot-user-${provider}`) as UserId
+	const botId = deterministicUUID(NAMESPACE_UUID, `internal-bot-${provider}`) as BotId
+	const externalId = `internal-bot-${provider}`
+	const botEmail = `${provider}-bot@internal.hazel.sh`
 
-		console.log(`\n[${config.name} Bot]`)
-		console.log("  -> Checking if bot exists...")
+	console.log(`\n[${config.name} Bot]`)
+	console.log("  -> Checking if bot exists...")
 
-		// Check if bot user already exists
-		const existingUser = yield* db.execute((client) =>
+	// Check if bot user already exists
+	const existingUser = yield* db.execute((client) =>
+		client.select().from(schema.usersTable).where(eq(schema.usersTable.externalId, externalId)).limit(1),
+	)
+
+	if (existingUser.length > 0) {
+		console.log("  -> Bot already exists, skipping...")
+		console.log(`     Bot User ID: ${existingUser[0].id}`)
+
+		// Get the bot record to show bot ID
+		const existingBot = yield* db.execute((client) =>
 			client
 				.select()
-				.from(schema.usersTable)
-				.where(eq(schema.usersTable.externalId, externalId))
+				.from(schema.botsTable)
+				.where(eq(schema.botsTable.userId, existingUser[0].id as UserId))
 				.limit(1),
 		)
 
-		if (existingUser.length > 0) {
-			console.log("  -> Bot already exists, skipping...")
-			console.log(`     Bot User ID: ${existingUser[0].id}`)
-
-			// Get the bot record to show bot ID
-			const existingBot = yield* db.execute((client) =>
-				client
-					.select()
-					.from(schema.botsTable)
-					.where(eq(schema.botsTable.userId, existingUser[0].id as UserId))
-					.limit(1),
-			)
-
-			if (existingBot.length > 0) {
-				console.log(`     Bot ID: ${existingBot[0].id}`)
-			}
-
-			return { created: false, provider }
+		if (existingBot.length > 0) {
+			console.log(`     Bot ID: ${existingBot[0].id}`)
 		}
 
-		console.log("  -> Bot not found, creating...")
+		return { created: false, provider }
+	}
 
-		// Generate token
-		const token = generateToken()
-		const tokenHash = yield* Effect.promise(() => hashToken(token))
+	console.log("  -> Bot not found, creating...")
 
-		// Create bot user
-		console.log("  -> Creating bot user...")
-		yield* db.execute((client) =>
-			client.insert(schema.usersTable).values({
-				id: botUserId,
-				externalId,
-				email: botEmail,
-				firstName: config.name,
-				lastName: "Bot",
-				avatarUrl: config.avatarUrl,
-				userType: "machine",
-			}),
-		)
-		console.log("  -> Bot user created")
+	// Generate token
+	const token = generateToken()
+	const tokenHash = yield* Effect.promise(() => hashToken(token))
 
-		// Create bot record
-		console.log("  -> Creating bot record...")
-		yield* db.execute((client) =>
-			client.insert(schema.botsTable).values({
-				id: botId,
-				userId: botUserId,
-				createdBy: botUserId,
-				name: config.name,
-				description: config.description,
-				apiTokenHash: tokenHash,
-				isPublic: false,
-				allowedIntegrations: [...config.allowedIntegrations],
-			}),
-		)
-		console.log("  -> Bot record created")
+	// Create bot user
+	console.log("  -> Creating bot user...")
+	yield* db.execute((client) =>
+		client.insert(schema.usersTable).values({
+			id: botUserId,
+			externalId,
+			email: botEmail,
+			firstName: config.name,
+			lastName: "Bot",
+			avatarUrl: config.avatarUrl,
+			userType: "machine",
+		}),
+	)
+	console.log("  -> Bot user created")
 
-		// Print token
-		console.log("\n" + "=".repeat(60))
-		console.log(`BOT TOKEN for ${config.name.toUpperCase()} (save this - you can't retrieve it later!):`)
-		console.log("=".repeat(60))
-		console.log(`\n${token}\n`)
-		console.log("=".repeat(60))
+	// Create bot record
+	console.log("  -> Creating bot record...")
+	yield* db.execute((client) =>
+		client.insert(schema.botsTable).values({
+			id: botId,
+			userId: botUserId,
+			createdBy: botUserId,
+			name: config.name,
+			description: config.description,
+			apiTokenHash: tokenHash,
+			isPublic: false,
+			allowedIntegrations: [...config.allowedIntegrations],
+		}),
+	)
+	console.log("  -> Bot record created")
 
-		console.log(`\nAdd this to your bots/${provider}-bot/.env file:`)
-		console.log(`BOT_TOKEN=${token}`)
+	// Print token
+	console.log("\n" + "=".repeat(60))
+	console.log(`BOT TOKEN for ${config.name.toUpperCase()} (save this - you can't retrieve it later!):`)
+	console.log("=".repeat(60))
+	console.log(`\n${token}\n`)
+	console.log("=".repeat(60))
 
-		console.log(`\nBot Details:`)
-		console.log(`   Bot ID: ${botId}`)
-		console.log(`   Bot User ID: ${botUserId}`)
-		console.log(`   Name: ${config.name}`)
+	console.log(`\nAdd this to your bots/${provider}-bot/.env file:`)
+	console.log(`BOT_TOKEN=${token}`)
 
-		return { created: true, provider, token, botId, botUserId }
-	})
+	console.log(`\nBot Details:`)
+	console.log(`   Bot ID: ${botId}`)
+	console.log(`   Bot User ID: ${botUserId}`)
+	console.log(`   Name: ${config.name}`)
+
+	return { created: true, provider, token, botId, botUserId }
+})
 
 // Parse command line arguments
 const args = process.argv.slice(2)

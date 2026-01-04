@@ -88,8 +88,7 @@ const demoEmbeds = {
 
 	links: {
 		title: "Links",
-		description:
-			"Markdown links: [GitHub](https://github.com) and auto-linked URLs: https://example.com",
+		description: "Markdown links: [GitHub](https://github.com) and auto-linked URLs: https://example.com",
 		url: "https://example.com",
 		color: 0x1f6feb,
 		author: {
@@ -107,8 +106,7 @@ const demoEmbeds = {
 
 	mixed: {
 		title: "Mixed Formatting",
-		description:
-			"Combine **bold**, {green:colored}, and `code` in one message",
+		description: "Combine **bold**, {green:colored}, and `code` in one message",
 		url: "https://example.com",
 		color: 0x8957e5,
 		author: {
@@ -139,8 +137,7 @@ const demoEmbeds = {
 
 	badges_basic: {
 		title: "Inline Badges",
-		description:
-			"Branch [[main]] updated with new features. Version [[success:v1.0.0]] is now live!",
+		description: "Branch [[main]] updated with new features. Version [[success:v1.0.0]] is now live!",
 		url: "https://example.com",
 		color: 0x3b82f6,
 		author: {
@@ -151,8 +148,7 @@ const demoEmbeds = {
 		fields: [
 			{
 				name: "All Variants",
-				value:
-					"[[primary:primary]] [[secondary:secondary]] [[success:success]] [[info:info]] [[warning:warning]] [[danger:danger]] [[outline:outline]]",
+				value: "[[primary:primary]] [[secondary:secondary]] [[success:success]] [[info:info]] [[warning:warning]] [[danger:danger]] [[outline:outline]]",
 				inline: false,
 			},
 		],
@@ -192,10 +188,7 @@ const demoEmbeds = {
 	},
 }
 
-function EmbedSection({
-	title,
-	children,
-}: { title: string; children: React.ReactNode }) {
+function EmbedSection({ title, children }: { title: string; children: React.ReactNode }) {
 	return (
 		<div className="space-y-4">
 			<h2 className="font-semibold text-fg text-lg">{title}</h2>
@@ -207,7 +200,10 @@ function EmbedSection({
 function EmbedPreview({
 	label,
 	embed,
-}: { label: string; embed: (typeof demoEmbeds)[keyof typeof demoEmbeds] }) {
+}: {
+	label: string
+	embed: (typeof demoEmbeds)[keyof typeof demoEmbeds]
+}) {
 	return (
 		<div className="space-y-2">
 			<span className="font-mono text-muted-fg text-xs">{label}</span>
@@ -229,9 +225,7 @@ function RouteComponent() {
 						<span className="text-fg">Demo</span>
 					</div>
 					<h1 className="font-bold text-2xl text-fg">Markdown Demo</h1>
-					<p className="text-muted-fg">
-						Preview of all supported markdown features in embeds.
-					</p>
+					<p className="text-muted-fg">Preview of all supported markdown features in embeds.</p>
 				</div>
 
 				<div className="rounded-lg border border-border bg-muted/30 p-4">

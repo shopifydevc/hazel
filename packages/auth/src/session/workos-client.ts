@@ -167,16 +167,16 @@ export class WorkOSClient extends Effect.Service<WorkOSClient>()("@hazel/auth/Wo
 					} as RefreshSessionResponse),
 				getLogoutUrl: () => Promise.resolve("https://workos.com/logout"),
 			} satisfies SealedSession),
-		getUser: (userId: string) =>
-			Effect.succeed({ ...WorkOSClient.mockUser, id: userId }),
-		getOrganization: (orgId: string) =>
-			Effect.succeed({ ...WorkOSClient.mockOrganization, id: orgId }),
+		getUser: (userId: string) => Effect.succeed({ ...WorkOSClient.mockUser, id: userId }),
+		getOrganization: (orgId: string) => Effect.succeed({ ...WorkOSClient.mockOrganization, id: orgId }),
 		clientId: "client_test_123",
 	})
 
 	/** Test layer factory for configurable WorkOS behavior */
 	static TestWith = (options: {
-		authenticateResponse?: AuthenticateWithSessionCookieSuccessResponse | AuthenticateWithSessionCookieFailedResponse
+		authenticateResponse?:
+			| AuthenticateWithSessionCookieSuccessResponse
+			| AuthenticateWithSessionCookieFailedResponse
 		refreshResponse?: RefreshSessionResponse
 		user?: WorkOSUser
 		organization?: Organization

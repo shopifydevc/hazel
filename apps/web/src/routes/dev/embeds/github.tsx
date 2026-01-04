@@ -51,10 +51,7 @@ const mockEmbeds = {
 	workflow_cancelled: buildWorkflowRunEmbed(testPayloads.workflow_cancelled),
 }
 
-function EmbedSection({
-	title,
-	children,
-}: { title: string; children: React.ReactNode }) {
+function EmbedSection({ title, children }: { title: string; children: React.ReactNode }) {
 	return (
 		<div className="space-y-4">
 			<h2 className="font-semibold text-fg text-lg">{title}</h2>
@@ -66,7 +63,10 @@ function EmbedSection({
 function EmbedPreview({
 	label,
 	embed,
-}: { label: string; embed: (typeof mockEmbeds)[keyof typeof mockEmbeds] }) {
+}: {
+	label: string
+	embed: (typeof mockEmbeds)[keyof typeof mockEmbeds]
+}) {
 	return (
 		<div className="space-y-2">
 			<span className="font-mono text-muted-fg text-xs">{label}</span>
@@ -89,8 +89,8 @@ function RouteComponent() {
 					</div>
 					<h1 className="font-bold text-2xl text-fg">GitHub Embed Cards</h1>
 					<p className="text-muted-fg">
-						Preview of all GitHub webhook embed card variants. Generated from
-						real embed builders to ensure demos stay in sync with production.
+						Preview of all GitHub webhook embed card variants. Generated from real embed builders
+						to ensure demos stay in sync with production.
 					</p>
 				</div>
 

@@ -27,17 +27,25 @@ export const makeRedisBackingPersistence = Effect.gen(function* () {
 				return identity<Persistence.BackingPersistenceStore>({
 					get: (key) =>
 						Effect.flatMap(
-							redis.get(prefixed(key)).pipe(
-								Effect.mapError((error) => Persistence.PersistenceBackingError.make("get", error)),
-							),
+							redis
+								.get(prefixed(key))
+								.pipe(
+									Effect.mapError((error) =>
+										Persistence.PersistenceBackingError.make("get", error),
+									),
+								),
 							parse("get"),
 						),
 
 					getMany: (keys) =>
 						Effect.flatMap(
-							redis.send<(string | null)[]>("MGET", keys.map(prefixed)).pipe(
-								Effect.mapError((error) => Persistence.PersistenceBackingError.make("getMany", error)),
-							),
+							redis
+								.send<(string | null)[]>("MGET", keys.map(prefixed))
+								.pipe(
+									Effect.mapError((error) =>
+										Persistence.PersistenceBackingError.make("getMany", error),
+									),
+								),
 							Effect.forEach(parse("getMany")),
 						),
 
@@ -52,12 +60,25 @@ export const makeRedisBackingPersistence = Effect.gen(function* () {
 							if (Option.isSome(ttl)) {
 								// Atomic SET with PX (milliseconds) - sets value and TTL in single command
 								yield* redis
-									.send("SET", [pkey, serialized, "PX", String(Duration.toMillis(ttl.value))])
-									.pipe(Effect.mapError((error) => Persistence.PersistenceBackingError.make("set", error)))
+									.send("SET", [
+										pkey,
+										serialized,
+										"PX",
+										String(Duration.toMillis(ttl.value)),
+									])
+									.pipe(
+										Effect.mapError((error) =>
+											Persistence.PersistenceBackingError.make("set", error),
+										),
+									)
 							} else {
 								yield* redis
 									.set(pkey, serialized)
-									.pipe(Effect.mapError((error) => Persistence.PersistenceBackingError.make("set", error)))
+									.pipe(
+										Effect.mapError((error) =>
+											Persistence.PersistenceBackingError.make("set", error),
+										),
+									)
 							}
 						}),
 
@@ -68,15 +89,24 @@ export const makeRedisBackingPersistence = Effect.gen(function* () {
 								const serialized = JSON.stringify(value)
 								if (Option.isSome(ttl)) {
 									yield* redis
-										.send("SET", [pkey, serialized, "PX", String(Duration.toMillis(ttl.value))])
+										.send("SET", [
+											pkey,
+											serialized,
+											"PX",
+											String(Duration.toMillis(ttl.value)),
+										])
 										.pipe(
-											Effect.mapError((error) => Persistence.PersistenceBackingError.make("setMany", error)),
+											Effect.mapError((error) =>
+												Persistence.PersistenceBackingError.make("setMany", error),
+											),
 										)
 								} else {
 									yield* redis
 										.set(pkey, serialized)
 										.pipe(
-											Effect.mapError((error) => Persistence.PersistenceBackingError.make("setMany", error)),
+											Effect.mapError((error) =>
+												Persistence.PersistenceBackingError.make("setMany", error),
+											),
 										)
 								}
 							}
@@ -85,16 +115,28 @@ export const makeRedisBackingPersistence = Effect.gen(function* () {
 					remove: (key) =>
 						redis
 							.del(prefixed(key))
-							.pipe(Effect.mapError((error) => Persistence.PersistenceBackingError.make("remove", error))),
+							.pipe(
+								Effect.mapError((error) =>
+									Persistence.PersistenceBackingError.make("remove", error),
+								),
+							),
 
 					clear: Effect.gen(function* () {
 						const keys = yield* redis
 							.send<string[]>("KEYS", [`${prefix}:*`])
-							.pipe(Effect.mapError((error) => Persistence.PersistenceBackingError.make("clear", error)))
+							.pipe(
+								Effect.mapError((error) =>
+									Persistence.PersistenceBackingError.make("clear", error),
+								),
+							)
 						if (keys.length > 0) {
 							yield* redis
 								.send("DEL", keys)
-								.pipe(Effect.mapError((error) => Persistence.PersistenceBackingError.make("clear", error)))
+								.pipe(
+									Effect.mapError((error) =>
+										Persistence.PersistenceBackingError.make("clear", error),
+									),
+								)
 						}
 					}),
 				})
@@ -107,14 +149,19 @@ export const makeRedisBackingPersistence = Effect.gen(function* () {
  * Requires: Redis
  * Provides: Persistence.BackingPersistence
  */
-export const RedisBackingPersistenceLive = Layer.effect(Persistence.BackingPersistence, makeRedisBackingPersistence)
+export const RedisBackingPersistenceLive = Layer.effect(
+	Persistence.BackingPersistence,
+	makeRedisBackingPersistence,
+)
 
 /**
  * Layer providing ResultPersistence using Redis backing.
  * Requires: Redis
  * Provides: Persistence.ResultPersistence
  */
-export const RedisResultPersistenceLive = Persistence.layerResult.pipe(Layer.provide(RedisBackingPersistenceLive))
+export const RedisResultPersistenceLive = Persistence.layerResult.pipe(
+	Layer.provide(RedisBackingPersistenceLive),
+)
 
 /**
  * In-memory persistence layer for testing or fallback.

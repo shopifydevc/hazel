@@ -25,9 +25,7 @@ const createMockUserRepo = (options?: {
 		if (options?.shouldFailFind) {
 			return Effect.fail({ _tag: "DatabaseError" as const })
 		}
-		return Effect.succeed(
-			options?.existingUser ? Option.some(options.existingUser) : Option.none(),
-		)
+		return Effect.succeed(options?.existingUser ? Option.some(options.existingUser) : Option.none())
 	},
 	upsertByExternalId: (user: any) => {
 		if (options?.shouldFailUpsert) {

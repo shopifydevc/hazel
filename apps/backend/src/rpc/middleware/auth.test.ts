@@ -7,7 +7,12 @@ import { UserPresenceStatusRepo } from "../../repositories/user-presence-status-
 import { BotRepo } from "../../repositories/bot-repo.ts"
 import { UserRepo } from "../../repositories/user-repo.ts"
 import type { CurrentUser } from "@hazel/domain"
-import { SessionExpiredError, InvalidJwtPayloadError, InvalidBearerTokenError, SessionNotProvidedError } from "@hazel/domain"
+import {
+	SessionExpiredError,
+	InvalidJwtPayloadError,
+	InvalidBearerTokenError,
+	SessionNotProvidedError,
+} from "@hazel/domain"
 import type { UserId } from "@hazel/schema"
 
 // ===== Mock CurrentUser Factory =====
@@ -109,13 +114,13 @@ const makeAuthMiddlewareLayer = (options?: {
 				Effect.gen(function* () {
 					const userOption = yield* FiberRef.get(currentUserRef)
 					if (Option.isSome(userOption)) {
-						yield* (presenceRepo
-							.updateStatus({
+						yield* (
+							presenceRepo.updateStatus({
 								userId: userOption.value.id,
 								status: "offline",
 								customMessage: null,
-							}) as unknown as Effect.Effect<void>)
-							.pipe(Effect.catchAll(() => Effect.void))
+							}) as unknown as Effect.Effect<void>
+						).pipe(Effect.catchAll(() => Effect.void))
 					}
 				}),
 			)

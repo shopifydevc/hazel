@@ -36,7 +36,9 @@ export class SessionCache extends Effect.Service<SessionCache>()("@hazel/auth/Se
 			timeToLive: () => DEFAULT_CACHE_TTL,
 		})
 
-		const get = (sessionCookie: string): Effect.Effect<Option.Option<ValidatedSession>, SessionCacheError> =>
+		const get = (
+			sessionCookie: string,
+		): Effect.Effect<Option.Option<ValidatedSession>, SessionCacheError> =>
 			Effect.gen(function* () {
 				const startTime = Date.now()
 
@@ -76,7 +78,10 @@ export class SessionCache extends Effect.Service<SessionCache>()("@hazel/auth/Se
 				return Option.none<ValidatedSession>()
 			}).pipe(Effect.withSpan("SessionCache.get"))
 
-		const set = (sessionCookie: string, session: ValidatedSession): Effect.Effect<void, SessionCacheError> =>
+		const set = (
+			sessionCookie: string,
+			session: ValidatedSession,
+		): Effect.Effect<void, SessionCacheError> =>
 			Effect.gen(function* () {
 				const startTime = Date.now()
 				const ttlMs = Duration.toMillis(calculateCacheTtl(session.expiresAt))

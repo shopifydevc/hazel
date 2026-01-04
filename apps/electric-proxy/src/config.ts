@@ -38,8 +38,12 @@ export class ProxyConfigService extends Effect.Service<ProxyConfigService>()("Pr
 		const workosApiKey = yield* Config.string("WORKOS_API_KEY")
 		const workosClientId = yield* Config.string("WORKOS_CLIENT_ID")
 		const workosPasswordCookie = yield* Config.redacted("WORKOS_COOKIE_PASSWORD")
-		const workosCookieDomain = yield* Config.string("WORKOS_COOKIE_DOMAIN").pipe(Config.withDefault("localhost"))
-		const allowedOrigin = yield* Config.string("ALLOWED_ORIGIN").pipe(Config.withDefault("http://localhost:3000"))
+		const workosCookieDomain = yield* Config.string("WORKOS_COOKIE_DOMAIN").pipe(
+			Config.withDefault("localhost"),
+		)
+		const allowedOrigin = yield* Config.string("ALLOWED_ORIGIN").pipe(
+			Config.withDefault("http://localhost:3000"),
+		)
 		const databaseUrl = yield* Config.redacted("DATABASE_URL")
 		const isDev = yield* Config.boolean("IS_DEV").pipe(Config.withDefault(false))
 		const port = yield* Config.number("PORT").pipe(Config.withDefault(8184))
@@ -68,4 +72,3 @@ export class ProxyConfigService extends Effect.Service<ProxyConfigService>()("Pr
 		} satisfies ProxyConfig
 	}),
 }) {}
-

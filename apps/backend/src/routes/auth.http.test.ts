@@ -70,7 +70,8 @@ const createMockWorkOSLive = (options?: {
 										profilePictureUrl: null,
 									},
 									sealedSession:
-										options?.authenticateResponse?.sealedSession ?? "sealed-session-cookie",
+										options?.authenticateResponse?.sealedSession ??
+										"sealed-session-cookie",
 									organizationId: options?.authenticateResponse?.organizationId,
 								}
 							},
@@ -131,9 +132,7 @@ const createMockUserRepoLive = (options?: {
 }) =>
 	Layer.succeed(UserRepo, {
 		findByExternalId: (_externalId: string) =>
-			Effect.succeed(
-				options?.existingUser ? Option.some(options.existingUser) : Option.none(),
-			),
+			Effect.succeed(options?.existingUser ? Option.some(options.existingUser) : Option.none()),
 		upsertByExternalId: (user: any) =>
 			Effect.succeed({
 				id: "usr_new123" as UserId,
@@ -162,12 +161,7 @@ const makeTestLayer = (options?: {
 	const workosLayer = options?.workosLayer ?? createMockWorkOSLive()
 	const userRepoLayer = options?.userRepoLayer ?? createMockUserRepoLive()
 
-	return Layer.mergeAll(
-		workosLayer,
-		userRepoLayer,
-		MockOrganizationMemberRepoLive,
-		TestConfigLive,
-	)
+	return Layer.mergeAll(workosLayer, userRepoLayer, MockOrganizationMemberRepoLive, TestConfigLive)
 }
 
 // Default test layer
@@ -325,10 +319,12 @@ describe("Auth HTTP Endpoint Logic", () => {
 					Effect.gen(function* () {
 						const userRepo = yield* UserRepo
 
-						const existingUser = yield* (userRepo.findByExternalId("user_new") as Effect.Effect<any>)
+						const existingUser = yield* userRepo.findByExternalId(
+							"user_new",
+						) as Effect.Effect<any>
 						expect(Option.isNone(existingUser)).toBe(true)
 
-						const createdUser = yield* (userRepo.upsertByExternalId({
+						const createdUser = yield* userRepo.upsertByExternalId({
 							externalId: "user_new",
 							email: "new@example.com",
 							firstName: "New",
@@ -339,7 +335,7 @@ describe("Auth HTTP Endpoint Logic", () => {
 							isOnboarded: false,
 							timezone: null,
 							deletedAt: null,
-						}) as Effect.Effect<any>)
+						}) as Effect.Effect<any>
 
 						expect(createdUser.id).toBe("usr_new123")
 						expect(createdUser.email).toBe("new@example.com")
@@ -370,7 +366,7 @@ describe("Auth HTTP Endpoint Logic", () => {
 							id: UserId
 							email: string
 							isOnboarded: boolean
-						}> = yield* (userRepo.findByExternalId("user_existing") as Effect.Effect<any>)
+						}> = yield* userRepo.findByExternalId("user_existing") as Effect.Effect<any>
 						expect(Option.isSome(existingUser)).toBe(true)
 
 						if (Option.isSome(existingUser)) {
@@ -449,7 +445,7 @@ describe("Auth HTTP Endpoint Logic", () => {
 				Effect.gen(function* () {
 					const workos = yield* WorkOS
 
-					const logoutUrl = yield* (workos.getLogoutUrl() as Effect.Effect<string>)
+					const logoutUrl = yield* workos.getLogoutUrl() as Effect.Effect<string>
 
 					expect(logoutUrl).toBe("https://workos.com/logout")
 				}),
@@ -467,7 +463,7 @@ describe("Auth HTTP Endpoint Logic", () => {
 				Effect.gen(function* () {
 					const workos = yield* WorkOS
 
-					const logoutUrl = yield* (workos.getLogoutUrl() as Effect.Effect<string>)
+					const logoutUrl = yield* workos.getLogoutUrl() as Effect.Effect<string>
 
 					expect(logoutUrl).toContain("session=abc123")
 				}),

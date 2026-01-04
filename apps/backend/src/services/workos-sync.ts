@@ -241,258 +241,256 @@ export class WorkOSSync extends Effect.Service<WorkOSSync>()("WorkOSSync", {
 		})
 
 		// Sync organization memberships
-		const syncOrganizationMemberships = Effect.fn("WorkOSSync.syncOrganizationMemberships")(function* (organizationId: OrganizationId) {
-				const result: SyncResult = { created: 0, updated: 0, deleted: 0, errors: [] }
+		const syncOrganizationMemberships = Effect.fn("WorkOSSync.syncOrganizationMemberships")(function* (
+			organizationId: OrganizationId,
+		) {
+			const result: SyncResult = { created: 0, updated: 0, deleted: 0, errors: [] }
 
-				// Fetch WorkOS organization by our internal organization ID (stored as externalId in WorkOS)
-				const workosOrgResult = yield* pipe(
-					workos.call((client) => client.organizations.getOrganizationByExternalId(organizationId)),
-					Effect.either,
+			// Fetch WorkOS organization by our internal organization ID (stored as externalId in WorkOS)
+			const workosOrgResult = yield* pipe(
+				workos.call((client) => client.organizations.getOrganizationByExternalId(organizationId)),
+				Effect.either,
+			)
+
+			if (workosOrgResult._tag === "Left") {
+				result.errors.push(
+					`Failed to fetch WorkOS org for ${organizationId}: ${workosOrgResult.left}`,
 				)
-
-				if (workosOrgResult._tag === "Left") {
-					result.errors.push(
-						`Failed to fetch WorkOS org for ${organizationId}: ${workosOrgResult.left}`,
-					)
-					return result
-				}
-
-				const workosOrg = workosOrgResult.right
-
-				// Fetch memberships from WorkOS using WorkOS organization ID
-				const workosMembershipsResult = yield* pipe(
-					workos.call((client) =>
-						client.userManagement.listOrganizationMemberships({
-							organizationId: workosOrg.id,
-							limit: 100,
-						}),
-					),
-					Effect.either,
-				)
-
-				if (workosMembershipsResult._tag === "Left") {
-					result.errors.push(
-						`Failed to fetch memberships for org ${organizationId}: ${workosMembershipsResult.left}`,
-					)
-					return result
-				}
-
-				const workosMemberships = workosMembershipsResult.right
-
-				// Get all existing memberships for this org
-				const existingMemberships = yield* orgMemberRepo.findAllByOrganization(organizationId)
-
-				// Get all users to map external IDs to internal IDs
-				const users = yield* userRepo.findAllActive()
-				const userMap = new Map(users.map((u) => [u.externalId, u]))
-
-				// Create a map of existing memberships by userId
-				const existingMembershipMap = new Map(existingMemberships.map((m) => [m.userId, m]))
-
-				// Track which memberships we've seen from WorkOS
-				const seenUserIds = new Set<string>()
-
-				// Upsert memberships from WorkOS
-				yield* Effect.all(
-					workosMemberships.data.map((workosMembership) => {
-						const user = userMap.get(workosMembership.userId)
-						if (!user) {
-							result.errors.push(`User ${workosMembership.userId} not found for membership`)
-							return Effect.succeed(undefined)
-						}
-
-						seenUserIds.add(user.id)
-						const existing = existingMembershipMap.get(user.id)
-						const role = (workosMembership.role?.slug || "member") as "admin" | "member" | "owner"
-
-						return collectResult(
-							orgMemberRepo
-								.upsertByOrgAndUser({
-									organizationId: organizationId,
-									userId: user.id,
-									role,
-									nickname: undefined,
-									joinedAt: new Date(),
-									invitedBy: null,
-									deletedAt: null,
-								})
-								.pipe(withSystemActor),
-							() => {
-								if (existing) {
-									result.updated++
-								} else {
-									result.created++
-								}
-							},
-							(error) => {
-								result.errors.push(
-									`Error syncing membership for user ${workosMembership.userId}: ${error}`,
-								)
-							},
-						)
-					}),
-					{ concurrency: "unbounded" },
-				)
-
-				// Soft delete memberships that no longer exist in WorkOS
-				// Skip mock users and machine/bot users (they're not managed by WorkOS)
-				yield* Effect.all(
-					existingMemberships
-						.filter((membership) => {
-							const user = users.find((u) => u.id === membership.userId)
-							return (
-								!seenUserIds.has(membership.userId) &&
-								!user?.externalId.startsWith("mock_") &&
-								user?.userType !== "machine"
-							)
-						})
-						.map((membership) =>
-							collectResult(
-								orgMemberRepo
-									.softDeleteByOrgAndUser(organizationId, membership.userId)
-									.pipe(withSystemActor),
-								() => result.deleted++,
-								(error) => {
-									result.errors.push(`Error removing membership: ${error}`)
-								},
-							),
-						),
-					{ concurrency: "unbounded" },
-				)
-
 				return result
-			})
+			}
+
+			const workosOrg = workosOrgResult.right
+
+			// Fetch memberships from WorkOS using WorkOS organization ID
+			const workosMembershipsResult = yield* pipe(
+				workos.call((client) =>
+					client.userManagement.listOrganizationMemberships({
+						organizationId: workosOrg.id,
+						limit: 100,
+					}),
+				),
+				Effect.either,
+			)
+
+			if (workosMembershipsResult._tag === "Left") {
+				result.errors.push(
+					`Failed to fetch memberships for org ${organizationId}: ${workosMembershipsResult.left}`,
+				)
+				return result
+			}
+
+			const workosMemberships = workosMembershipsResult.right
+
+			// Get all existing memberships for this org
+			const existingMemberships = yield* orgMemberRepo.findAllByOrganization(organizationId)
+
+			// Get all users to map external IDs to internal IDs
+			const users = yield* userRepo.findAllActive()
+			const userMap = new Map(users.map((u) => [u.externalId, u]))
+
+			// Create a map of existing memberships by userId
+			const existingMembershipMap = new Map(existingMemberships.map((m) => [m.userId, m]))
+
+			// Track which memberships we've seen from WorkOS
+			const seenUserIds = new Set<string>()
+
+			// Upsert memberships from WorkOS
+			yield* Effect.all(
+				workosMemberships.data.map((workosMembership) => {
+					const user = userMap.get(workosMembership.userId)
+					if (!user) {
+						result.errors.push(`User ${workosMembership.userId} not found for membership`)
+						return Effect.succeed(undefined)
+					}
+
+					seenUserIds.add(user.id)
+					const existing = existingMembershipMap.get(user.id)
+					const role = (workosMembership.role?.slug || "member") as "admin" | "member" | "owner"
+
+					return collectResult(
+						orgMemberRepo
+							.upsertByOrgAndUser({
+								organizationId: organizationId,
+								userId: user.id,
+								role,
+								nickname: undefined,
+								joinedAt: new Date(),
+								invitedBy: null,
+								deletedAt: null,
+							})
+							.pipe(withSystemActor),
+						() => {
+							if (existing) {
+								result.updated++
+							} else {
+								result.created++
+							}
+						},
+						(error) => {
+							result.errors.push(
+								`Error syncing membership for user ${workosMembership.userId}: ${error}`,
+							)
+						},
+					)
+				}),
+				{ concurrency: "unbounded" },
+			)
+
+			// Soft delete memberships that no longer exist in WorkOS
+			// Skip mock users and machine/bot users (they're not managed by WorkOS)
+			yield* Effect.all(
+				existingMemberships
+					.filter((membership) => {
+						const user = users.find((u) => u.id === membership.userId)
+						return (
+							!seenUserIds.has(membership.userId) &&
+							!user?.externalId.startsWith("mock_") &&
+							user?.userType !== "machine"
+						)
+					})
+					.map((membership) =>
+						collectResult(
+							orgMemberRepo
+								.softDeleteByOrgAndUser(organizationId, membership.userId)
+								.pipe(withSystemActor),
+							() => result.deleted++,
+							(error) => {
+								result.errors.push(`Error removing membership: ${error}`)
+							},
+						),
+					),
+				{ concurrency: "unbounded" },
+			)
+
+			return result
+		})
 
 		// Sync invitations
-		const syncInvitations = Effect.fn("WorkOSSync.syncInvitations")(function* (organizationId: OrganizationId) {
-				const result: SyncResult & { expired: number } = {
-					created: 0,
-					updated: 0,
-					deleted: 0,
-					expired: 0,
-					errors: [],
-				}
+		const syncInvitations = Effect.fn("WorkOSSync.syncInvitations")(function* (
+			organizationId: OrganizationId,
+		) {
+			const result: SyncResult & { expired: number } = {
+				created: 0,
+				updated: 0,
+				deleted: 0,
+				expired: 0,
+				errors: [],
+			}
 
-				// Fetch WorkOS organization by our internal organization ID (stored as externalId in WorkOS)
-				const workosOrgResult = yield* pipe(
-					workos.call((client) => client.organizations.getOrganizationByExternalId(organizationId)),
-					Effect.either,
+			// Fetch WorkOS organization by our internal organization ID (stored as externalId in WorkOS)
+			const workosOrgResult = yield* pipe(
+				workos.call((client) => client.organizations.getOrganizationByExternalId(organizationId)),
+				Effect.either,
+			)
+
+			if (workosOrgResult._tag === "Left") {
+				result.errors.push(
+					`Failed to fetch WorkOS org for ${organizationId}: ${workosOrgResult.left}`,
 				)
-
-				if (workosOrgResult._tag === "Left") {
-					result.errors.push(
-						`Failed to fetch WorkOS org for ${organizationId}: ${workosOrgResult.left}`,
-					)
-					return result
-				}
-
-				const workosOrg = workosOrgResult.right
-
-				// Fetch invitations from WorkOS using WorkOS organization ID
-				const workosInvitationsResult = yield* pipe(
-					workos.call((client) =>
-						client.userManagement.listInvitations({
-							organizationId: workosOrg.id,
-							limit: 100,
-						}),
-					),
-					Effect.either,
-				)
-
-				if (workosInvitationsResult._tag === "Left") {
-					result.errors.push(
-						`Failed to fetch invitations for org ${organizationId}: ${workosInvitationsResult.left}`,
-					)
-					return result
-				}
-
-				const workosInvitations = workosInvitationsResult.right
-
-				// Get all existing invitations for this org
-				const existingInvitations = yield* invitationRepo.findAllByOrganization(organizationId)
-
-				// Get all users to map external IDs to internal IDs
-				const users = yield* userRepo.findAllActive()
-				const userMap = new Map(users.map((u) => [u.externalId, u]))
-
-				// Create a map of existing invitations by WorkOS ID
-				const existingInvitationMap = new Map(
-					existingInvitations.map((inv) => [inv.workosInvitationId, inv]),
-				)
-
-				// Upsert invitations from WorkOS
-				yield* Effect.all(
-					workosInvitations.data.map((workosInvitation) => {
-						const existing = existingInvitationMap.get(workosInvitation.id)
-
-						// Determine status based on WorkOS data
-						let status: "pending" | "accepted" | "expired" | "revoked" = "pending"
-						if (workosInvitation.state === "accepted") {
-							status = "accepted"
-						} else if (workosInvitation.state === "expired") {
-							status = "expired"
-						} else if (workosInvitation.state === "revoked") {
-							status = "revoked"
-						}
-
-						// Find inviter user if available
-						let invitedBy: UserId | null = null
-						if (workosInvitation.inviterUserId) {
-							const inviter = userMap.get(workosInvitation.inviterUserId)
-							if (inviter) {
-								invitedBy = inviter.id as UserId
-							}
-						}
-
-						return collectResult(
-							invitationRepo
-								.upsertByWorkosId({
-									workosInvitationId: workosInvitation.id,
-									invitationUrl: workosInvitation.acceptInvitationUrl,
-									organizationId: organizationId,
-									email: workosInvitation.email,
-									invitedBy: invitedBy,
-									invitedAt: new Date(workosInvitation.createdAt),
-									expiresAt: new Date(workosInvitation.expiresAt),
-									status,
-									acceptedAt: workosInvitation.acceptedAt
-										? new Date(workosInvitation.acceptedAt)
-										: null,
-									acceptedBy: null,
-								})
-								.pipe(withSystemActor),
-							() => {
-								if (existing) {
-									result.updated++
-								} else {
-									result.created++
-								}
-							},
-							(error) => {
-								result.errors.push(
-									`Error syncing invitation ${workosInvitation.id}: ${error}`,
-								)
-							},
-						)
-					}),
-					{ concurrency: "unbounded" },
-				)
-
-				// Mark expired invitations
-				const expiredResult = yield* pipe(
-					invitationRepo.markExpired(),
-					withSystemActor,
-					Effect.either,
-				)
-
-				if (expiredResult._tag === "Right") {
-					result.expired = expiredResult.right.length
-				} else {
-					result.errors.push(`Error marking expired invitations: ${expiredResult.left}`)
-				}
-
 				return result
-			})
+			}
+
+			const workosOrg = workosOrgResult.right
+
+			// Fetch invitations from WorkOS using WorkOS organization ID
+			const workosInvitationsResult = yield* pipe(
+				workos.call((client) =>
+					client.userManagement.listInvitations({
+						organizationId: workosOrg.id,
+						limit: 100,
+					}),
+				),
+				Effect.either,
+			)
+
+			if (workosInvitationsResult._tag === "Left") {
+				result.errors.push(
+					`Failed to fetch invitations for org ${organizationId}: ${workosInvitationsResult.left}`,
+				)
+				return result
+			}
+
+			const workosInvitations = workosInvitationsResult.right
+
+			// Get all existing invitations for this org
+			const existingInvitations = yield* invitationRepo.findAllByOrganization(organizationId)
+
+			// Get all users to map external IDs to internal IDs
+			const users = yield* userRepo.findAllActive()
+			const userMap = new Map(users.map((u) => [u.externalId, u]))
+
+			// Create a map of existing invitations by WorkOS ID
+			const existingInvitationMap = new Map(
+				existingInvitations.map((inv) => [inv.workosInvitationId, inv]),
+			)
+
+			// Upsert invitations from WorkOS
+			yield* Effect.all(
+				workosInvitations.data.map((workosInvitation) => {
+					const existing = existingInvitationMap.get(workosInvitation.id)
+
+					// Determine status based on WorkOS data
+					let status: "pending" | "accepted" | "expired" | "revoked" = "pending"
+					if (workosInvitation.state === "accepted") {
+						status = "accepted"
+					} else if (workosInvitation.state === "expired") {
+						status = "expired"
+					} else if (workosInvitation.state === "revoked") {
+						status = "revoked"
+					}
+
+					// Find inviter user if available
+					let invitedBy: UserId | null = null
+					if (workosInvitation.inviterUserId) {
+						const inviter = userMap.get(workosInvitation.inviterUserId)
+						if (inviter) {
+							invitedBy = inviter.id as UserId
+						}
+					}
+
+					return collectResult(
+						invitationRepo
+							.upsertByWorkosId({
+								workosInvitationId: workosInvitation.id,
+								invitationUrl: workosInvitation.acceptInvitationUrl,
+								organizationId: organizationId,
+								email: workosInvitation.email,
+								invitedBy: invitedBy,
+								invitedAt: new Date(workosInvitation.createdAt),
+								expiresAt: new Date(workosInvitation.expiresAt),
+								status,
+								acceptedAt: workosInvitation.acceptedAt
+									? new Date(workosInvitation.acceptedAt)
+									: null,
+								acceptedBy: null,
+							})
+							.pipe(withSystemActor),
+						() => {
+							if (existing) {
+								result.updated++
+							} else {
+								result.created++
+							}
+						},
+						(error) => {
+							result.errors.push(`Error syncing invitation ${workosInvitation.id}: ${error}`)
+						},
+					)
+				}),
+				{ concurrency: "unbounded" },
+			)
+
+			// Mark expired invitations
+			const expiredResult = yield* pipe(invitationRepo.markExpired(), withSystemActor, Effect.either)
+
+			if (expiredResult._tag === "Right") {
+				result.expired = expiredResult.right.length
+			} else {
+				result.errors.push(`Error marking expired invitations: ${expiredResult.left}`)
+			}
+
+			return result
+		})
 
 		// Main sync orchestrator
 		const syncAll = Effect.gen(function* () {

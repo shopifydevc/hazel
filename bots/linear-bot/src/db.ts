@@ -136,63 +136,63 @@ export class IntegrationEncryption extends Effect.Service<IntegrationEncryption>
  * Get the Linear access token for an organization.
  * Returns the decrypted access token if the org has Linear connected.
  */
-export const getLinearAccessToken = Effect.fn("LinearBotDb.getLinearAccessToken")(function* (orgId: OrganizationId) {
-		const db = yield* Database.Database
-		const encryption = yield* IntegrationEncryption
+export const getLinearAccessToken = Effect.fn("LinearBotDb.getLinearAccessToken")(function* (
+	orgId: OrganizationId,
+) {
+	const db = yield* Database.Database
+	const encryption = yield* IntegrationEncryption
 
-		// Find the org's Linear connection using the Effect-based execute API
-		const connections = yield* db.execute((client) =>
-			client
-				.select()
-				.from(schema.integrationConnectionsTable)
-				.where(
-					and(
-						eq(schema.integrationConnectionsTable.organizationId, orgId),
-						eq(schema.integrationConnectionsTable.provider, "linear"),
-						isNull(schema.integrationConnectionsTable.userId),
-						eq(schema.integrationConnectionsTable.level, "organization"),
-						isNull(schema.integrationConnectionsTable.deletedAt),
-					),
-				)
-				.limit(1),
-		)
-
-		const connection = connections[0]
-		if (!connection) {
-			return yield* Effect.fail(new IntegrationNotConnectedError({ provider: "linear" }))
-		}
-
-		if (connection.status !== "active") {
-			return yield* Effect.fail(new IntegrationNotConnectedError({ provider: "linear" }))
-		}
-
-		// Find the token for this connection
-		const tokens = yield* db.execute((client) =>
-			client
-				.select()
-				.from(schema.integrationTokensTable)
-				.where(eq(schema.integrationTokensTable.connectionId, connection.id))
-				.limit(1),
-		)
-
-		const token = tokens[0]
-		if (!token) {
-			return yield* Effect.fail(new IntegrationNotConnectedError({ provider: "linear" }))
-		}
-
-		// Decrypt and return the access token
-		const accessToken = yield* encryption
-			.decrypt({
-				ciphertext: token.encryptedAccessToken,
-				iv: token.iv,
-				keyVersion: token.encryptionKeyVersion,
-			})
-			.pipe(
-				Effect.catchAll(() => Effect.fail(new IntegrationNotConnectedError({ provider: "linear" }))),
+	// Find the org's Linear connection using the Effect-based execute API
+	const connections = yield* db.execute((client) =>
+		client
+			.select()
+			.from(schema.integrationConnectionsTable)
+			.where(
+				and(
+					eq(schema.integrationConnectionsTable.organizationId, orgId),
+					eq(schema.integrationConnectionsTable.provider, "linear"),
+					isNull(schema.integrationConnectionsTable.userId),
+					eq(schema.integrationConnectionsTable.level, "organization"),
+					isNull(schema.integrationConnectionsTable.deletedAt),
+				),
 			)
+			.limit(1),
+	)
 
-		return accessToken
-	})
+	const connection = connections[0]
+	if (!connection) {
+		return yield* Effect.fail(new IntegrationNotConnectedError({ provider: "linear" }))
+	}
+
+	if (connection.status !== "active") {
+		return yield* Effect.fail(new IntegrationNotConnectedError({ provider: "linear" }))
+	}
+
+	// Find the token for this connection
+	const tokens = yield* db.execute((client) =>
+		client
+			.select()
+			.from(schema.integrationTokensTable)
+			.where(eq(schema.integrationTokensTable.connectionId, connection.id))
+			.limit(1),
+	)
+
+	const token = tokens[0]
+	if (!token) {
+		return yield* Effect.fail(new IntegrationNotConnectedError({ provider: "linear" }))
+	}
+
+	// Decrypt and return the access token
+	const accessToken = yield* encryption
+		.decrypt({
+			ciphertext: token.encryptedAccessToken,
+			iv: token.iv,
+			keyVersion: token.encryptionKeyVersion,
+		})
+		.pipe(Effect.catchAll(() => Effect.fail(new IntegrationNotConnectedError({ provider: "linear" }))))
+
+	return accessToken
+})
 
 // ============ Layer Composition ============
 
