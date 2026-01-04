@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { Badge, type BadgeProps } from "~/components/ui/badge"
 import { cn } from "~/lib/utils"
 
 export interface EmbedMarkdownProps {
@@ -11,7 +12,7 @@ export interface EmbedMarkdownProps {
 }
 
 interface ParsedSegment {
-	type: "text" | "bold" | "italic" | "strikethrough" | "code" | "link" | "url" | "colored"
+	type: "text" | "bold" | "italic" | "strikethrough" | "code" | "link" | "url" | "colored" | "badge"
 	content: string
 	url?: string
 	color?: string
@@ -43,6 +44,11 @@ function parseInlineMarkdown(text: string): ParsedSegment[] {
 
 	// Combined regex for all patterns - order matters (more specific first)
 	const patterns = [
+		// Badge: [[text]] or [[intent:text]]
+		{
+			regex: /^\[\[(?:(primary|secondary|success|info|warning|danger|outline):)?([^\]]+)\]\]/,
+			type: "badge" as const,
+		},
 		// Colored text: {color:text}
 		{ regex: /^\{(\w+):([^}]+)\}/, type: "colored" as const },
 		// Bold: **text** or __text__
@@ -66,7 +72,23 @@ function parseInlineMarkdown(text: string): ParsedSegment[] {
 
 		for (const pattern of patterns) {
 			const match = remaining.match(pattern.regex)
-			if (match && match[1] !== undefined) {
+			if (match) {
+				// Badge pattern: [[intent:text]] or [[text]]
+				// match[1] = optional intent (may be undefined), match[2] = text content
+				if (pattern.type === "badge" && match[2] !== undefined) {
+					segments.push({
+						type: "badge",
+						color: match[1], // intent or undefined (reuse color field)
+						content: match[2],
+					})
+					remaining = remaining.slice(match[0].length)
+					matched = true
+					break
+				}
+
+				// All other patterns require match[1] to be defined
+				if (match[1] === undefined) continue
+
 				const capturedContent = match[1]
 				if (pattern.type === "colored" && match[2] !== undefined) {
 					// {color:text} - first capture is color, second is content
@@ -167,6 +189,14 @@ function renderSegments(segments: ParsedSegment[]): ReactNode[] {
 					</span>
 				)
 			}
+			case "badge": {
+				const intent = (segment.color as BadgeProps["intent"]) ?? "secondary"
+				return (
+					<Badge key={key} intent={intent} size="sm" isCircle>
+						{segment.content}
+					</Badge>
+				)
+			}
 			case "link":
 			case "url":
 				return (
@@ -189,6 +219,7 @@ function renderSegments(segments: ParsedSegment[]): ReactNode[] {
 
 /**
  * Renders inline markdown text with support for:
+ * - Badges: [[text]], [[success:text]], [[danger:text]], etc.
  * - Colored text: {red:text}, {green:text}, {success:text}, etc.
  * - Bold: **text** or __text__
  * - Italic: *text* or _text_

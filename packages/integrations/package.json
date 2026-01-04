@@ -8,6 +8,7 @@
 		".": "./src/index.ts",
 		"./common": "./src/common/index.ts",
 		"./github": "./src/github/index.ts",
+		"./github/browser": "./src/github/browser.ts",
 		"./github/schema": "./src/github/schema.ts",
 		"./linear": "./src/linear/index.ts"
 	},

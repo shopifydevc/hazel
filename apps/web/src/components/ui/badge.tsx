@@ -2,10 +2,10 @@ import { tv, type VariantProps } from "tailwind-variants"
 
 const badgeStyles = tv({
 	base: [
-		"inline-flex items-center gap-x-1.5 py-0.5 font-medium text-xs/5 forced-colors:outline",
+		"inline-flex items-center font-medium forced-colors:outline",
 		"inset-ring inset-ring-(--badge-ring) bg-(--badge-bg) text-(--badge-fg) [--badge-ring:transparent]",
 		"group-hover:bg-(--badge-overlay) group-focus:bg-(--badge-overlay)",
-		"*:data-[slot=icon]:size-3 *:data-[slot=icon]:shrink-0",
+		"*:data-[slot=icon]:shrink-0",
 		"duration-200",
 	],
 	variants: {
@@ -22,13 +22,24 @@ const badgeStyles = tv({
 			danger: "[--badge-bg:var(--color-danger-subtle)] [--badge-fg:var(--color-danger-subtle-fg)] [--badge-overlay:var(--color-danger)]/20",
 			outline: "[--badge-overlay:var(--color-secondary)]/20 [--badge-ring:var(--color-border)]",
 		},
+		size: {
+			sm: "gap-x-1 py-px text-[10px]/4 *:data-[slot=icon]:size-2.5",
+			md: "gap-x-1.5 py-0.5 text-xs/5 *:data-[slot=icon]:size-3",
+		},
 		isCircle: {
-			true: "rounded-full px-2",
-			false: "rounded-sm px-1.5",
+			true: "rounded-full",
+			false: "rounded-sm",
 		},
 	},
+	compoundVariants: [
+		{ size: "sm", isCircle: true, className: "px-1.5" },
+		{ size: "sm", isCircle: false, className: "px-1" },
+		{ size: "md", isCircle: true, className: "px-2" },
+		{ size: "md", isCircle: false, className: "px-1.5" },
+	],
 	defaultVariants: {
 		intent: "primary",
+		size: "md",
 		isCircle: true,
 	},
 })
@@ -38,9 +49,9 @@ interface BadgeProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<
 	children: React.ReactNode
 }
 
-const Badge = ({ children, intent, isCircle = true, className, ...props }: BadgeProps) => {
+const Badge = ({ children, intent, size, isCircle = true, className, ...props }: BadgeProps) => {
 	return (
-		<span {...props} className={badgeStyles({ intent, isCircle, className })}>
+		<span {...props} className={badgeStyles({ intent, size, isCircle, className })}>
 			{children}
 		</span>
 	)

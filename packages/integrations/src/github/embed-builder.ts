@@ -43,7 +43,7 @@ export function buildPushEmbed(payload: GitHubPushPayload): MessageEmbed {
 
 	return {
 		title: repository.full_name,
-		description: `**${commitCount}** commit${commitCount !== 1 ? "s" : ""} pushed to \`${branch}\``,
+		description: `**${commitCount}** commit${commitCount !== 1 ? "s" : ""} pushed to [[${branch}]]`,
 		url: payload.compare,
 		color: GITHUB_COLORS.push,
 		author: sender
@@ -109,7 +109,7 @@ export function buildPullRequestEmbed(payload: GitHubPullRequestPayload): Messag
 	if (pr.labels && pr.labels.length > 0) {
 		const labelText = pr.labels
 			.slice(0, 3)
-			.map((l: GitHubLabelType) => `\`${l.name}\``)
+			.map((l: GitHubLabelType) => `[[${l.name}]]`)
 			.join(" ")
 		const moreCount = pr.labels.length > 3 ? ` +${pr.labels.length - 3}` : ""
 		fields.push({
@@ -169,7 +169,7 @@ export function buildIssueEmbed(payload: GitHubIssuesPayload): MessageEmbed {
 	if (issue.labels && issue.labels.length > 0) {
 		const labelText = issue.labels
 			.slice(0, 3)
-			.map((l: GitHubLabelType) => `\`${l.name}\``)
+			.map((l: GitHubLabelType) => `[[${l.name}]]`)
 			.join(" ")
 		const moreCount = issue.labels.length > 3 ? ` +${issue.labels.length - 3}` : ""
 		fields.push({
@@ -232,14 +232,14 @@ export function buildReleaseEmbed(payload: GitHubReleasePayload): MessageEmbed {
 		fields: [
 			{
 				name: "Tag",
-				value: release.tag_name,
+				value: `[[primary:${release.tag_name}]]`,
 				inline: true,
 			},
 			...(release.prerelease
 				? [
 						{
 							name: "Pre-release",
-							value: "Yes",
+							value: "[[warning:Pre-release]]",
 							inline: true,
 						},
 					]
@@ -288,7 +288,7 @@ export function buildDeploymentEmbed(payload: GitHubDeploymentStatusPayload): Me
 		fields: [
 			{
 				name: "Environment",
-				value: deployment.environment,
+				value: `[[info:${deployment.environment}]]`,
 				inline: true,
 			},
 		],
@@ -344,7 +344,7 @@ export function buildWorkflowRunEmbed(payload: GitHubWorkflowRunPayload): Messag
 	if (workflowRun.head_branch) {
 		fields.push({
 			name: "Branch",
-			value: `\`${workflowRun.head_branch}\``,
+			value: `[[${workflowRun.head_branch}]]`,
 			inline: true,
 		})
 	}
