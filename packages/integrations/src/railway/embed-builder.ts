@@ -1,5 +1,5 @@
 import { WEBHOOK_BOT_CONFIGS } from "../common/bot-configs.ts"
-import type { MessageEmbed } from "../common/embed-types.ts"
+import type { BadgeIntent, MessageEmbed, MessageEmbedField } from "../common/embed-types.ts"
 import { getEventCategory, getRailwayEventConfig } from "./colors.ts"
 import type { RailwayPayload } from "./payloads.ts"
 
@@ -39,13 +39,14 @@ export function buildRailwayEmbed(payload: RailwayPayload): MessageEmbed {
 	}
 
 	// Build fields based on available data
-	const fields: Array<{ name: string; value: string; inline?: boolean }> = []
+	const fields: MessageEmbedField[] = []
 
 	// Branch with badge (if available)
 	if (details.branch) {
 		fields.push({
 			name: "Branch",
-			value: `[[${details.branch}]]`,
+			value: details.branch,
+			type: "badge",
 			inline: true,
 		})
 	}
@@ -83,7 +84,7 @@ export function buildRailwayEmbed(payload: RailwayPayload): MessageEmbed {
 
 	// Severity with badge (if available and noteworthy)
 	if (severity && severity !== "INFO") {
-		const severityIntent =
+		const severityIntent: BadgeIntent =
 			severity === "ERROR" || severity === "CRITICAL"
 				? "danger"
 				: severity === "WARNING"
@@ -91,7 +92,9 @@ export function buildRailwayEmbed(payload: RailwayPayload): MessageEmbed {
 					: "secondary"
 		fields.push({
 			name: "Severity",
-			value: `[[${severityIntent}:${severity}]]`,
+			value: severity,
+			type: "badge",
+			options: { intent: severityIntent },
 			inline: true,
 		})
 	}

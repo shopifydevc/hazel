@@ -56,6 +56,8 @@ function MessageEmbedCard({ embed }: { embed: MessageEmbedType }) {
 						name: f.name,
 						value: f.value,
 						inline: f.inline,
+						type: f.type,
+						options: f.options,
 					}))}
 				/>
 			)}

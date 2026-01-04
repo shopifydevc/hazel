@@ -232,14 +232,18 @@ export function buildReleaseEmbed(payload: GitHubReleasePayload): MessageEmbed {
 		fields: [
 			{
 				name: "Tag",
-				value: `[[primary:${release.tag_name}]]`,
+				value: release.tag_name,
+				type: "badge",
+				options: { intent: "primary" },
 				inline: true,
 			},
 			...(release.prerelease
 				? [
 						{
 							name: "Pre-release",
-							value: "[[warning:Pre-release]]",
+							value: "Pre-release",
+							type: "badge" as const,
+							options: { intent: "warning" as const },
 							inline: true,
 						},
 					]
@@ -288,7 +292,9 @@ export function buildDeploymentEmbed(payload: GitHubDeploymentStatusPayload): Me
 		fields: [
 			{
 				name: "Environment",
-				value: `[[info:${deployment.environment}]]`,
+				value: deployment.environment,
+				type: "badge",
+				options: { intent: "info" },
 				inline: true,
 			},
 		],
@@ -340,11 +346,12 @@ export function buildWorkflowRunEmbed(payload: GitHubWorkflowRunPayload): Messag
 	}
 
 	// Build fields
-	const fields = []
+	const fields: Array<{ name: string; value: string; type?: "text" | "badge"; inline?: boolean }> = []
 	if (workflowRun.head_branch) {
 		fields.push({
 			name: "Branch",
-			value: `[[${workflowRun.head_branch}]]`,
+			value: workflowRun.head_branch,
+			type: "badge",
 			inline: true,
 		})
 	}
@@ -412,7 +419,7 @@ export function buildStarEmbed(payload: GitHubStarPayload): MessageEmbed {
 	let description: string
 	if (isStarred) {
 		if (starCount !== undefined) {
-			description = `**${sender?.login ?? "Someone"}** starred this repository\nNow at **${formatCompactNumber(starCount)}** stars`
+			description = `**${sender?.login ?? "Someone"}** starred this repository\nNow at **${formatCompactNumber(starCount)}** ⭐ stars`
 		} else {
 			description = `**${sender?.login ?? "Someone"}** starred this repository`
 		}
@@ -421,18 +428,18 @@ export function buildStarEmbed(payload: GitHubStarPayload): MessageEmbed {
 	}
 
 	// Build fields
-	const fields = []
+	const fields: Array<{ name: string; value: string; type?: "text" | "badge"; inline?: boolean }> = []
 	if (starCount !== undefined) {
 		fields.push({
 			name: "Total Stars",
-			value: formatCompactNumber(starCount),
+			value: `${formatCompactNumber(starCount)} ⭐`,
 			inline: true,
 		})
 	}
 	if (repository.forks_count !== undefined) {
 		fields.push({
 			name: "Forks",
-			value: formatCompactNumber(repository.forks_count),
+			value: `${formatCompactNumber(repository.forks_count)} 🔱`,
 			inline: true,
 		})
 	}
@@ -440,6 +447,7 @@ export function buildStarEmbed(payload: GitHubStarPayload): MessageEmbed {
 		fields.push({
 			name: "Language",
 			value: repository.language,
+			type: "badge",
 			inline: true,
 		})
 	}

@@ -15,10 +15,20 @@ export interface MessageEmbedFooter {
 	iconUrl?: string
 }
 
+export type MessageEmbedFieldType = "text" | "badge"
+
+export type BadgeIntent = "primary" | "secondary" | "success" | "info" | "warning" | "danger" | "outline"
+
+export interface MessageEmbedFieldOptions {
+	intent?: BadgeIntent
+}
+
 export interface MessageEmbedField {
 	name: string
 	value: string
 	inline?: boolean
+	type?: MessageEmbedFieldType
+	options?: MessageEmbedFieldOptions
 }
 
 export interface MessageEmbedBadge {

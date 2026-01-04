@@ -15,11 +15,35 @@ export const MessageEmbedFooter = Schema.Struct({
 })
 export type MessageEmbedFooter = Schema.Schema.Type<typeof MessageEmbedFooter>
 
+// Badge intent for field styling
+export const BadgeIntent = Schema.Literal(
+	"primary",
+	"secondary",
+	"success",
+	"info",
+	"warning",
+	"danger",
+	"outline",
+)
+export type BadgeIntent = Schema.Schema.Type<typeof BadgeIntent>
+
+// Field type for rendering mode
+export const MessageEmbedFieldType = Schema.Literal("text", "badge")
+export type MessageEmbedFieldType = Schema.Schema.Type<typeof MessageEmbedFieldType>
+
+// Field options for type-specific settings
+export const MessageEmbedFieldOptions = Schema.Struct({
+	intent: Schema.optional(BadgeIntent),
+})
+export type MessageEmbedFieldOptions = Schema.Schema.Type<typeof MessageEmbedFieldOptions>
+
 // Embed field (for key-value display)
 export const MessageEmbedField = Schema.Struct({
 	name: Schema.String.pipe(Schema.minLength(1), Schema.maxLength(256)),
 	value: Schema.String.pipe(Schema.minLength(1), Schema.maxLength(1024)),
 	inline: Schema.optional(Schema.Boolean),
+	type: Schema.optional(MessageEmbedFieldType),
+	options: Schema.optional(MessageEmbedFieldOptions),
 })
 export type MessageEmbedField = Schema.Schema.Type<typeof MessageEmbedField>
 
