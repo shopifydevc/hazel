@@ -55,7 +55,6 @@ export function ProfileInfoStep({
 				}),
 				{
 					loading: "Updating profile...",
-					success: "Profile updated successfully",
 					customErrors: {
 						UserNotFoundError: () => ({
 							title: "User not found",

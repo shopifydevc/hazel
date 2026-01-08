@@ -60,7 +60,7 @@ type RequireCustomErrorsIfNeeded<E> =
 
 export type ToastExitOptions<A, E> = {
 	loading: string
-	success: string | ((value: A) => string)
+	success?: string | ((value: A) => string)
 	/** @deprecated Use customErrors for type-safe error handling */
 	error?: string | ((cause: Cause.Cause<E>) => string)
 	/** Callback executed after success toast is shown */
@@ -150,8 +150,12 @@ export async function toastExit<A, E extends { _tag: string }>(
 
 	return Exit.match(exit, {
 		onSuccess: async (value) => {
-			const message = typeof options.success === "function" ? options.success(value) : options.success
-			toast.success(message, { id: loadingToast })
+			if (options.success) {
+				const message = typeof options.success === "function" ? options.success(value) : options.success
+				toast.success(message, { id: loadingToast })
+			} else {
+				toast.dismiss(loadingToast)
+			}
 			await options.onSuccess?.(value)
 			return exit
 		},

@@ -145,7 +145,6 @@ export function TimezoneSelectionStep({ onBack, onContinue, defaultTimezone }: T
 			}),
 			{
 				loading: "Saving timezone...",
-				success: "Timezone saved",
 				customErrors: {
 					UserNotFoundError: () => ({
 						title: "User not found",

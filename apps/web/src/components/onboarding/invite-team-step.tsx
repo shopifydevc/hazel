@@ -97,13 +97,6 @@ export function InviteTeamStep({ onBack, onContinue, onSkip, organizationId }: I
 				}),
 				{
 					loading: `Sending ${filledEmails.length} invitation${filledEmails.length > 1 ? "s" : ""}...`,
-					success: (result) => {
-						const { successCount, errorCount } = result
-						if (errorCount > 0) {
-							return `Sent ${successCount} invitation${successCount !== 1 ? "s" : ""}, ${errorCount} failed`
-						}
-						return `Sent ${successCount} invitation${successCount !== 1 ? "s" : ""} successfully`
-					},
 				},
 			)
 

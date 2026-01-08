@@ -69,7 +69,6 @@ export function OrgSetupStep({ onBack, onContinue, defaultName = "", defaultSlug
 				}),
 				{
 					loading: "Creating workspace...",
-					success: "Workspace created successfully",
 					customErrors: {
 						OrganizationSlugAlreadyExistsError: (error) => ({
 							title: "Slug already taken",
