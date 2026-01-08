@@ -1,5 +1,10 @@
 import { createFileRoute, Outlet, useSearch } from "@tanstack/react-router"
 import { Match, Option } from "effect"
+import { useState } from "react"
+import { toast } from "sonner"
+import IconCheck from "~/components/icons/icon-check"
+import IconCopy from "~/components/icons/icon-copy"
+import { IconEnvelope } from "~/components/icons/icon-envelope"
 import { Loader } from "~/components/loader"
 import { Button } from "~/components/ui/button"
 import { Text } from "~/components/ui/text"
@@ -23,8 +28,20 @@ function RouteComponent() {
 	const search = useSearch({ from: "/_app" }) as {
 		loginRetry?: string
 	}
+	const [copied, setCopied] = useState(false)
 
 	const loginRetry = Number(search.loginRetry) || 0
+
+	const handleCopyEmail = async () => {
+		try {
+			await navigator.clipboard.writeText("support@hazel.com")
+			setCopied(true)
+			toast.success("Email copied")
+			setTimeout(() => setCopied(false), 2000)
+		} catch {
+			toast.error("Failed to copy email")
+		}
+	}
 
 	// Show loader while loading
 	if (isLoading && !user) {
@@ -41,25 +58,43 @@ function RouteComponent() {
 						We've attempted to log you in multiple times without success. This might indicate a
 						problem with the authentication service or your session.
 					</Text>
-					<div className="flex gap-3">
-						<Button
-							intent="primary"
-							onPress={() => {
-								const url = new URL(window.location.href)
-								url.searchParams.delete("loginRetry")
-								window.location.href = url.toString()
-							}}
-						>
-							Try Again
-						</Button>
-						<Button
-							intent="secondary"
-							onPress={() => {
-								window.location.href = "mailto:support@example.com?subject=Login%20Issues"
-							}}
-						>
-							Contact Support
-						</Button>
+					<div className="flex flex-col items-center gap-4">
+						<div className="flex items-center gap-2 rounded-lg border border-border bg-overlay px-3 py-2">
+							<IconEnvelope className="size-4 text-muted-fg" />
+							<span className="font-mono text-sm">support@hazel.com</span>
+							<button
+								type="button"
+								onClick={handleCopyEmail}
+								className="ml-1 rounded p-1 text-muted-fg transition-colors hover:bg-secondary hover:text-fg"
+								aria-label="Copy email address"
+							>
+								{copied ? (
+									<IconCheck className="size-4 text-success" />
+								) : (
+									<IconCopy className="size-4" />
+								)}
+							</button>
+						</div>
+						<div className="flex gap-3">
+							<Button
+								intent="primary"
+								onPress={() => {
+									const url = new URL(window.location.href)
+									url.searchParams.delete("loginRetry")
+									window.location.href = url.toString()
+								}}
+							>
+								Try Again
+							</Button>
+							<Button
+								intent="secondary"
+								onPress={() => {
+									window.location.href = "mailto:support@hazel.com?subject=Login%20Issues"
+								}}
+							>
+								Send Email
+							</Button>
+						</div>
 					</div>
 				</div>
 			</div>
