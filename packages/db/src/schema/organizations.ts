@@ -1,6 +1,5 @@
 import type { OrganizationId, OrganizationMemberId, UserId } from "@hazel/schema"
-import { sql } from "drizzle-orm"
-import { index, jsonb, pgEnum, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core"
+import { index, jsonb, pgEnum, pgTable, text, timestamp, unique, uuid, varchar } from "drizzle-orm/pg-core"
 
 // Organization member roles
 export const organizationRoleEnum = pgEnum("organization_role", ["admin", "member", "owner"])
@@ -45,7 +44,7 @@ export const organizationMembersTable = pgTable(
 	(table) => [
 		index("org_members_organization_id_idx").on(table.organizationId),
 		index("org_members_user_id_idx").on(table.userId),
-		index("org_members_org_user_idx").on(table.organizationId, table.userId),
+		unique("org_members_org_user_unique").on(table.organizationId, table.userId),
 	],
 )
 
