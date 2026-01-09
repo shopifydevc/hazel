@@ -41,9 +41,10 @@ interface OrgSetupStepProps {
 	onContinue: (data: { name: string; slug: string; organizationId: string }) => void
 	defaultName?: string
 	defaultSlug?: string
+	error?: string
 }
 
-export function OrgSetupStep({ onBack, onContinue, defaultName = "", defaultSlug = "" }: OrgSetupStepProps) {
+export function OrgSetupStep({ onBack, onContinue, defaultName = "", defaultSlug = "", error }: OrgSetupStepProps) {
 	const { user } = useAuth()
 	const createOrganization = useAtomSet(createOrganizationMutation, { mode: "promiseExit" })
 
@@ -91,6 +92,12 @@ export function OrgSetupStep({ onBack, onContinue, defaultName = "", defaultSlug
 					Choose a name and URL for your organization. You can change these later.
 				</CardDescription>
 			</CardHeader>
+
+			{error && (
+				<div className="rounded-lg border border-danger bg-danger/10 p-3">
+					<p className="text-danger text-sm">{error}</p>
+				</div>
+			)}
 
 			<form
 				onSubmit={(e) => {

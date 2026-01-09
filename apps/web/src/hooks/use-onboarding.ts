@@ -15,7 +15,6 @@ import {
 	type OnboardingStep,
 } from "~/atoms/onboarding-atoms"
 import {
-	createOrganizationMutation,
 	setOrganizationSlugMutation,
 	updateOrganizationMemberMetadataMutation,
 } from "~/atoms/organization-atoms"
@@ -45,7 +44,6 @@ export function useOnboarding(options: UseOnboardingOptions) {
 	const [state, setState] = useAtom(onboardingAtom)
 
 	// Mutations with promiseExit mode
-	const createOrganization = useAtomSet(createOrganizationMutation, { mode: "promiseExit" })
 	const setOrganizationSlug = useAtomSet(setOrganizationSlugMutation, { mode: "promiseExit" })
 	const updateMemberMetadata = useAtomSet(updateOrganizationMemberMetadataMutation, {
 		mode: "promiseExit",
@@ -160,36 +158,24 @@ export function useOnboarding(options: UseOnboardingOptions) {
 			setState((prev) => ({ ...prev, isProcessing: true, error: undefined }))
 
 			try {
-				let effectiveOrgId: OrganizationId | undefined =
-					state.initialOrgId ||
-					state.data.createdOrgId ||
-					(data.organizationId as OrganizationId)
+				// If organizationId is passed, org was just created by OrgSetupStep with slug already set
+				// Only call setOrganizationSlug if we have a pre-existing org that needs its slug updated
+				let effectiveOrgId: OrganizationId | undefined
 
-				if (!effectiveOrgId) {
-					// Create new organization
-					const result = await createOrganization({
-						payload: {
-							name: data.name,
-							slug: data.slug,
-							logoUrl: null,
-							settings: null,
-						},
-					})
-
-					if (Exit.isSuccess(result)) {
-						effectiveOrgId = result.value.data.id
-					} else {
-						throw new Error("Failed to create organization")
-					}
-				} else {
-					// Update slug
+				if (data.organizationId) {
+					// Org was just created by OrgSetupStep - slug is already set, no API call needed
+					effectiveOrgId = data.organizationId as OrganizationId
+				} else if (state.initialOrgId) {
+					// Pre-existing org needs slug update
+					effectiveOrgId = state.initialOrgId
 					const result = await setOrganizationSlug({
 						payload: { id: effectiveOrgId, slug: data.slug },
 					})
-
 					if (!Exit.isSuccess(result)) {
 						throw new Error("Failed to set organization slug")
 					}
+				} else {
+					throw new Error("No organization ID available")
 				}
 
 				setState((prev) => ({
@@ -212,7 +198,7 @@ export function useOnboarding(options: UseOnboardingOptions) {
 				}))
 			}
 		},
-		[state.initialOrgId, state.data.createdOrgId, createOrganization, setOrganizationSlug, setState],
+		[state.initialOrgId, setOrganizationSlug, setState],
 	)
 
 	const handleUseCasesContinue = useCallback(

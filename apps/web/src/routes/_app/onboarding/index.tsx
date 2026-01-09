@@ -200,6 +200,7 @@ function RouteComponent() {
 							onContinue={onboarding.handleOrgSetupContinue}
 							defaultName={onboarding.initialOrganization?.name}
 							defaultSlug={onboarding.initialOrganization?.slug || ""}
+							error={onboarding.error}
 						/>
 					</motion.div>
 				)}
