@@ -8,7 +8,6 @@ import { type } from "arktype"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { ColorSwatch } from "react-aria-components"
 import { toast } from "sonner"
-import { createDmChannelMutation } from "~/atoms/channel-atoms"
 import { type CommandPalettePage, commandPaletteAtom, isFormPage } from "~/atoms/command-palette-atoms"
 import { useModal } from "~/atoms/modal-atoms"
 import { recentChannelsAtom } from "~/atoms/recent-channels-atom"
@@ -32,18 +31,11 @@ import {
 	CommandMenuToggle,
 } from "~/components/ui/command-menu-form"
 import { createChannelAction, joinChannelAction } from "~/db/actions"
-import {
-	channelCollection,
-	channelMemberCollection,
-	organizationMemberCollection,
-	userCollection,
-	userPresenceStatusCollection,
-} from "~/db/collections"
-import { useAppForm } from "~/hooks/use-app-form"
+import { channelCollection, channelMemberCollection } from "~/db/collections"
+import { channelMemberWithUserCollection } from "~/db/materialized-collections"
 import { useOrganization } from "~/hooks/use-organization"
 import { usePresence } from "~/hooks/use-presence"
 import { useAuth } from "~/lib/auth"
-import { findExistingDmChannel } from "~/lib/channels"
 import { matchExitWithToast, toastExit } from "~/lib/toast-exit"
 import { cn } from "~/lib/utils"
 import { ChannelIcon } from "./channel-icon"
@@ -62,7 +54,7 @@ import { IconServers } from "./icons/icon-servers"
 import IconUsersPlus from "./icons/icon-users-plus"
 import { Avatar } from "./ui/avatar"
 
-type Page = "home" | "channels" | "members" | "status" | "appearance" | "create-channel" | "join-channel"
+type Page = "home" | "status" | "appearance" | "create-channel" | "join-channel"
 
 export function CommandPalette(
 	props: Pick<CommandMenuProps, "isOpen" | "onOpenChange"> & { initialPage?: CommandPalettePage },
@@ -142,10 +134,6 @@ export function CommandPalette(
 
 	const searchPlaceholder = useMemo(() => {
 		switch (currentPage) {
-			case "channels":
-				return "Search channels..."
-			case "members":
-				return "Search members..."
 			case "status":
 				return "Set your status..."
 			case "appearance":
@@ -185,8 +173,6 @@ export function CommandPalette(
 						{currentPage === "home" && (
 							<HomeView navigateToPage={navigateToPage} onClose={closePalette} />
 						)}
-						{currentPage === "channels" && <ChannelsView onClose={closePalette} />}
-						{currentPage === "members" && <MembersView onClose={closePalette} />}
 						{currentPage === "status" && <StatusView onClose={closePalette} />}
 						{currentPage === "appearance" && <AppearanceView onClose={closePalette} />}
 					</CommandMenuList>
@@ -234,6 +220,75 @@ function HomeView({
 			.slice(0, 5)
 	}, [recentChannelData, recentChannels])
 
+	// Query all user channels (public/private) for search
+	const { data: allChannels } = useLiveQuery(
+		(q) =>
+			organizationId && user?.id
+				? q
+						.from({ channel: channelCollection })
+						.innerJoin({ member: channelMemberCollection }, ({ channel, member }) =>
+							eq(member.channelId, channel.id),
+						)
+						.where((q) =>
+							and(
+								eq(q.channel.organizationId, organizationId),
+								or(eq(q.channel.type, "public"), eq(q.channel.type, "private")),
+								eq(q.member.userId, user.id),
+								eq(q.member.isHidden, false),
+							),
+						)
+						.orderBy(({ channel }) => channel.name, "asc")
+				: null,
+		[organizationId, user?.id],
+	)
+
+	// Query DM channels with all members for search
+	const { data: dmChannelData } = useLiveQuery(
+		(q) =>
+			organizationId && user?.id
+				? q
+						.from({ channel: channelCollection })
+						.innerJoin({ member: channelMemberWithUserCollection }, ({ channel, member }) =>
+							eq(member.channelId, channel.id),
+						)
+						.where((q) =>
+							and(
+								eq(q.channel.organizationId, organizationId),
+								or(eq(q.channel.type, "single"), eq(q.channel.type, "direct")),
+							),
+						)
+				: null,
+		[organizationId, user?.id],
+	)
+
+	// Process DM data to group by channel and get other members
+	const dmChannels = useMemo(() => {
+		if (!dmChannelData || !user?.id) return []
+
+		// Group by channel, collect members
+		const channelMap = new Map<
+			string,
+			{
+				channel: (typeof dmChannelData)[0]["channel"]
+				members: (typeof dmChannelData)[0]["member"][]
+			}
+		>()
+		for (const row of dmChannelData) {
+			const existing = channelMap.get(row.channel.id) || { channel: row.channel, members: [] }
+			existing.members.push(row.member)
+			channelMap.set(row.channel.id, existing)
+		}
+
+		// Filter to channels where current user is a member
+		return Array.from(channelMap.values())
+			.filter(({ members }) => members.some((m) => m.userId === user.id))
+			.map(({ channel, members }) => ({
+				...channel,
+				// Filter out current user from display
+				otherMembers: members.filter((m) => m.userId !== user.id),
+			}))
+	}, [dmChannelData, user?.id])
+
 	return (
 		<>
 			{/* Quick Actions */}
@@ -276,7 +331,7 @@ function HomeView({
 				<CommandMenuSection label="Recent">
 					{sortedRecentChannels.map((channel) => (
 						<CommandMenuItem
-							key={channel.id}
+							key={`recent-${channel.id}`}
 							textValue={channel.name}
 							onAction={() => {
 								navigate({
@@ -293,17 +348,94 @@ function HomeView({
 				</CommandMenuSection>
 			)}
 
-			{/* Browse */}
-			<CommandMenuSection label="Browse">
-				<CommandMenuItem onAction={() => navigateToPage("channels")} textValue="browse channels">
-					<IconMsgs />
-					<CommandMenuLabel>Browse channels...</CommandMenuLabel>
-				</CommandMenuItem>
-				<CommandMenuItem onAction={() => navigateToPage("members")} textValue="browse members">
-					<IconUsersPlus />
-					<CommandMenuLabel>Browse members...</CommandMenuLabel>
-				</CommandMenuItem>
-			</CommandMenuSection>
+			{/* All Channels (for search) */}
+			{allChannels && allChannels.length > 0 && (
+				<CommandMenuSection label="Channels">
+					{allChannels.map(({ channel }) => (
+						<CommandMenuItem
+							key={`channel-${channel.id}`}
+							textValue={channel.name}
+							onAction={() => {
+								navigate({
+									to: "/$orgSlug/chat/$id",
+									params: { orgSlug: orgSlug!, id: channel.id },
+								})
+								onClose()
+							}}
+						>
+							<ChannelIcon icon={channel.icon} />
+							<CommandMenuLabel>{channel.name}</CommandMenuLabel>
+						</CommandMenuItem>
+					))}
+				</CommandMenuSection>
+			)}
+
+			{/* Direct Messages (for search) */}
+			{dmChannels.length > 0 && (
+				<CommandMenuSection label="Direct Messages">
+					{dmChannels.map((dm) => {
+						const firstMember = dm.otherMembers[0]
+						// Build display name and search text from other members
+						const displayName =
+							dm.type === "single" && dm.otherMembers.length === 1 && firstMember
+								? `${firstMember.user.firstName} ${firstMember.user.lastName}`
+								: dm.otherMembers.map((m) => m.user.firstName).join(", ")
+
+						// Include full names in textValue for better search
+						const searchText = dm.otherMembers
+							.map((m) => `${m.user.firstName} ${m.user.lastName}`)
+							.join(" ")
+
+						return (
+							<CommandMenuItem
+								key={`dm-${dm.id}`}
+								textValue={searchText}
+								onAction={() => {
+									navigate({
+										to: "/$orgSlug/chat/$id",
+										params: { orgSlug: orgSlug!, id: dm.id },
+									})
+									onClose()
+								}}
+							>
+								{dm.type === "single" && dm.otherMembers.length === 1 && firstMember ? (
+									<Avatar
+										size="xs"
+										className="mr-1"
+										data-slot="icon"
+										src={firstMember.user.avatarUrl}
+										alt={displayName}
+									/>
+								) : (
+									<div data-slot="icon" className="flex -space-x-2 mr-1">
+										{dm.otherMembers.slice(0, 2).map((member) => (
+											<Avatar
+												key={member.userId}
+												size="xs"
+												src={member.user.avatarUrl}
+												alt={member.user.firstName}
+												className="ring-[1.5px] ring-overlay"
+											/>
+										))}
+										{dm.otherMembers.length > 2 && (
+											<Avatar
+												size="xs"
+												className="ring-[1.5px] ring-overlay"
+												placeholder={
+													<span className="flex items-center justify-center font-semibold text-quaternary text-xs">
+														+{dm.otherMembers.length - 2}
+													</span>
+												}
+											/>
+										)}
+									</div>
+								)}
+								<CommandMenuLabel>{displayName}</CommandMenuLabel>
+							</CommandMenuItem>
+						)
+					})}
+				</CommandMenuSection>
+			)}
 
 			{/* Navigation */}
 			<CommandMenuSection label="Navigation">
@@ -428,158 +560,6 @@ function HomeView({
 				</CommandMenuItem>
 			</CommandMenuSection>
 		</>
-	)
-}
-
-function ChannelsView({ onClose }: { onClose: () => void }) {
-	const { organizationId, slug: orgSlug } = useOrganization()
-	const { user } = useAuth()
-	const navigate = useNavigate()
-
-	const { data: userChannels } = useLiveQuery(
-		(q) =>
-			organizationId && user?.id
-				? q
-						.from({ channel: channelCollection })
-						.innerJoin({ member: channelMemberCollection }, ({ channel, member }) =>
-							eq(member.channelId, channel.id),
-						)
-						.where((q) =>
-							and(
-								eq(q.channel.organizationId, organizationId),
-								or(eq(q.channel.type, "public"), eq(q.channel.type, "private")),
-								eq(q.member.userId, user.id),
-								eq(q.member.isHidden, false),
-							),
-						)
-						.orderBy(({ channel }) => channel.name, "asc")
-				: null,
-		[organizationId, user?.id],
-	)
-
-	return (
-		<CommandMenuSection>
-			{userChannels?.map(({ channel }) => (
-				<CommandMenuItem
-					key={channel.id}
-					textValue={channel.name}
-					onAction={() => {
-						navigate({ to: "/$orgSlug/chat/$id", params: { orgSlug: orgSlug!, id: channel.id } })
-						onClose()
-					}}
-				>
-					<ChannelIcon icon={channel.icon} />
-					<CommandMenuLabel>{channel.name}</CommandMenuLabel>
-				</CommandMenuItem>
-			))}
-		</CommandMenuSection>
-	)
-}
-
-function MembersView({ onClose }: { onClose: () => void }) {
-	const { organizationId, slug: orgSlug } = useOrganization()
-	const { user: currentUser } = useAuth()
-	const navigate = useNavigate()
-
-	const createDmChannel = useAtomSet(createDmChannelMutation, {
-		mode: "promiseExit",
-	})
-
-	const { data: members } = useLiveQuery(
-		(q) =>
-			organizationId
-				? q
-						.from({ member: organizationMemberCollection })
-						.innerJoin({ user: userCollection }, ({ member, user }) => eq(member.userId, user.id))
-						.leftJoin({ presence: userPresenceStatusCollection }, ({ user, presence }) =>
-							eq(user.id, presence.userId),
-						)
-						.where((q) => eq(q.member.organizationId, organizationId))
-						.where(({ user }) => eq(user.userType, "user"))
-						.orderBy(({ user }) => user.firstName, "asc")
-						.select(({ member, user, presence }) => ({ member, user, presence }))
-				: null,
-		[organizationId],
-	)
-
-	const filteredMembers = useMemo(() => {
-		return members?.filter(({ user }) => user.id !== currentUser?.id) || []
-	}, [members, currentUser?.id])
-
-	return (
-		<CommandMenuSection>
-			{filteredMembers.map(({ user, presence }) => {
-				const fullName = `${user.firstName} ${user.lastName}`
-				const isOnline =
-					presence?.status === "online" ||
-					presence?.status === "away" ||
-					presence?.status === "busy" ||
-					presence?.status === "dnd"
-				return (
-					<CommandMenuItem
-						key={user.id}
-						textValue={fullName}
-						onAction={async () => {
-							if (!currentUser?.id) return
-
-							// Check if a DM channel already exists
-							const existingChannel = findExistingDmChannel(currentUser.id, user.id)
-
-							if (existingChannel) {
-								// Navigate to existing channel
-								navigate({
-									to: "/$orgSlug/chat/$id",
-									params: { orgSlug: orgSlug!, id: existingChannel.id },
-								})
-								onClose()
-							} else {
-								// Create new DM channel
-								if (!organizationId || !orgSlug) return
-
-								await toastExit(
-									createDmChannel({
-										payload: {
-											organizationId,
-											participantIds: [user.id as UserId],
-											type: "single",
-										},
-									}),
-									{
-										loading: `Starting conversation with ${user.firstName}...`,
-										success: (result) => {
-											// Navigate to the created channel
-											if (result.data.id) {
-												navigate({
-													to: "/$orgSlug/chat/$id",
-													params: { orgSlug, id: result.data.id },
-												})
-											}
-
-											onClose()
-											return `Started conversation with ${user.firstName}`
-										},
-									},
-								)
-							}
-						}}
-					>
-						<Avatar
-							size="xs"
-							className="mr-1"
-							src={user.avatarUrl}
-							alt={fullName}
-							status={isOnline ? "online" : "offline"}
-						/>
-						<CommandMenuLabel>{fullName}</CommandMenuLabel>
-						{presence?.customMessage && (
-							<span className="ml-auto truncate text-muted text-xs">
-								{presence.customMessage}
-							</span>
-						)}
-					</CommandMenuItem>
-				)
-			})}
-		</CommandMenuSection>
 	)
 }
 
@@ -742,7 +722,7 @@ function CreateChannelView({ onClose, onBack }: { onClose: () => void; onBack: (
 		setIsSubmitting(true)
 		setError(null)
 
-		const exit = await toastExit(
+		await toastExit(
 			createChannel({
 				name,
 				icon: null,
