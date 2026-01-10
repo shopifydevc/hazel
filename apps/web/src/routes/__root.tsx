@@ -22,7 +22,7 @@ export const Route = createRootRouteWithContext<{}>()({
 					return location.href ?? "#"
 				}}
 			>
-				{import.meta.env.DEV && (
+				{/* {import.meta.env.DEV && (
 					<TanStackDevtools
 						plugins={[
 							{
@@ -31,7 +31,7 @@ export const Route = createRootRouteWithContext<{}>()({
 							},
 						]}
 					/>
-				)}
+				)} */}
 				<Outlet />
 				{import.meta.env.PROD && <VersionCheck />}
 			</RouterProvider>

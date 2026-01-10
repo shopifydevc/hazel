@@ -1,7 +1,7 @@
 import { HttpApiBuilder } from "@effect/platform"
 import { Database } from "@hazel/db"
-import { InternalServerError, withRemapDbErrors, withSystemActor } from "@hazel/domain"
-import { OrganizationId } from "@hazel/domain/ids"
+import { CurrentUser, withRemapDbErrors, withSystemActor } from "@hazel/domain"
+import { OrganizationId, UserId } from "@hazel/domain/ids"
 import { Effect } from "effect"
 import { HazelApi } from "../api"
 import { generateTransactionId } from "../lib/create-transactionId"
@@ -15,17 +15,15 @@ export const HttpMockDataLive = HttpApiBuilder.group(HazelApi, "mockData", (hand
 		return handlers.handle(
 			"generate",
 			Effect.fn(function* ({ payload }) {
+				const currentUser = yield* CurrentUser.Context
+
 				const { result, txid } = yield* db
 					.transaction(
 						Effect.gen(function* () {
-							const result = yield* mockDataService.generateForOrganization(
-								OrganizationId.make(payload.organizationId),
-								{
-									userCount: payload.userCount,
-									channelCount: payload.channelCount,
-									messageCount: payload.messageCount,
-								},
-							)
+							const result = yield* mockDataService.generateForMarketingScreenshots({
+								organizationId: OrganizationId.make(payload.organizationId),
+								currentUserId: UserId.make(currentUser.id),
+							})
 
 							const txid = yield* generateTransactionId()
 

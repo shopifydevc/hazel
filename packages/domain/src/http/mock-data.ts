@@ -7,9 +7,6 @@ import { TransactionId } from "@hazel/schema"
 export class GenerateMockDataRequest extends Schema.Class<GenerateMockDataRequest>("GenerateMockDataRequest")(
 	{
 		organizationId: Schema.UUID,
-		userCount: Schema.Number,
-		channelCount: Schema.Number,
-		messageCount: Schema.Number,
 	},
 ) {}
 
@@ -20,8 +17,11 @@ export class GenerateMockDataResponse extends Schema.Class<GenerateMockDataRespo
 	created: Schema.Struct({
 		users: Schema.Number,
 		channels: Schema.Number,
+		channelSections: Schema.Number,
 		messages: Schema.Number,
 		organizationMembers: Schema.Number,
+		channelMembers: Schema.Number,
+		threads: Schema.Number,
 	}),
 }) {}
 

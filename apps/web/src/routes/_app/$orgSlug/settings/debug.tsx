@@ -48,16 +48,13 @@ function DebugSettings() {
 			generateMockData({
 				payload: {
 					organizationId: organizationId!,
-					userCount: 10,
-					channelCount: 5,
-					messageCount: 50,
 				},
 			}),
 			{
 				loading: "Generating mock data...",
 				success: (result) => {
 					setShowMockDataDialog(false)
-					return `Mock data generated successfully! Created ${result.created.users} users, ${result.created.channels} channels, and ${result.created.messages} messages.`
+					return `Mock data generated! Created ${result.created.users} users, ${result.created.channels} channels, ${result.created.messages} messages, and ${result.created.threads} thread.`
 				},
 				error: "Failed to generate mock data",
 			},
@@ -162,10 +159,9 @@ function DebugSettings() {
 							<div className="text-muted-fg text-xs">
 								<p>Mock data includes:</p>
 								<ul className="mt-1 list-inside list-disc space-y-0.5">
-									<li>8 sample users with realistic profiles</li>
-									<li>Public and private channels</li>
-									<li>Direct message conversations</li>
-									<li>Messages with reactions and threads</li>
+									<li>7 team members with professional profiles</li>
+									<li>12 channels with emoji icons in 4 sections</li>
+									<li>Messages with replies and threads</li>
 								</ul>
 							</div>
 						</div>
@@ -226,11 +222,9 @@ function DebugSettings() {
 									This will create sample data in your current organization including:
 								</p>
 								<ul className="list-disc space-y-1 pl-5 text-muted-fg text-sm">
-									<li>8 mock users with profiles</li>
-									<li>5 channels (public and private)</li>
-									<li>Direct message conversations</li>
-									<li>Sample messages with reactions</li>
-									<li>Thread replies</li>
+									<li>7 team members (Sarah, Marcus, Emily, Alex, Jordan, Taylor, Casey)</li>
+									<li>12 channels with emoji icons in 4 sections</li>
+									<li>Messages with replies and a discussion thread</li>
 								</ul>
 								<div className="rounded-lg border border-warning/20 bg-warning/10 p-3">
 									<p className="font-medium text-sm text-warning">
