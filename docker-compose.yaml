@@ -131,6 +131,7 @@ services:
             - "3004:3004" # WebSocket proxy (backend)
         volumes:
             - ./Caddyfile.docker:/etc/caddy/Caddyfile
+            - ./certs:/etc/caddy/certs:ro
             - caddy_data:/data
             - caddy_config:/config
         extra_hosts:
