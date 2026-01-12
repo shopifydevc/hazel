@@ -1,3 +1,4 @@
+import { useNavigate } from "@tanstack/react-router"
 import { eq, useLiveQuery } from "@tanstack/react-db"
 import { format } from "date-fns"
 import { messageCollection, pinnedMessageCollection, userCollection } from "~/db/collections"
@@ -10,6 +11,7 @@ import { UserProfilePopover } from "./user-profile-popover"
 
 export function PinnedMessagesModal() {
 	const { channelId, unpinMessage } = useChat()
+	const navigate = useNavigate()
 
 	const { data: pinnedMessages } = useLiveQuery(
 		(q) =>
@@ -34,17 +36,10 @@ export function PinnedMessagesModal() {
 		[channelId],
 	)
 
-	const scrollToMessage = (messageId: string) => {
-		const element = document.getElementById(`message-${messageId}`)
-		if (element) {
-			element.scrollIntoView({ behavior: "smooth", block: "center" })
-
-			// Add a highlight effect
-			element.classList.add("bg-secondary/30")
-			setTimeout(() => {
-				element.classList.remove("bg-secondary/30")
-			}, 2000)
-		}
+	// TODO: Implement scroll-to-message - see GitHub issue
+	// For now, just navigate with messageId in search params (ready for when scroll is reimplemented)
+	const goToMessage = (messageId: string) => {
+		navigate({ search: { messageId } })
 	}
 
 	const sortedPins = [...(pinnedMessages || [])].sort(
@@ -89,7 +84,7 @@ export function PinnedMessagesModal() {
 									return (
 										<button
 											key={pinnedMessage.pinned.messageId}
-											onClick={() => scrollToMessage(pinnedMessage.pinned.messageId)}
+											onClick={() => goToMessage(pinnedMessage.pinned.messageId)}
 											className="group relative w-full cursor-pointer border-border border-b px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-secondary"
 											type="button"
 										>
