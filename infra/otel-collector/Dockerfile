@@ -1,4 +1,4 @@
-FROM tinybirdco/opentelemetry-collector-contrib:v0.128.0
+FROM tinybirdco/opentelemetry-collector-contrib:v0.128.1
 
 COPY config.yaml /etc/otelcol-contrib/config.yaml
 
