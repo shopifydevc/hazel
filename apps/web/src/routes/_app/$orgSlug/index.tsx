@@ -16,6 +16,7 @@ import { DropdownLabel } from "~/components/ui/dropdown"
 import { Loader } from "~/components/ui/loader"
 import { Menu, MenuContent, MenuItem, MenuTrigger } from "~/components/ui/menu"
 import { SearchField, SearchInput } from "~/components/ui/search-field"
+import { SectionHeader } from "~/components/ui/section-header"
 import { organizationMemberCollection, userCollection, userPresenceStatusCollection } from "~/db/collections"
 import { useOrganization } from "~/hooks/use-organization"
 import { useAuth } from "~/lib/auth"
@@ -125,14 +126,16 @@ function RouteComponent() {
 
 	return (
 		<div className="flex flex-col gap-6 p-6 lg:p-12">
-			<div>
-				<div className="space-y-0.5">
-					<h1 className="font-semibold text-2xl text-fg">Members</h1>
-					<p className="text-muted-fg text-sm">
-						Explore your organization and connect with fellow members.
-					</p>
-				</div>
-			</div>
+			<SectionHeader.Root className="border-none pb-0">
+				<SectionHeader.Group>
+					<div className="space-y-0.5">
+						<SectionHeader.Heading size="xl">Members</SectionHeader.Heading>
+						<SectionHeader.Subheading>
+							Explore your organization and connect with fellow members.
+						</SectionHeader.Subheading>
+					</div>
+				</SectionHeader.Group>
+			</SectionHeader.Root>
 
 			<div className="w-full">
 				<SearchField autoFocus className="w-full">

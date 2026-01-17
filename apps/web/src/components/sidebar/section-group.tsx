@@ -178,7 +178,7 @@ export function SectionGroup({
 					{isEditable && (
 						<>
 							<MenuSeparator />
-							<MenuItem onAction={handleDelete} className="text-danger">
+							<MenuItem onAction={handleDelete} intent="danger">
 								<IconTrash />
 								<MenuLabel>Delete section</MenuLabel>
 							</MenuItem>

@@ -19,8 +19,13 @@ const SectionHeaderActions = ({ className, children, ...props }: ComponentPropsW
 	</div>
 )
 
-const SectionHeaderHeading = ({ className, children, ...props }: ComponentPropsWithRef<"h2">) => (
-	<h2 {...props} className={cn("font-semibold text-fg text-lg", className)}>
+const SectionHeaderHeading = ({
+	className,
+	children,
+	size = "lg",
+	...props
+}: ComponentPropsWithRef<"h2"> & { size?: "lg" | "xl" }) => (
+	<h2 {...props} className={cn("font-semibold text-fg", size === "xl" ? "text-2xl" : "text-lg", className)}>
 		{children}
 	</h2>
 )

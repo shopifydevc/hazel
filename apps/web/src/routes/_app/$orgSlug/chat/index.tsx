@@ -97,10 +97,10 @@ function RouteComponent() {
 
 	return (
 		<div className="flex flex-col gap-6 p-6 lg:p-12">
-			<SectionHeader.Root>
+			<SectionHeader.Root className="border-none pb-0">
 				<SectionHeader.Group>
 					<div className="space-y-0.5">
-						<SectionHeader.Heading>All channels</SectionHeader.Heading>
+						<SectionHeader.Heading size="xl">All channels</SectionHeader.Heading>
 						<SectionHeader.Subheading>
 							Discover communities and join the discussions that matter to you.
 						</SectionHeader.Subheading>
