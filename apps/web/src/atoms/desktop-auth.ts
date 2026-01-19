@@ -10,8 +10,9 @@
  */
 
 import { Atom } from "@effect-atom/atom-react"
+import { Clipboard } from "@effect/platform-browser"
 import type { OrganizationId } from "@hazel/schema"
-import { Deferred, Duration, Effect, Exit, Layer, Option, Ref } from "effect"
+import { Deferred, Duration, Effect, Exit, Layer, Option, Ref, Schema } from "effect"
 import { runtime } from "~/lib/services/common/runtime"
 import { TauriAuth } from "~/lib/services/desktop/tauri-auth"
 import { TokenExchange } from "~/lib/services/desktop/token-exchange"
@@ -62,6 +63,7 @@ const TauriAuthLive = TauriAuth.Default.pipe(
 	Layer.provide(TokenStorageLive),
 	Layer.provide(TokenExchangeLive),
 )
+const ClipboardLive = Clipboard.layer
 
 // ============================================================================
 // Core State Atoms
@@ -291,6 +293,79 @@ export const desktopForceRefreshAtom = Atom.fn(
 	Effect.fnUntraced(function* (_: void, get) {
 		if (!isTauri()) return false
 		return yield* doRefresh(get)
+	}),
+)
+
+/**
+ * Schema for clipboard auth payload
+ */
+const ClipboardAuthPayload = Schema.Struct({
+	code: Schema.String,
+	state: Schema.Unknown,
+})
+
+/**
+ * Action atom that authenticates using clipboard data
+ * Used as fallback when local OAuth server connection fails
+ */
+export const desktopLoginFromClipboardAtom = Atom.fn(
+	Effect.fnUntraced(function* (_: void, get) {
+		if (!isTauri()) return
+
+		get.set(desktopAuthStatusAtom, "loading")
+		get.set(desktopAuthErrorAtom, null)
+
+		const result = yield* Effect.gen(function* () {
+			// Read clipboard using Effect Platform API
+			const clipboard = yield* Clipboard.Clipboard
+			const clipboardText = yield* clipboard.readString
+
+			// Parse JSON and validate structure
+			const rawJson = yield* Effect.try({
+				try: () => JSON.parse(clipboardText),
+				catch: () => new Error("Invalid clipboard data - not valid JSON"),
+			})
+
+			const parsed = yield* Schema.decodeUnknown(ClipboardAuthPayload)(rawJson).pipe(
+				Effect.mapError(() => new Error("Invalid clipboard data - missing code or state")),
+			)
+
+			// State needs to be stringified for the token exchange
+			const stateString = typeof parsed.state === "string" ? parsed.state : JSON.stringify(parsed.state)
+
+			// Exchange code for tokens
+			const tokenExchange = yield* TokenExchange
+			return yield* tokenExchange.exchangeCode(parsed.code, stateString)
+		}).pipe(
+			Effect.provide(ClipboardLive),
+			Effect.provide(TokenExchangeLive),
+			Effect.catchAll((error) => {
+				console.error("[desktop-auth] Clipboard login failed:", error)
+				get.set(desktopAuthStatusAtom, "error")
+				get.set(desktopAuthErrorAtom, {
+					_tag: "ClipboardAuthError",
+					message: error instanceof Error ? error.message : "Failed to authenticate from clipboard",
+				})
+				return Effect.fail(error)
+			}),
+		)
+
+		// Store tokens
+		yield* Effect.gen(function* () {
+			const tokenStorage = yield* TokenStorage
+			yield* tokenStorage.storeTokens(result.accessToken, result.refreshToken, result.expiresIn)
+		}).pipe(Effect.provide(TokenStorageLive))
+
+		// Update atom state
+		get.set(desktopTokensAtom, {
+			accessToken: result.accessToken,
+			refreshToken: result.refreshToken,
+			expiresAt: Date.now() + result.expiresIn * 1000,
+		})
+		get.set(desktopAuthStatusAtom, "authenticated")
+
+		yield* Effect.log("[desktop-auth] Clipboard login successful")
+		window.location.href = "/"
 	}),
 )
 
