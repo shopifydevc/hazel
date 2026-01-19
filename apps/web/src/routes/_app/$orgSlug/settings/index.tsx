@@ -1,7 +1,7 @@
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-react"
 import { eq, useLiveQuery } from "@tanstack/react-db"
 import { createFileRoute, useParams } from "@tanstack/react-router"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 import IconCompany from "~/components/icons/icon-company"
 import IconCopy from "~/components/icons/icon-copy"
@@ -30,6 +30,13 @@ function GeneralSettings() {
 	const { user, isLoading: isAuthLoading } = useAuth()
 
 	const [name, setName] = useState(organization?.name ?? "")
+
+	// Sync local state when organization name changes from server
+	useEffect(() => {
+		if (organization?.name) {
+			setName(organization.name)
+		}
+	}, [organization?.name])
 
 	const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -68,11 +75,6 @@ function GeneralSettings() {
 
 	// While loading, don't hide UI elements - just disable them
 	const isPermissionsLoading = isAuthLoading || isLoadingMembers
-
-	// Update local state when organization changes
-	if (organization?.name && name !== organization.name && !isSavingName) {
-		setName(organization.name)
-	}
 
 	const getInitials = (orgName: string) => {
 		const words = orgName.trim().split(/\s+/)
