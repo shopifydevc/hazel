@@ -53,6 +53,10 @@ interface DesktopLogoutOptions {
 // Refresh 5 minutes before expiry
 const REFRESH_BUFFER_MS = 5 * 60 * 1000
 
+// Retry configuration for transient errors
+const MAX_REFRESH_RETRIES = 3
+const BASE_BACKOFF_MS = 1000 // 1s, 2s, 4s
+
 // ============================================================================
 // Layers
 // ============================================================================
@@ -90,6 +94,12 @@ export const desktopAuthErrorAtom = Atom.make<DesktopAuthError | null>(null).pip
  */
 const isRefreshingRef = Ref.unsafeMake(false)
 
+/**
+ * Ref holding a Deferred that resolves when current refresh completes
+ * Allows callers to wait for an in-progress refresh
+ */
+const refreshDeferredRef = Ref.unsafeMake<Deferred.Deferred<boolean> | null>(null)
+
 // ============================================================================
 // Derived Atoms
 // ============================================================================
@@ -114,12 +124,38 @@ interface AtomGetter {
 }
 
 /**
- * Effect that performs the actual token refresh
- * Returns true if refresh succeeded, false if skipped (already refreshing)
+ * Check if an error is a fatal error (refresh token revoked/invalid)
+ * Fatal errors should not be retried
+ */
+export const isFatalRefreshError = (error: { _tag?: string; message?: string; detail?: string }): boolean => {
+	// 401 from refresh endpoint means refresh token is revoked/invalid
+	if (error.detail?.includes("HTTP 401")) return true
+	// 403 means forbidden - token blacklisted or similar
+	if (error.detail?.includes("HTTP 403")) return true
+	return false
+}
+
+/**
+ * Check if an error is transient (timeout, network) and can be retried
+ */
+export const isTransientError = (error: { _tag?: string; message?: string }): boolean => {
+	const message = error.message?.toLowerCase() ?? ""
+	return (
+		message.includes("timed out") ||
+		message.includes("timeout") ||
+		message.includes("network error") ||
+		error._tag === "TimeoutException" ||
+		error._tag === "RequestError"
+	)
+}
+
+/**
+ * Effect that performs the actual token refresh with retry logic
+ * Returns true if refresh succeeded, false if failed/skipped
  */
 const doRefresh = (get: AtomGetter) =>
 	Effect.gen(function* () {
-		// Prevent concurrent refreshes
+		// Prevent concurrent refreshes - but allow caller to wait
 		const alreadyRefreshing = yield* Ref.get(isRefreshingRef)
 		if (alreadyRefreshing) {
 			yield* Effect.log("[desktop-auth] Already refreshing, skipping")
@@ -128,7 +164,14 @@ const doRefresh = (get: AtomGetter) =>
 
 		yield* Ref.set(isRefreshingRef, true)
 
-		const result = yield* Effect.gen(function* () {
+		// Create a Deferred so callers can wait for this refresh
+		const deferred = yield* Deferred.make<boolean>()
+		yield* Ref.set(refreshDeferredRef, deferred)
+
+		// Use a Ref to store the result so we can access it in the finalizer
+		const resultRef = yield* Ref.make<boolean>(false)
+
+		yield* Effect.gen(function* () {
 			const tokenStorage = yield* TokenStorage
 			const tokenExchange = yield* TokenExchange
 
@@ -147,47 +190,112 @@ const doRefresh = (get: AtomGetter) =>
 				if (typeof window !== "undefined") {
 					window.dispatchEvent(new CustomEvent("auth:session-expired"))
 				}
-				return false
+				yield* Ref.set(resultRef, false)
+				return
 			}
 
 			yield* Effect.log("[desktop-auth] Refreshing tokens...")
 
-			// Exchange refresh token for new tokens
-			const tokens = yield* tokenExchange.refreshToken(refreshTokenOpt.value)
+			// Attempt refresh with retries for transient errors
+			const attemptRefresh = (attempt: number): Effect.Effect<boolean> =>
+				Effect.gen(function* () {
+					const refreshResult = yield* tokenExchange.refreshToken(refreshTokenOpt.value).pipe(
+						Effect.map((tokens) => ({ success: true as const, tokens })),
+						Effect.catchAll((error) => Effect.succeed({ success: false as const, error })),
+					)
 
-			// Store new tokens
-			yield* tokenStorage.storeTokens(tokens.accessToken, tokens.refreshToken, tokens.expiresIn)
+					if (refreshResult.success) {
+						const { tokens } = refreshResult
+						// Store new tokens
+						yield* tokenStorage
+							.storeTokens(tokens.accessToken, tokens.refreshToken, tokens.expiresIn)
+							.pipe(Effect.orDie)
 
-			// Update atom state
-			const expiresAt = Date.now() + tokens.expiresIn * 1000
-			get.set(desktopTokensAtom, {
-				accessToken: tokens.accessToken,
-				refreshToken: tokens.refreshToken,
-				expiresAt,
-			})
-			get.set(desktopAuthErrorAtom, null)
+						// Update atom state
+						const expiresAt = Date.now() + tokens.expiresIn * 1000
+						get.set(desktopTokensAtom, {
+							accessToken: tokens.accessToken,
+							refreshToken: tokens.refreshToken,
+							expiresAt,
+						})
+						get.set(desktopAuthErrorAtom, null)
 
-			yield* Effect.log("[desktop-auth] Tokens refreshed successfully")
-			return true
+						yield* Effect.log("[desktop-auth] Tokens refreshed successfully")
+						return true
+					}
+
+					const { error } = refreshResult
+
+					// Fatal error - don't retry, logout immediately
+					if (isFatalRefreshError(error)) {
+						yield* Effect.log(
+							`[desktop-auth] Fatal refresh error (attempt ${attempt}): ${error.message}`,
+						)
+						console.error("[desktop-auth] Fatal token refresh error:", error)
+						get.set(desktopAuthErrorAtom, {
+							_tag: error._tag ?? "UnknownError",
+							message: error.message ?? "Token refresh failed",
+						})
+						if (typeof window !== "undefined") {
+							window.dispatchEvent(new CustomEvent("auth:session-expired"))
+						}
+						return false
+					}
+
+					// Transient error - retry with backoff
+					if (isTransientError(error) && attempt < MAX_REFRESH_RETRIES) {
+						const backoffMs = BASE_BACKOFF_MS * Math.pow(2, attempt - 1)
+						yield* Effect.log(
+							`[desktop-auth] Transient error (attempt ${attempt}/${MAX_REFRESH_RETRIES}), retrying in ${backoffMs}ms: ${error.message}`,
+						)
+						yield* Effect.sleep(Duration.millis(backoffMs))
+						return yield* attemptRefresh(attempt + 1)
+					}
+
+					// Max retries exhausted or non-transient error
+					yield* Effect.log(
+						`[desktop-auth] Refresh failed after ${attempt} attempts: ${error.message}`,
+					)
+					console.error("[desktop-auth] Token refresh failed after retries:", error)
+					get.set(desktopAuthErrorAtom, {
+						_tag: error._tag ?? "UnknownError",
+						message: error.message ?? "Token refresh failed",
+					})
+					if (typeof window !== "undefined") {
+						window.dispatchEvent(new CustomEvent("auth:session-expired"))
+					}
+					return false
+				})
+
+			const refreshed = yield* attemptRefresh(1)
+			yield* Ref.set(resultRef, refreshed)
 		}).pipe(
 			Effect.provide(TokenStorageLive),
 			Effect.provide(TokenExchangeLive),
-			Effect.ensuring(Ref.set(isRefreshingRef, false)),
+			Effect.ensuring(
+				Effect.gen(function* () {
+					yield* Ref.set(isRefreshingRef, false)
+					// Resolve the Deferred so waiters get the result
+					const currentDeferred = yield* Ref.get(refreshDeferredRef)
+					const finalResult = yield* Ref.get(resultRef)
+					if (currentDeferred) {
+						yield* Deferred.succeed(currentDeferred, finalResult)
+					}
+					yield* Ref.set(refreshDeferredRef, null)
+				}),
+			),
 			Effect.catchAll((error) => {
-				console.error("[desktop-auth] Token refresh failed:", error)
+				// Catch any unexpected errors
+				console.error("[desktop-auth] Unexpected error during refresh:", error)
 				get.set(desktopAuthErrorAtom, {
-					_tag: error._tag ?? "UnknownError",
-					message: error.message ?? "Token refresh failed",
+					_tag: "UnknownError",
+					message: "Unexpected error during token refresh",
 				})
-				// Dispatch session expired on refresh failure
-				if (typeof window !== "undefined") {
-					window.dispatchEvent(new CustomEvent("auth:session-expired"))
-				}
-				return Effect.succeed(false)
+				return Effect.void
 			}),
 		)
 
-		return result
+		return yield* Ref.get(resultRef)
 	})
 
 // ============================================================================
@@ -489,6 +597,89 @@ export const getDesktopAccessToken = (): Promise<string | null> => {
 		}).pipe(
 			Effect.provide(TokenStorageLive),
 			Effect.catchAll(() => Effect.succeed(null)),
+		),
+	)
+}
+
+/**
+ * Wait for any in-progress token refresh to complete
+ * Returns true if refresh succeeded, false otherwise, or true if no refresh in progress
+ */
+export const waitForRefresh = (): Promise<boolean> => {
+	if (!isTauri()) return Promise.resolve(true)
+
+	return Effect.runPromise(
+		Effect.gen(function* () {
+			const deferred = yield* Ref.get(refreshDeferredRef)
+			if (deferred) {
+				yield* Effect.log("[desktop-auth] Waiting for in-progress refresh...")
+				return yield* Deferred.await(deferred)
+			}
+			return true
+		}).pipe(Effect.catchAll(() => Effect.succeed(true))),
+	)
+}
+
+/**
+ * Force an immediate token refresh (Promise-based for use by auth-fetch)
+ * Returns true if refresh succeeded, false otherwise
+ */
+export const forceRefresh = (): Promise<boolean> => {
+	if (!isTauri()) return Promise.resolve(false)
+
+	return Effect.runPromise(
+		Effect.gen(function* () {
+			// Check if a refresh is already in progress
+			const alreadyRefreshing = yield* Ref.get(isRefreshingRef)
+			if (alreadyRefreshing) {
+				// Wait for the in-progress refresh instead of starting a new one
+				const deferred = yield* Ref.get(refreshDeferredRef)
+				if (deferred) {
+					yield* Effect.log("[desktop-auth] forceRefresh: waiting for in-progress refresh")
+					return yield* Deferred.await(deferred)
+				}
+				return false
+			}
+
+			// Get refresh token to check if we can refresh
+			const tokenStorage = yield* TokenStorage
+			const refreshTokenOpt = yield* tokenStorage.getRefreshToken
+			if (Option.isNone(refreshTokenOpt)) {
+				yield* Effect.log("[desktop-auth] forceRefresh: no refresh token available")
+				return false
+			}
+
+			// Perform the refresh using a mock getter that doesn't use atoms
+			// This is a simplified version for auth-fetch use case
+			const tokenExchange = yield* TokenExchange
+
+			yield* Effect.log("[desktop-auth] forceRefresh: starting refresh...")
+			yield* Ref.set(isRefreshingRef, true)
+
+			const result = yield* tokenExchange.refreshToken(refreshTokenOpt.value).pipe(
+				Effect.flatMap((tokens) =>
+					Effect.gen(function* () {
+						yield* tokenStorage.storeTokens(
+							tokens.accessToken,
+							tokens.refreshToken,
+							tokens.expiresIn,
+						)
+						yield* Effect.log("[desktop-auth] forceRefresh: tokens refreshed successfully")
+						return true
+					}),
+				),
+				Effect.catchAll((error) => {
+					console.error("[desktop-auth] forceRefresh failed:", error)
+					return Effect.succeed(false)
+				}),
+				Effect.ensuring(Ref.set(isRefreshingRef, false)),
+			)
+
+			return result
+		}).pipe(
+			Effect.provide(TokenStorageLive),
+			Effect.provide(TokenExchangeLive),
+			Effect.catchAll(() => Effect.succeed(false)),
 		),
 	)
 }
