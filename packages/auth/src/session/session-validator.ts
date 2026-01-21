@@ -26,6 +26,26 @@ import { getJwtExpiry } from "./jwt-decoder.ts"
 import { type SealedSession, WorkOSClient } from "./workos-client.ts"
 
 /**
+ * Extract meaningful details from an error for logging.
+ * Captures status codes, error codes, causes, and stack traces.
+ */
+const extractErrorDetails = (error: unknown): string => {
+	if (error instanceof Error) {
+		const details: string[] = [error.message]
+		if ("status" in error) details.push(`status: ${(error as { status: unknown }).status}`)
+		if ("code" in error) details.push(`code: ${(error as { code: unknown }).code}`)
+		if ("cause" in error && error.cause) details.push(`cause: ${String(error.cause)}`)
+		if (error.stack) {
+			// Extract first 3 lines of stack trace
+			const stackLines = error.stack.split("\n").slice(0, 3).join(" | ")
+			details.push(`stack: ${stackLines}`)
+		}
+		return details.join(" | ")
+	}
+	return String(error)
+}
+
+/**
  * Core session validation service.
  * Handles WorkOS sealed session authentication with Redis caching.
  */
@@ -135,9 +155,17 @@ export class SessionValidator extends Effect.Service<SessionValidator>()("@hazel
 				catch: (error) =>
 					new SessionAuthenticationError({
 						message: "Failed to authenticate sealed session",
-						detail: String(error),
+						detail: extractErrorDetails(error),
 					}),
-			}).pipe(Effect.withSpan("WorkOS.authenticate"))
+			}).pipe(
+				Effect.tapError((err) =>
+					Effect.gen(function* () {
+						yield* Effect.logError("Session authentication failed", { detail: err.detail })
+						yield* Effect.annotateCurrentSpan("auth.error_detail", err.detail)
+					}),
+				),
+				Effect.withSpan("WorkOS.authenticate"),
+			)
 
 			// Record WorkOS API latency
 			yield* Metric.update(workosAuthLatency, Date.now() - startTime)
@@ -270,9 +298,16 @@ export class SessionValidator extends Effect.Service<SessionValidator>()("@hazel
 				catch: (error) =>
 					new SessionAuthenticationError({
 						message: "Failed to authenticate sealed session",
-						detail: String(error),
+						detail: extractErrorDetails(error),
 					}),
-			})
+			}).pipe(
+				Effect.tapError((err) =>
+					Effect.gen(function* () {
+						yield* Effect.logError("Session authentication failed (pre-refresh)", { detail: err.detail })
+						yield* Effect.annotateCurrentSpan("auth.error_detail", err.detail)
+					}),
+				),
+			)
 
 			// If authenticated successfully, cache and return
 			if (authResult.authenticated) {
@@ -301,9 +336,12 @@ export class SessionValidator extends Effect.Service<SessionValidator>()("@hazel
 			}
 
 			// Try to refresh the session
-			yield* Effect.logDebug("Session authentication failed, attempting refresh")
+			yield* Effect.logDebug("Session authentication failed, attempting refresh", {
+				authFailureReason: authResult.reason,
+			})
 			yield* Metric.increment(sessionRefreshAttempts)
 			yield* Effect.annotateCurrentSpan("refresh.attempted", true)
+			yield* Effect.annotateCurrentSpan("refresh.auth_failure_reason", authResult.reason)
 
 			const refreshStartTime = Date.now()
 			const refreshResult = yield* Effect.tryPromise({
@@ -311,9 +349,18 @@ export class SessionValidator extends Effect.Service<SessionValidator>()("@hazel
 				catch: (error) =>
 					new SessionRefreshError({
 						message: "Failed to refresh sealed session",
-						detail: String(error),
+						detail: `authFailureReason=${authResult.reason} | ${extractErrorDetails(error)}`,
 					}),
 			}).pipe(
+				Effect.tapError((err) =>
+					Effect.gen(function* () {
+						yield* Effect.logError("Session refresh failed", {
+							detail: err.detail,
+							authFailureReason: authResult.reason,
+						})
+						yield* Effect.annotateCurrentSpan("refresh.error_detail", err.detail)
+					}),
+				),
 				Effect.tap(() => Metric.update(workosRefreshLatency, Date.now() - refreshStartTime)),
 				Effect.withSpan("WorkOS.refresh"),
 			)
