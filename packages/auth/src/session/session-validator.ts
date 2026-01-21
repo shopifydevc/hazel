@@ -303,7 +303,9 @@ export class SessionValidator extends Effect.Service<SessionValidator>()("@hazel
 			}).pipe(
 				Effect.tapError((err) =>
 					Effect.gen(function* () {
-						yield* Effect.logError("Session authentication failed (pre-refresh)", { detail: err.detail })
+						yield* Effect.logError("Session authentication failed (pre-refresh)", {
+							detail: err.detail,
+						})
 						yield* Effect.annotateCurrentSpan("auth.error_detail", err.detail)
 					}),
 				),

@@ -31,7 +31,7 @@
 		"@hazel/schema": "workspace:*",
 		"@hazel/tanstack-db-atom": "workspace:*",
 		"@heroicons/react": "^2.2.0",
-		"@legendapp/list": "3.0.0-beta.20",
+		"@legendapp/list": "3.0.0-beta.21",
 		"@paper-design/shaders-react": "^0.0.70",
 		"@posthog/react": "^1.5.2",
 		"@react-aria/optimize-locales-plugin": "^1.1.5",

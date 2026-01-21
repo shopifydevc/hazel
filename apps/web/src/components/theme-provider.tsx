@@ -68,8 +68,19 @@ export const applyThemeAtom = Atom.make((get) => {
 	if (typeof document === "undefined") return
 
 	const root = document.documentElement
+
+	// Disable transitions during theme switch to prevent flash
+	root.classList.add("no-transitions")
+
 	root.classList.remove("light", "dark")
 	root.classList.add(theme)
+
+	// Re-enable transitions after the theme change has painted
+	requestAnimationFrame(() => {
+		requestAnimationFrame(() => {
+			root.classList.remove("no-transitions")
+		})
+	})
 })
 
 export const applyBrandColorAtom = Atom.make((get) => {

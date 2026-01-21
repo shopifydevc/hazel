@@ -7,6 +7,8 @@ const badgeStyles = tv({
 		"group-hover:bg-(--badge-overlay) group-focus:bg-(--badge-overlay)",
 		"*:data-[slot=icon]:shrink-0",
 		"duration-200",
+		// Tabular numbers for consistent width when displaying counts
+		"tabular-nums",
 	],
 	variants: {
 		intent: {

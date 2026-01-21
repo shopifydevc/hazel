@@ -99,7 +99,8 @@ const ModalContent = ({
 					"relative overflow-hidden bg-overlay text-overlay-fg",
 					"rounded-t-2xl shadow-lg ring ring-fg/5 dark:ring-border",
 					sizes[size],
-
+					// Ensure scale animation originates from center for proper visual effect
+					"origin-center",
 					"entering:slide-in-from-bottom sm:entering:zoom-in-95 sm:entering:slide-in-from-bottom-0 entering:animate-in entering:duration-300 entering:ease-out",
 					"exiting:slide-out-to-bottom sm:exiting:zoom-out-95 sm:exiting:slide-out-to-bottom-0 exiting:animate-out exiting:ease-in",
 					className,
