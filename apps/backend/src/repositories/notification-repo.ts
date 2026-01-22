@@ -1,5 +1,5 @@
 import { and, Database, eq, inArray, ModelRepository, schema, type TransactionClient } from "@hazel/db"
-import { type MessageId, type OrganizationMemberId, policyRequire } from "@hazel/domain"
+import { type ChannelId, type MessageId, type OrganizationMemberId, policyRequire } from "@hazel/domain"
 import { Notification } from "@hazel/domain/models"
 import { Effect } from "effect"
 import { DatabaseLive } from "../services/database"
@@ -50,9 +50,37 @@ export class NotificationRepo extends Effect.Service<NotificationRepo>()("Notifi
 				policyRequire("Notification", "delete"),
 			)({ messageIds, memberId }, tx)
 
+		/**
+		 * Delete all notifications for a specific channel and member.
+		 * Used when clearing notifications for a channel (e.g., when entering a channel).
+		 *
+		 * Note: Authorization is handled at the handler level by verifying
+		 * the user is a member of the channel. The memberId parameter
+		 * ensures users can only delete their own notifications.
+		 * The caller must use withSystemActor to satisfy the policy requirement.
+		 */
+		const deleteByChannelId = (channelId: ChannelId, memberId: OrganizationMemberId, tx?: TxFn) =>
+			db.makeQuery(
+				(execute, data: { channelId: ChannelId; memberId: OrganizationMemberId }) =>
+					execute((client) =>
+						client
+							.delete(schema.notificationsTable)
+							.where(
+								and(
+									eq(schema.notificationsTable.targetedResourceId, data.channelId),
+									eq(schema.notificationsTable.targetedResourceType, "channel"),
+									eq(schema.notificationsTable.memberId, data.memberId),
+								),
+							)
+							.returning(),
+					),
+				policyRequire("Notification", "delete"),
+			)({ channelId, memberId }, tx)
+
 		return {
 			...baseRepo,
 			deleteByMessageIds,
+			deleteByChannelId,
 		} as const
 	}),
 	dependencies: [DatabaseLive],

@@ -1,10 +1,13 @@
 import { Database } from "@hazel/db"
-import { CurrentUser, policyUse, withRemapDbErrors } from "@hazel/domain"
+import { CurrentUser, policyUse, withRemapDbErrors, withSystemActor } from "@hazel/domain"
 import { ChannelMemberRpcs } from "@hazel/domain/rpc"
-import { Effect } from "effect"
+import { Effect, Option } from "effect"
 import { generateTransactionId } from "../../lib/create-transactionId"
 import { ChannelMemberPolicy } from "../../policies/channel-member-policy"
 import { ChannelMemberRepo } from "../../repositories/channel-member-repo"
+import { ChannelRepo } from "../../repositories/channel-repo"
+import { NotificationRepo } from "../../repositories/notification-repo"
+import { OrganizationMemberRepo } from "../../repositories/organization-member-repo"
 
 export const ChannelMemberRpcLive = ChannelMemberRpcs.toLayer(
 	Effect.gen(function* () {
@@ -89,16 +92,38 @@ export const ChannelMemberRpcLive = ChannelMemberRpcs.toLayer(
 						withRemapDbErrors("ChannelMember", "select"),
 					)
 
+					// Get channel to find organizationId
+					const channelOption = yield* ChannelRepo.findById(channelId).pipe(
+						withSystemActor,
+						withRemapDbErrors("Channel", "select"),
+					)
+
+					// Get organization member for notification deletion
+					const orgMemberOption = Option.isSome(channelOption)
+						? yield* OrganizationMemberRepo.findByOrgAndUser(
+								channelOption.value.organizationId,
+								user.id,
+							).pipe(withSystemActor, withRemapDbErrors("OrganizationMember", "select"))
+						: Option.none()
+
 					// Wrap the update and transaction ID generation in a single transaction
 					const result = yield* db
 						.transaction(
 							Effect.gen(function* () {
 								// If member exists, clear the notification count
-								if (memberOption._tag === "Some") {
+								if (Option.isSome(memberOption)) {
 									yield* ChannelMemberRepo.update({
 										id: memberOption.value.id,
 										notificationCount: 0,
 									}).pipe(policyUse(ChannelMemberPolicy.canUpdate(memberOption.value.id)))
+								}
+
+								// Delete all notifications for this channel
+								if (Option.isSome(orgMemberOption)) {
+									yield* NotificationRepo.deleteByChannelId(
+										channelId,
+										orgMemberOption.value.id,
+									).pipe(withSystemActor)
 								}
 
 								const txid = yield* generateTransactionId()
