@@ -279,7 +279,7 @@ const CreateIssueResponse = Schema.Struct({
 })
 
 const GetIssueResponse = Schema.Struct({
-	data: Schema.optionalWith(
+	data: Schema.OptionFromNullishOr(
 		Schema.Struct({
 			issue: Schema.NullOr(
 				Schema.Struct({
@@ -308,8 +308,8 @@ const GetIssueResponse = Schema.Struct({
 							avatarUrl: Schema.NullOr(Schema.String),
 						}),
 					),
-					priority: Schema.Number,
-					priorityLabel: Schema.String,
+					priority: Schema.NullOr(Schema.Number),
+					priorityLabel: Schema.NullOr(Schema.String),
 					labels: Schema.Struct({
 						nodes: Schema.Array(
 							Schema.Struct({
@@ -322,9 +322,9 @@ const GetIssueResponse = Schema.Struct({
 				}),
 			),
 		}),
-		{ as: "Option" },
+		null,
 	),
-	errors: Schema.optionalWith(Schema.Array(GraphQLError), { as: "Option" }),
+	errors: Schema.OptionFromNullishOr(Schema.Array(GraphQLError), null),
 })
 
 const ViewerResponse = Schema.Struct({
@@ -623,7 +623,17 @@ export class LinearApiClient extends Effect.Service<LinearApiClient>()("LinearAp
 				const client = makeAuthenticatedClient(accessToken)
 				const rawResponse = yield* executeGraphQL(client, ISSUE_QUERY, { issueId: issueKey })
 
+				yield* Effect.logDebug("Linear API raw response").pipe(
+					Effect.annotateLogs("rawResponse", JSON.stringify(rawResponse, null, 2)),
+				)
+
 				const response = yield* Schema.decodeUnknown(GetIssueResponse)(rawResponse).pipe(
+					Effect.tapError((parseError) =>
+						Effect.logError("Linear API parse error").pipe(
+							Effect.annotateLogs("parseError", String(parseError)),
+							Effect.annotateLogs("rawResponse", JSON.stringify(rawResponse, null, 2)),
+						),
+					),
 					Effect.mapError(
 						(parseError) =>
 							new LinearApiError({

@@ -300,7 +300,12 @@ export const MessageAuthorHeader = ({
 	return (
 		<div className="flex items-baseline gap-2">
 			<span className="font-semibold text-fg">{fullName}</span>
-			<StatusEmojiWithTooltip emoji={statusEmoji} message={customMessage} expiresAt={statusExpiresAt} quietHours={quietHours} />
+			<StatusEmojiWithTooltip
+				emoji={statusEmoji}
+				message={customMessage}
+				expiresAt={statusExpiresAt}
+				quietHours={quietHours}
+			/>
 			{user.userType === "machine" && (
 				<Badge intent="primary" isCircle={false}>
 					APP
