@@ -2,7 +2,6 @@
 
 import { Result, useAtomValue } from "@effect-atom/atom-react"
 import type { OrganizationId } from "@hazel/domain"
-import { Option } from "effect"
 import { HazelApiClient } from "~/lib/services/common/atom-client"
 import { cn } from "~/lib/utils"
 import { Embed, useEmbedTheme } from "../embeds"
@@ -217,6 +216,7 @@ export function GitHubPREmbedWithData({ url, data }: GitHubPREmbedWithDataProps)
 export function GitHubPREmbed({ url, orgId }: GitHubPREmbedProps) {
 	const theme = useEmbedTheme("github")
 	const info = extractGitHubInfo(url)
+	const prLabel = info ? `#${info.number}` : undefined
 
 	const resourceResult = useAtomValue(
 		HazelApiClient.query("integration-resources", "fetchGitHubPR", {
@@ -226,61 +226,36 @@ export function GitHubPREmbed({ url, orgId }: GitHubPREmbedProps) {
 		}),
 	)
 
-	// Loading state
-	if (Result.isInitial(resourceResult)) {
-		return <Embed.Skeleton accentColor={theme.color} />
-	}
-
-	// Error handling
-	if (Result.isFailure(resourceResult)) {
-		const errorOption = Result.error(resourceResult)
-		const prLabel = info ? `#${info.number}` : undefined
-
-		if (Option.isSome(errorOption)) {
-			const error = errorOption.value
-
-			// Show connect prompt if not connected
-			if ("_tag" in error && error._tag === "IntegrationNotConnectedForPreviewError") {
-				return (
-					<Embed.ConnectPrompt
-						providerName={theme.name}
-						iconUrl={theme.iconUrl}
-						accentColor={theme.color}
-						resourceLabel={prLabel}
-						description="Connect GitHub to see PR details inline"
-					/>
-				)
-			}
-
-			// Show the actual error message from the integration
-			if ("_tag" in error && error._tag === "IntegrationResourceError") {
-				return (
-					<Embed.Error
-						iconUrl={theme.iconUrl}
-						accentColor={theme.color}
-						message={error.message}
-						url={url}
-						resourceLabel={prLabel}
-					/>
-				)
-			}
-
-			// Show specific error message for not found
-			if ("_tag" in error && error._tag === "ResourceNotFoundError") {
-				return (
-					<Embed.Error
-						iconUrl={theme.iconUrl}
-						accentColor={theme.color}
-						message={error.message ?? "PR not found"}
-						url={url}
-						resourceLabel={prLabel}
-					/>
-				)
-			}
-		}
-
-		// Fallback for unknown errors
-		return (
+	return Result.builder(resourceResult)
+		.onInitial(() => <Embed.Skeleton accentColor={theme.color} />)
+		.onErrorTag("IntegrationNotConnectedForPreviewError", () => (
+			<Embed.ConnectPrompt
+				providerName={theme.name}
+				iconUrl={theme.iconUrl}
+				accentColor={theme.color}
+				resourceLabel={prLabel}
+				description="Connect GitHub to see PR details inline"
+			/>
+		))
+		.onErrorTag("IntegrationResourceError", (error) => (
+			<Embed.Error
+				iconUrl={theme.iconUrl}
+				accentColor={theme.color}
+				message={error.message}
+				url={url}
+				resourceLabel={prLabel}
+			/>
+		))
+		.onErrorTag("ResourceNotFoundError", (error) => (
+			<Embed.Error
+				iconUrl={theme.iconUrl}
+				accentColor={theme.color}
+				message={error.message ?? "PR not found"}
+				url={url}
+				resourceLabel={prLabel}
+			/>
+		))
+		.onError(() => (
 			<Embed.Error
 				iconUrl={theme.iconUrl}
 				accentColor={theme.color}
@@ -288,86 +263,84 @@ export function GitHubPREmbed({ url, orgId }: GitHubPREmbedProps) {
 				url={url}
 				resourceLabel={prLabel}
 			/>
-		)
-	}
+		))
+		.onSuccess((pr) => {
+			if (!pr) {
+				return (
+					<Embed.Error
+						iconUrl={theme.iconUrl}
+						accentColor={theme.color}
+						message="PR not found"
+						url={url}
+						resourceLabel={prLabel}
+					/>
+				)
+			}
 
-	const pr = Result.getOrElse(resourceResult, () => null)
+			// Determine PR state
+			const prState: PRState = pr.merged
+				? "merged"
+				: pr.draft
+					? "draft"
+					: pr.state === "closed"
+						? "closed"
+						: "open"
 
-	if (!pr) {
-		const prLabel = info ? `#${info.number}` : undefined
-		return (
-			<Embed.Error
-				iconUrl={theme.iconUrl}
-				accentColor={theme.color}
-				message="PR not found"
-				url={url}
-				resourceLabel={prLabel}
-			/>
-		)
-	}
+			// Build fields array
+			const fields = []
 
-	// Determine PR state
-	const prState: PRState = pr.merged
-		? "merged"
-		: pr.draft
-			? "draft"
-			: pr.state === "closed"
-				? "closed"
-				: "open"
+			if (pr.author) {
+				fields.push({
+					name: "Author",
+					value: <AuthorAvatar login={pr.author.login} avatarUrl={pr.author.avatarUrl} />,
+					inline: true,
+				})
+			}
 
-	// Build fields array
-	const fields = []
+			if (pr.additions !== undefined && pr.deletions !== undefined) {
+				fields.push({
+					name: "Changes",
+					value: <DiffStats additions={pr.additions} deletions={pr.deletions} />,
+					inline: true,
+				})
+			}
 
-	if (pr.author) {
-		fields.push({
-			name: "Author",
-			value: <AuthorAvatar login={pr.author.login} avatarUrl={pr.author.avatarUrl} />,
-			inline: true,
+			if (pr.labels && pr.labels.length > 0) {
+				for (const label of pr.labels.slice(0, 2)) {
+					fields.push({
+						name: "Label",
+						value: <LabelBadge name={label.name} color={label.color} />,
+						inline: true,
+					})
+				}
+
+				if (pr.labels.length > 2) {
+					fields.push({
+						name: "More",
+						value: <span className="text-[10px] text-muted-fg">+{pr.labels.length - 2}</span>,
+						inline: true,
+					})
+				}
+			}
+
+			return (
+				<Embed accentColor={theme.color} url={url} className="group">
+					<Embed.Author
+						iconUrl={theme.iconUrl}
+						name={`${pr.owner}/${pr.repo}`}
+						url={`https://github.com/${pr.owner}/${pr.repo}`}
+						trailing={<PRStatusBadge state={prState} />}
+					/>
+					<Embed.Body title={`#${pr.number} ${pr.title}`} description={pr.body} />
+					{fields.length > 0 && <Embed.Fields fields={fields} />}
+					{pr.headRefName && (
+						<Embed.Footer
+							text={pr.headRefName}
+							timestamp={pr.updatedAt ? new Date(pr.updatedAt) : undefined}
+						/>
+					)}
+				</Embed>
+			)
 		})
-	}
-
-	if (pr.additions !== undefined && pr.deletions !== undefined) {
-		fields.push({
-			name: "Changes",
-			value: <DiffStats additions={pr.additions} deletions={pr.deletions} />,
-			inline: true,
-		})
-	}
-
-	if (pr.labels && pr.labels.length > 0) {
-		for (const label of pr.labels.slice(0, 2)) {
-			fields.push({
-				name: "Label",
-				value: <LabelBadge name={label.name} color={label.color} />,
-				inline: true,
-			})
-		}
-
-		if (pr.labels.length > 2) {
-			fields.push({
-				name: "More",
-				value: <span className="text-[10px] text-muted-fg">+{pr.labels.length - 2}</span>,
-				inline: true,
-			})
-		}
-	}
-
-	return (
-		<Embed accentColor={theme.color} url={url} className="group">
-			<Embed.Author
-				iconUrl={theme.iconUrl}
-				name={`${pr.owner}/${pr.repo}`}
-				url={`https://github.com/${pr.owner}/${pr.repo}`}
-				trailing={<PRStatusBadge state={prState} />}
-			/>
-			<Embed.Body title={`#${pr.number} ${pr.title}`} description={pr.body} />
-			{fields.length > 0 && <Embed.Fields fields={fields} />}
-			{pr.headRefName && (
-				<Embed.Footer
-					text={pr.headRefName}
-					timestamp={pr.updatedAt ? new Date(pr.updatedAt) : undefined}
-				/>
-			)}
-		</Embed>
-	)
+		.render()
 }

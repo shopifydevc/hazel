@@ -2,7 +2,6 @@
 
 import { Result, useAtomValue } from "@effect-atom/atom-react"
 import type { OrganizationId } from "@hazel/domain"
-import { Option } from "effect"
 import { HazelApiClient } from "~/lib/services/common/atom-client"
 import { cn } from "~/lib/utils"
 import { Embed, embedSectionStyles, useEmbedTheme } from "../embeds"
@@ -126,6 +125,7 @@ function LabelBadge({ name, color }: { name: string; color: string }) {
 
 export function LinearIssueEmbed({ url, orgId }: LinearIssueEmbedProps) {
 	const theme = useEmbedTheme("linear")
+	const issueKey = extractLinearIssueKey(url) ?? undefined
 
 	const resourceResult = useAtomValue(
 		HazelApiClient.query("integration-resources", "fetchLinearIssue", {
@@ -135,137 +135,112 @@ export function LinearIssueEmbed({ url, orgId }: LinearIssueEmbedProps) {
 		}),
 	)
 
-	// Loading state
-	if (Result.isInitial(resourceResult)) {
-		return <Embed.Skeleton accentColor={theme.color} />
-	}
-
-	// Error handling
-	if (Result.isFailure(resourceResult)) {
-		const errorOption = Result.error(resourceResult)
-		const issueKey = extractLinearIssueKey(url)
-
-		if (Option.isSome(errorOption)) {
-			const error = errorOption.value
-
-			// Show connect prompt if not connected
-			if ("_tag" in error && error._tag === "IntegrationNotConnectedForPreviewError") {
-				return (
-					<Embed.ConnectPrompt
-						providerName={theme.name}
-						iconUrl={theme.iconUrl}
-						accentColor={theme.color}
-						resourceLabel={issueKey ?? undefined}
-					/>
-				)
-			}
-
-			// Show the actual error message from the integration
-			if ("_tag" in error && error._tag === "IntegrationResourceError") {
-				return (
-					<Embed.Error
-						iconUrl={theme.iconUrl}
-						accentColor={theme.color}
-						message={error.message}
-						url={url}
-						resourceLabel={issueKey ?? undefined}
-					/>
-				)
-			}
-
-			// Show specific error message for not found
-			if ("_tag" in error && error._tag === "ResourceNotFoundError") {
-				return (
-					<Embed.Error
-						iconUrl={theme.iconUrl}
-						accentColor={theme.color}
-						message={error.message ?? "Issue not found"}
-						url={url}
-						resourceLabel={issueKey ?? undefined}
-					/>
-				)
-			}
-		}
-
-		// Fallback for unknown errors
-		return (
+	return Result.builder(resourceResult)
+		.onInitial(() => <Embed.Skeleton accentColor={theme.color} />)
+		.onErrorTag("IntegrationNotConnectedForPreviewError", () => (
+			<Embed.ConnectPrompt
+				providerName={theme.name}
+				iconUrl={theme.iconUrl}
+				accentColor={theme.color}
+				resourceLabel={issueKey}
+			/>
+		))
+		.onErrorTag("IntegrationResourceError", (error) => (
+			<Embed.Error
+				iconUrl={theme.iconUrl}
+				accentColor={theme.color}
+				message={error.message}
+				url={url}
+				resourceLabel={issueKey}
+			/>
+		))
+		.onErrorTag("ResourceNotFoundError", (error) => (
+			<Embed.Error
+				iconUrl={theme.iconUrl}
+				accentColor={theme.color}
+				message={error.message ?? "Issue not found"}
+				url={url}
+				resourceLabel={issueKey}
+			/>
+		))
+		.onError(() => (
 			<Embed.Error
 				iconUrl={theme.iconUrl}
 				accentColor={theme.color}
 				message="Could not load content"
 				url={url}
-				resourceLabel={issueKey ?? undefined}
+				resourceLabel={issueKey}
 			/>
-		)
-	}
-
-	const issue = Result.getOrElse(resourceResult, () => null)
-
-	if (!issue) {
-		const issueKey = extractLinearIssueKey(url)
-		return (
-			<Embed.Error
-				iconUrl={theme.iconUrl}
-				accentColor={theme.color}
-				message="Issue not found"
-				url={url}
-				resourceLabel={issueKey ?? undefined}
-			/>
-		)
-	}
-
-	// Build fields array for priority and labels
-	const fields = []
-
-	if (issue.priority > 0) {
-		fields.push({
-			name: "Priority",
-			value: <PriorityBadge priority={issue.priority} label={issue.priorityLabel} />,
-			inline: true,
-		})
-	}
-
-	// Add labels (max 2, with overflow indicator)
-	for (const label of issue.labels.slice(0, 2)) {
-		fields.push({
-			name: "Label",
-			value: <LabelBadge name={label.name} color={label.color} />,
-			inline: true,
-		})
-	}
-
-	if (issue.labels.length > 2) {
-		fields.push({
-			name: "More",
-			value: <span className="text-[10px] text-muted-fg">+{issue.labels.length - 2}</span>,
-			inline: true,
-		})
-	}
-
-	return (
-		<Embed accentColor={theme.color} url={url} className="group">
-			<Embed.Author
-				iconUrl={theme.iconUrl}
-				name={
-					<span className="flex items-center gap-1.5">
-						<span className="text-muted-fg">{issue.teamName}</span>
-						<span className="text-muted-fg/50">/</span>
-						<span>{issue.identifier}</span>
-					</span>
-				}
-				trailing={issue.state && <StatusBadge name={issue.state.name} color={issue.state.color} />}
-			/>
-			<Embed.Body title={issue.title} description={issue.description} />
-			{fields.length > 0 && <Embed.Fields fields={fields} />}
-			{issue.assignee && (
-				<div className={cn(embedSectionStyles({ position: "bottom" }), "bg-muted/20")}>
-					<AssigneeAvatar
-						name={issue.assignee.name}
-						avatarUrl={issue.assignee.avatarUrl}
+		))
+		.onSuccess((issue) => {
+			if (!issue) {
+				return (
+					<Embed.Error
+						iconUrl={theme.iconUrl}
 						accentColor={theme.color}
+						message="Issue not found"
+						url={url}
+						resourceLabel={issueKey}
 					/>
-				</div>
-			)}
-		</Embed>
-	)
+				)
+			}
+
+			// Build fields array for priority and labels
+			const fields = []
+
+			if (issue.priority > 0) {
+				fields.push({
+					name: "Priority",
+					value: <PriorityBadge priority={issue.priority} label={issue.priorityLabel} />,
+					inline: true,
+				})
+			}
+
+			// Add labels (max 2, with overflow indicator)
+			for (const label of issue.labels.slice(0, 2)) {
+				fields.push({
+					name: "Label",
+					value: <LabelBadge name={label.name} color={label.color} />,
+					inline: true,
+				})
+			}
+
+			if (issue.labels.length > 2) {
+				fields.push({
+					name: "More",
+					value: <span className="text-[10px] text-muted-fg">+{issue.labels.length - 2}</span>,
+					inline: true,
+				})
+			}
+
+			return (
+				<Embed accentColor={theme.color} url={url} className="group">
+					<Embed.Author
+						iconUrl={theme.iconUrl}
+						name={
+							<span className="flex items-center gap-1.5">
+								<span className="text-muted-fg">{issue.teamName}</span>
+								<span className="text-muted-fg/50">/</span>
+								<span>{issue.identifier}</span>
+							</span>
+						}
+						trailing={
+							issue.state && <StatusBadge name={issue.state.name} color={issue.state.color} />
+						}
+					/>
+					<Embed.Body title={issue.title} description={issue.description} />
+					{fields.length > 0 && <Embed.Fields fields={fields} />}
+					{issue.assignee && (
+						<div className={cn(embedSectionStyles({ position: "bottom" }), "bg-muted/20")}>
+							<AssigneeAvatar
+								name={issue.assignee.name}
+								avatarUrl={issue.assignee.avatarUrl}
+								accentColor={theme.color}
+							/>
+						</div>
+					)}
+				</Embed>
+			)
+		})
+		.render()
 }

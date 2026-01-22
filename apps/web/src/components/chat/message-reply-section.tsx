@@ -11,8 +11,6 @@ interface MessageReplySectionProps {
 export function MessageReplySection({ replyToMessageId, onClick }: MessageReplySectionProps) {
 	// Use atom for message with author - automatically deduplicated
 	const messageResult = useAtomValue(messageWithAuthorAtomFamily(replyToMessageId))
-	const data = Result.getOrElse(messageResult, () => undefined)
-	const isLoading = Result.isInitial(messageResult)
 
 	return (
 		<div className="relative">
@@ -40,29 +38,35 @@ export function MessageReplySection({ replyToMessageId, onClick }: MessageReplyS
 				className="flex w-fit items-center gap-1 pl-12 text-left hover:bg-transparent"
 				onClick={onClick}
 			>
-				{isLoading ? (
-					<>
-						<div className="size-4 animate-pulse rounded-full bg-muted" />
-						<span className="text-muted-fg text-sm">Loading...</span>
-					</>
-				) : data ? (
-					<>
-						<Avatar
-							size="xs"
-							src={data.author.avatarUrl}
-							initials={`${data.author.firstName[0]}${data.author.lastName[0]}`}
-							alt={`${data.author.firstName} ${data.author.lastName}`}
-						/>
-						<span className="font-medium text-fg text-sm hover:underline">
-							{data.author.firstName} {data.author.lastName}
-						</span>
-						<span className="max-w-xs truncate text-ellipsis text-muted-fg text-sm">
-							{data.content.split("\n")[0]}
-						</span>
-					</>
-				) : (
-					<span className="text-muted-fg text-sm">Message not found</span>
-				)}
+				{Result.builder(messageResult)
+					.onInitial(() => (
+						<>
+							<div className="size-4 animate-pulse rounded-full bg-muted" />
+							<span className="text-muted-fg text-sm">Loading...</span>
+						</>
+					))
+					.onSuccess((data) =>
+						data ? (
+							<>
+								<Avatar
+									size="xs"
+									src={data.author.avatarUrl}
+									initials={`${data.author.firstName[0]}${data.author.lastName[0]}`}
+									alt={`${data.author.firstName} ${data.author.lastName}`}
+								/>
+								<span className="font-medium text-fg text-sm hover:underline">
+									{data.author.firstName} {data.author.lastName}
+								</span>
+								<span className="max-w-xs truncate text-ellipsis text-muted-fg text-sm">
+									{data.content.split("\n")[0]}
+								</span>
+							</>
+						) : (
+							<span className="text-muted-fg text-sm">Message not found</span>
+						),
+					)
+					.onFailure(() => <span className="text-muted-fg text-sm">Message not found</span>)
+					.render()}
 			</button>
 		</div>
 	)
