@@ -396,7 +396,7 @@ export function usePresence() {
 
 	const setStatus = useCallback(
 		async (status: PresenceStatus, customMessage?: string) => {
-			if (!user?.id) return
+			if (!user?.id) return undefined
 
 			setManualStatus({
 				status,
@@ -408,13 +408,13 @@ export function usePresence() {
 
 			const program = Effect.gen(function* () {
 				const client = yield* HazelRpcClient
-				yield* client("userPresenceStatus.update", {
+				return yield* client("userPresenceStatus.update", {
 					status,
 					customMessage: customMessage ?? null,
 				})
 			})
 
-			await runtime.runPromise(program).catch(console.error)
+			return runtime.runPromiseExit(program)
 		},
 		[user?.id, setManualStatus],
 	)
@@ -426,11 +426,11 @@ export function usePresence() {
 			expiresAt: Date | null,
 			suppressNotifications?: boolean,
 		) => {
-			if (!user?.id) return
+			if (!user?.id) return undefined
 
 			const program = Effect.gen(function* () {
 				const client = yield* HazelRpcClient
-				yield* client("userPresenceStatus.update", {
+				return yield* client("userPresenceStatus.update", {
 					statusEmoji: emoji,
 					customMessage: message,
 					statusExpiresAt: expiresAt,
@@ -438,20 +438,20 @@ export function usePresence() {
 				})
 			})
 
-			await runtime.runPromise(program).catch(console.error)
+			return runtime.runPromiseExit(program)
 		},
 		[user?.id],
 	)
 
 	const clearCustomStatus = useCallback(async () => {
-		if (!user?.id) return
+		if (!user?.id) return undefined
 
 		const program = Effect.gen(function* () {
 			const client = yield* HazelRpcClient
-			yield* client("userPresenceStatus.clearStatus", {})
+			return yield* client("userPresenceStatus.clearStatus", {})
 		})
 
-		await runtime.runPromise(program).catch(console.error)
+		return runtime.runPromiseExit(program)
 	}, [user?.id])
 
 	return {

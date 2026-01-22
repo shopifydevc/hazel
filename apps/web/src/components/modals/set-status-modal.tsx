@@ -1,6 +1,8 @@
 import { getLocalTimeZone, Time, today, type DateValue } from "@internationalized/date"
+import { Exit } from "effect"
 import type { TimeValue } from "react-aria-components"
 import { useState } from "react"
+import { toast } from "sonner"
 import { Button } from "~/components/ui/button"
 import { DateInput } from "~/components/ui/date-field"
 import { DatePicker, DatePickerTrigger } from "~/components/ui/date-picker"
@@ -12,6 +14,7 @@ import { Switch, SwitchLabel } from "~/components/ui/switch"
 import { TextField } from "~/components/ui/text-field"
 import { TimeField } from "~/components/ui/time-field"
 import { usePresence } from "~/hooks/use-presence"
+import { toastExitOnError } from "~/lib/toast-exit"
 import { EmojiPickerDialog } from "../emoji-picker/emoji-picker-dialog"
 
 type ExpirationOption = "never" | "30min" | "1hr" | "4hr" | "today" | "week" | "custom"
@@ -115,8 +118,14 @@ export function SetStatusModal({ isOpen, onOpenChange }: SetStatusModalProps) {
 		setIsSubmitting(true)
 		try {
 			const expiresAt = getExpirationDate(expiration, customDate, customTime)
-			await setCustomStatus(emoji, message || null, expiresAt, pauseNotifications)
-			onOpenChange(false)
+			const exit = await setCustomStatus(emoji, message || null, expiresAt, pauseNotifications)
+
+			if (exit && Exit.isSuccess(exit)) {
+				toast.success("Status updated")
+				onOpenChange(false)
+			} else if (exit) {
+				toastExitOnError(exit, {})
+			}
 		} finally {
 			setIsSubmitting(false)
 		}
@@ -125,14 +134,20 @@ export function SetStatusModal({ isOpen, onOpenChange }: SetStatusModalProps) {
 	const handleClear = async () => {
 		setIsSubmitting(true)
 		try {
-			await clearCustomStatus()
-			setEmoji(null)
-			setMessage("")
-			setExpiration("never")
-			setCustomDate(null)
-			setCustomTime(null)
-			setPauseNotifications(false)
-			onOpenChange(false)
+			const exit = await clearCustomStatus()
+
+			if (exit && Exit.isSuccess(exit)) {
+				toast.success("Status cleared")
+				setEmoji(null)
+				setMessage("")
+				setExpiration("never")
+				setCustomDate(null)
+				setCustomTime(null)
+				setPauseNotifications(false)
+				onOpenChange(false)
+			} else if (exit) {
+				toastExitOnError(exit, {})
+			}
 		} finally {
 			setIsSubmitting(false)
 		}
