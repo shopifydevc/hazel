@@ -5,14 +5,33 @@
  */
 
 import { Atom } from "@effect-atom/atom-react"
-import { Duration, Effect, Schedule, Stream } from "effect"
+import { Data, Duration, Effect, Schedule, Stream } from "effect"
 import { runtime } from "~/lib/services/common/runtime"
 
 type UpdaterApi = typeof import("@tauri-apps/plugin-updater")
 type ProcessApi = typeof import("@tauri-apps/plugin-process")
 type TauriUpdate = Awaited<ReturnType<UpdaterApi["check"]>>
-type DownloadCallback = NonNullable<Parameters<NonNullable<TauriUpdate>["downloadAndInstall"]>[0]>
+type DownloadCallback = NonNullable<Parameters<NonNullable<TauriUpdate>["download"]>[0]>
 type DownloadEvent = Parameters<DownloadCallback>[0]
+
+/**
+ * Tagged error classes for update operations
+ */
+export class UpdateCheckError extends Data.TaggedError("UpdateCheckError")<{
+	message: string
+}> {}
+
+export class UpdateDownloadError extends Data.TaggedError("UpdateDownloadError")<{
+	message: string
+}> {}
+
+export class UpdateInstallError extends Data.TaggedError("UpdateInstallError")<{
+	message: string
+}> {}
+
+export class UpdateRelaunchError extends Data.TaggedError("UpdateRelaunchError")<{
+	message: string
+}> {}
 
 const updater: UpdaterApi | undefined = (window as any).__TAURI__?.updater
 const process: ProcessApi | undefined = (window as any).__TAURI__?.process
@@ -24,7 +43,7 @@ export type TauriUpdateState =
 	| { _tag: "idle" }
 	| { _tag: "checking" }
 	| { _tag: "available"; version: string; body: string | null; update: NonNullable<TauriUpdate> }
-	| { _tag: "not-available" }
+	| { _tag: "not-available"; lastCheckedAt: Date }
 	| { _tag: "error"; message: string }
 
 /**
@@ -92,7 +111,7 @@ export const tauriUpdateCheckAtom = Atom.make((get) => {
 					update,
 				})
 			} else {
-				get.set(tauriUpdateStateAtom, { _tag: "not-available" })
+				get.set(tauriUpdateStateAtom, { _tag: "not-available", lastCheckedAt: new Date() })
 			}
 		} catch (error) {
 			console.error("Update check failed:", error)
@@ -119,6 +138,9 @@ export const tauriUpdateCheckAtom = Atom.make((get) => {
 /**
  * Creates an Effect that downloads and installs an update.
  * The component should pass the setDownloadState function to update progress.
+ *
+ * Uses separate download() and install() phases for better progress tracking
+ * and error handling.
  */
 export const createDownloadEffect = (
 	update: NonNullable<TauriUpdate>,
@@ -130,12 +152,14 @@ export const createDownloadEffect = (
 		let downloadedBytes = 0
 		let totalBytes: number | undefined
 
-		try {
-			// Phase 1: Download with progress
-			yield* Effect.promise(() =>
-				update.downloadAndInstall((event: DownloadEvent) => {
+		// Phase 1: Download with progress tracking
+		yield* Effect.tryPromise({
+			try: () =>
+				update.download((event: DownloadEvent) => {
+					console.log("[update] Download event:", event.event)
 					switch (event.event) {
 						case "Started":
+							console.log("[update] Content length:", event.data.contentLength)
 							totalBytes = event.data.contentLength ?? undefined
 							setDownloadState({
 								_tag: "downloading",
@@ -152,26 +176,93 @@ export const createDownloadEffect = (
 							})
 							break
 						case "Finished":
-							setDownloadState({ _tag: "installing" })
+							console.log("[update] Download finished")
 							break
 					}
 				}),
-			)
+			catch: (error) =>
+				new UpdateDownloadError({
+					message: error instanceof Error ? error.message : "Download failed",
+				}),
+		})
 
-			// Phase 2: Restart
-			setDownloadState({ _tag: "restarting" })
-			yield* Effect.promise(() => process!.relaunch())
-		} catch (error) {
-			console.error("Update failed:", error)
-			setDownloadState({
-				_tag: "error",
-				message:
-					error instanceof Error
-						? error.message
-						: "Please restart the app manually to complete the update",
+		// Phase 2: Install
+		setDownloadState({ _tag: "installing" })
+		yield* Effect.tryPromise({
+			try: () => update.install(),
+			catch: (error) =>
+				new UpdateInstallError({
+					message: error instanceof Error ? error.message : "Installation failed",
+				}),
+		})
+
+		// Phase 3: Restart with delay to ensure installation completes
+		setDownloadState({ _tag: "restarting" })
+		yield* Effect.sleep(Duration.millis(500))
+
+		yield* Effect.tryPromise({
+			try: () => process!.relaunch(),
+			catch: () =>
+				new UpdateRelaunchError({
+					message: "Update installed successfully. Please restart the app manually.",
+				}),
+		})
+	}).pipe(
+		Effect.catchTags({
+			UpdateDownloadError: (error) =>
+				Effect.sync(() => {
+					console.error("[update] Download failed:", error.message)
+					setDownloadState({ _tag: "error", message: error.message })
+				}),
+			UpdateInstallError: (error) =>
+				Effect.sync(() => {
+					console.error("[update] Install failed:", error.message)
+					setDownloadState({ _tag: "error", message: error.message })
+				}),
+			UpdateRelaunchError: (error) =>
+				Effect.sync(() => {
+					console.error("[update] Relaunch failed:", error.message)
+					setDownloadState({ _tag: "error", message: error.message })
+				}),
+		}),
+	)
+
+/**
+ * Creates an Effect that manually checks for updates.
+ * Used by the Desktop settings page to allow users to trigger an update check.
+ */
+export const checkForUpdatesManually = (setUpdateState: (state: TauriUpdateState) => void) =>
+	Effect.gen(function* () {
+		if (!updater || !process) return
+
+		setUpdateState({ _tag: "checking" })
+
+		const update = yield* Effect.tryPromise({
+			try: () => updater!.check(),
+			catch: (error) =>
+				new UpdateCheckError({
+					message: error instanceof Error ? error.message : "Failed to check for updates",
+				}),
+		})
+
+		if (update) {
+			setUpdateState({
+				_tag: "available",
+				version: update.version,
+				body: update.body ?? null,
+				update,
 			})
+		} else {
+			setUpdateState({ _tag: "not-available", lastCheckedAt: new Date() })
 		}
-	})
+	}).pipe(
+		Effect.catchTag("UpdateCheckError", (error) =>
+			Effect.sync(() => {
+				console.error("[update] Check failed:", error.message)
+				setUpdateState({ _tag: "error", message: error.message })
+			}),
+		),
+	)
 
 /**
  * Check if we're in a Tauri environment

@@ -63,8 +63,8 @@ export const TauriUpdateCheck = () => {
 			})
 		}
 
-		// Reset toast tracking when state goes back to idle or not-available
-		if (updateState._tag === "idle" || updateState._tag === "not-available") {
+		// Reset toast tracking when state goes back to idle
+		if (updateState._tag === "idle") {
 			hasShownToastRef.current = false
 		}
 	}, [updateState, setDownloadState])
