@@ -7,12 +7,12 @@
 
 - replace tanstack form with effect based form
 
-- Figure out an cookie/auth setup that works without the need of a 3rd party cookie
 
 # Bugs
 
 - When message fails to send should retry
 - Profile Pic getting synced later, initally no pfp??
+- if github is already connecred to other org figure out how to let double connect
 
 # Later
 
