@@ -52,6 +52,7 @@ import {
 	EventDispatcher,
 	ShapeStreamSubscriber,
 } from "./services/index.ts"
+import { extractTablesFromEventTypes } from "./types/events.ts"
 
 /**
  * Internal configuration context for HazelBotClient
@@ -862,7 +863,13 @@ export const createHazelBot = <Commands extends CommandGroup<any> = EmptyCommand
 				on: (eventType, handler) => dispatcher.on(eventType, handler),
 				start: Effect.gen(function* () {
 					yield* Effect.logDebug("Starting bot client...")
-					yield* subscriber.start
+
+					// Derive required tables from registered event handlers
+					const eventTypes = yield* dispatcher.registeredEventTypes
+					const requiredTables = extractTablesFromEventTypes(eventTypes)
+
+					// Start shape stream subscriptions (only for tables with handlers)
+					yield* subscriber.start(requiredTables)
 					yield* dispatcher.start
 					yield* Effect.logDebug("Bot client started successfully")
 				}),
