@@ -8,6 +8,7 @@ import {
 	ChannelWebhookRpcs,
 	GitHubSubscriptionRpcs,
 	IntegrationRequestRpcs,
+	RssSubscriptionRpcs,
 	InvitationRpcs,
 	MessageReactionRpcs,
 	MessageRpcs,
@@ -28,6 +29,7 @@ import { ChannelWebhookRpcLive } from "./handlers/channel-webhooks"
 import { ChannelRpcLive } from "./handlers/channels"
 import { GitHubSubscriptionRpcLive } from "./handlers/github-subscriptions"
 import { IntegrationRequestRpcLive } from "./handlers/integration-requests"
+import { RssSubscriptionRpcLive } from "./handlers/rss-subscriptions"
 import { InvitationRpcLive } from "./handlers/invitations"
 import { MessageReactionRpcLive } from "./handlers/message-reactions"
 import { MessageRpcLive } from "./handlers/messages"
@@ -71,29 +73,31 @@ export const AllRpcs = MessageRpcs.merge(
 	ChannelSectionRpcs,
 	ChannelWebhookRpcs,
 	GitHubSubscriptionRpcs,
+	RssSubscriptionRpcs,
 	AttachmentRpcs,
 	BotRpcs,
 ).middleware(RpcLoggingMiddleware)
 
-export const RpcServerLive = Layer.empty.pipe(
-	Layer.provideMerge(MessageRpcLive),
-	Layer.provideMerge(MessageReactionRpcLive),
-	Layer.provideMerge(NotificationRpcLive),
-	Layer.provideMerge(InvitationRpcLive),
-	Layer.provideMerge(IntegrationRequestRpcLive),
-	Layer.provideMerge(TypingIndicatorRpcLive),
-	Layer.provideMerge(PinnedMessageRpcLive),
-	Layer.provideMerge(OrganizationRpcLive),
-	Layer.provideMerge(OrganizationMemberRpcLive),
-	Layer.provideMerge(UserRpcLive),
-	Layer.provideMerge(UserPresenceStatusRpcLive),
-	Layer.provideMerge(ChannelRpcLive),
-	Layer.provideMerge(ChannelMemberRpcLive),
-	Layer.provideMerge(ChannelSectionRpcLive),
-	Layer.provideMerge(ChannelWebhookRpcLive),
-	Layer.provideMerge(GitHubSubscriptionRpcLive),
-	Layer.provideMerge(AttachmentRpcLive),
-	Layer.provideMerge(BotRpcLive),
-	Layer.provideMerge(AuthMiddlewareLive),
-	Layer.provideMerge(RpcLoggingMiddlewareLive),
-)
+export const RpcServerLive = Layer.empty
+	.pipe(
+		Layer.provideMerge(MessageRpcLive),
+		Layer.provideMerge(MessageReactionRpcLive),
+		Layer.provideMerge(NotificationRpcLive),
+		Layer.provideMerge(InvitationRpcLive),
+		Layer.provideMerge(IntegrationRequestRpcLive),
+		Layer.provideMerge(TypingIndicatorRpcLive),
+		Layer.provideMerge(PinnedMessageRpcLive),
+		Layer.provideMerge(OrganizationRpcLive),
+		Layer.provideMerge(OrganizationMemberRpcLive),
+		Layer.provideMerge(UserRpcLive),
+		Layer.provideMerge(UserPresenceStatusRpcLive),
+		Layer.provideMerge(ChannelRpcLive),
+		Layer.provideMerge(ChannelMemberRpcLive),
+		Layer.provideMerge(ChannelSectionRpcLive),
+		Layer.provideMerge(ChannelWebhookRpcLive),
+		Layer.provideMerge(GitHubSubscriptionRpcLive),
+		Layer.provideMerge(RssSubscriptionRpcLive),
+		Layer.provideMerge(AttachmentRpcLive),
+		Layer.provideMerge(BotRpcLive),
+	)
+	.pipe(Layer.provideMerge(AuthMiddlewareLive), Layer.provideMerge(RpcLoggingMiddlewareLive))

@@ -1,63 +1,43 @@
-import { useAtomSet, useAtomValue } from "@effect-atom/atom-react"
+import { useAtomSet } from "@effect-atom/atom-react"
 import type { Channel } from "@hazel/domain/models"
-import type { GitHubSubscriptionId, OrganizationId } from "@hazel/schema"
+import type { OrganizationId, RssSubscriptionId } from "@hazel/schema"
 import { eq, or, useLiveQuery } from "@tanstack/react-db"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
-	deleteGitHubSubscriptionMutation,
-	type GitHubSubscriptionData,
-	listOrganizationGitHubSubscriptionsMutation,
-	updateGitHubSubscriptionMutation,
-} from "~/atoms/github-subscription-atoms"
-import { getProviderIconUrl } from "~/components/embeds/use-embed-theme"
+	deleteRssSubscriptionMutation,
+	listOrganizationRssSubscriptionsMutation,
+	type RssSubscriptionData,
+	updateRssSubscriptionMutation,
+} from "~/atoms/rss-subscription-atoms"
 import { IconCirclePause } from "~/components/icons/icon-circle-pause"
 import IconDotsVertical from "~/components/icons/icon-dots-vertical"
-import IconEdit from "~/components/icons/icon-edit"
 import IconHashtag from "~/components/icons/icon-hashtag"
 import { IconPlay } from "~/components/icons/icon-play"
 import IconTrash from "~/components/icons/icon-trash"
-import { resolvedThemeAtom } from "~/components/theme-provider"
 import { Badge } from "~/components/ui/badge"
 import { Button } from "~/components/ui/button"
 import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator } from "~/components/ui/menu"
 import { Modal, ModalClose, ModalContent, ModalFooter, ModalHeader } from "~/components/ui/modal"
 import { channelCollection } from "~/db/collections"
 import { exitToast } from "~/lib/toast-exit"
-import { AddGitHubSubscriptionModal } from "./add-github-subscription-modal"
-import { EditGitHubSubscriptionModal } from "./edit-github-subscription-modal"
+import { AddRssSubscriptionModal } from "./add-rss-subscription-modal"
 
 type ChannelData = typeof Channel.Model.Type
 
-interface GitHubSubscriptionsSectionProps {
+interface RssSubscriptionsSectionProps {
 	organizationId: OrganizationId
 }
 
-const EVENT_LABELS: Record<string, string> = {
-	push: "Push",
-	pull_request: "PRs",
-	issues: "Issues",
-	release: "Releases",
-	deployment_status: "Deploy",
-	workflow_run: "Actions",
-	star: "Stars",
-}
-
-export function GitHubSubscriptionsSection({ organizationId }: GitHubSubscriptionsSectionProps) {
-	const [subscriptions, setSubscriptions] = useState<readonly GitHubSubscriptionData[]>([])
+export function RssSubscriptionsSection({ organizationId }: RssSubscriptionsSectionProps) {
+	const [subscriptions, setSubscriptions] = useState<readonly RssSubscriptionData[]>([])
 	const [isLoading, setIsLoading] = useState(true)
 	const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-	const [editingSubscription, setEditingSubscription] = useState<{
-		subscription: GitHubSubscriptionData
-		channelName: string
-	} | null>(null)
 
-	const resolvedTheme = useAtomValue(resolvedThemeAtom)
-
-	const listSubscriptions = useAtomSet(listOrganizationGitHubSubscriptionsMutation, {
+	const listSubscriptions = useAtomSet(listOrganizationRssSubscriptionsMutation, {
 		mode: "promiseExit",
 	})
-	const updateSubscription = useAtomSet(updateGitHubSubscriptionMutation, { mode: "promiseExit" })
-	const deleteSubscription = useAtomSet(deleteGitHubSubscriptionMutation, { mode: "promiseExit" })
+	const updateSubscription = useAtomSet(updateRssSubscriptionMutation, { mode: "promiseExit" })
+	const deleteSubscription = useAtomSet(deleteRssSubscriptionMutation, { mode: "promiseExit" })
 
 	// Ref to avoid stale closures
 	const listSubscriptionsRef = useRef(listSubscriptions)
@@ -100,14 +80,14 @@ export function GitHubSubscriptionsSection({ organizationId }: GitHubSubscriptio
 		fetchSubscriptions(true)
 	}, [fetchSubscriptions])
 
-	// Group subscriptions by repository
+	// Group subscriptions by feed URL
 	const groupedSubscriptions = useMemo(() => {
 		const groups = new Map<
 			string,
 			{
-				repositoryFullName: string
-				repositoryId: number
-				subscriptions: Array<GitHubSubscriptionData & { channelName: string }>
+				feedUrl: string
+				feedTitle: string | null
+				subscriptions: Array<RssSubscriptionData & { channelName: string }>
 			}
 		>()
 
@@ -115,30 +95,30 @@ export function GitHubSubscriptionsSection({ organizationId }: GitHubSubscriptio
 			const channel = channelMap.get(sub.channelId)
 			const channelName = channel?.name ?? "Unknown"
 
-			if (!groups.has(sub.repositoryFullName)) {
-				groups.set(sub.repositoryFullName, {
-					repositoryFullName: sub.repositoryFullName,
-					repositoryId: sub.repositoryId,
+			if (!groups.has(sub.feedUrl)) {
+				groups.set(sub.feedUrl, {
+					feedUrl: sub.feedUrl,
+					feedTitle: sub.feedTitle,
 					subscriptions: [],
 				})
 			}
 
-			groups.get(sub.repositoryFullName)?.subscriptions.push({
+			groups.get(sub.feedUrl)?.subscriptions.push({
 				...sub,
 				channelName,
 			})
 		}
 
-		// Sort groups by repository name
+		// Sort groups by feed title or URL
 		return Array.from(groups.values()).sort((a, b) =>
-			a.repositoryFullName.localeCompare(b.repositoryFullName),
+			(a.feedTitle ?? a.feedUrl).localeCompare(b.feedTitle ?? b.feedUrl),
 		)
 	}, [subscriptions, channelMap])
 
-	const handleToggle = async (subscription: GitHubSubscriptionData) => {
+	const handleToggle = async (subscription: RssSubscriptionData) => {
 		const exit = await updateSubscription({
 			payload: {
-				id: subscription.id as GitHubSubscriptionId,
+				id: subscription.id as RssSubscriptionId,
 				isEnabled: !subscription.isEnabled,
 			},
 		})
@@ -146,7 +126,7 @@ export function GitHubSubscriptionsSection({ organizationId }: GitHubSubscriptio
 		exitToast(exit)
 			.onSuccess(() => fetchSubscriptions())
 			.successMessage(subscription.isEnabled ? "Subscription disabled" : "Subscription enabled")
-			.onErrorTag("GitHubSubscriptionNotFoundError", () => ({
+			.onErrorTag("RssSubscriptionNotFoundError", () => ({
 				title: "Subscription not found",
 				description: "This subscription may have been deleted.",
 				isRetryable: false,
@@ -154,24 +134,20 @@ export function GitHubSubscriptionsSection({ organizationId }: GitHubSubscriptio
 			.run()
 	}
 
-	const handleDelete = async (subscription: GitHubSubscriptionData) => {
+	const handleDelete = async (subscription: RssSubscriptionData) => {
 		const exit = await deleteSubscription({
-			payload: { id: subscription.id as GitHubSubscriptionId },
+			payload: { id: subscription.id as RssSubscriptionId },
 		})
 
 		exitToast(exit)
 			.onSuccess(() => fetchSubscriptions())
 			.successMessage("Subscription removed")
-			.onErrorTag("GitHubSubscriptionNotFoundError", () => ({
+			.onErrorTag("RssSubscriptionNotFoundError", () => ({
 				title: "Subscription not found",
 				description: "This subscription may have already been deleted.",
 				isRetryable: false,
 			}))
 			.run()
-	}
-
-	const handleEdit = (subscription: GitHubSubscriptionData, channelName: string) => {
-		setEditingSubscription({ subscription, channelName })
 	}
 
 	// Loading state - wait for both subscriptions and channels
@@ -180,7 +156,7 @@ export function GitHubSubscriptionsSection({ organizationId }: GitHubSubscriptio
 		return (
 			<div className="overflow-hidden rounded-xl border border-border bg-bg">
 				<div className="border-border border-b bg-bg-muted/30 px-5 py-3">
-					<h3 className="font-semibold text-fg text-sm">Channel Subscriptions</h3>
+					<h3 className="font-semibold text-fg text-sm">RSS Subscriptions</h3>
 				</div>
 				<div className="flex items-center justify-center p-8">
 					<div className="flex items-center gap-3 text-muted-fg">
@@ -211,7 +187,7 @@ export function GitHubSubscriptionsSection({ organizationId }: GitHubSubscriptio
 			<div className="overflow-hidden rounded-xl border border-border bg-bg">
 				<div className="flex items-center justify-between border-border border-b bg-bg-muted/30 px-5 py-3">
 					<div className="flex items-center gap-2">
-						<h3 className="font-semibold text-fg text-sm">Channel Subscriptions</h3>
+						<h3 className="font-semibold text-fg text-sm">RSS Subscriptions</h3>
 						{subscriptions.length > 0 && (
 							<span className="rounded-full bg-secondary px-2 py-0.5 text-muted-fg text-xs">
 								{subscriptions.length}
@@ -228,25 +204,31 @@ export function GitHubSubscriptionsSection({ organizationId }: GitHubSubscriptio
 						>
 							<path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
 						</svg>
-						Add Subscription
+						Add Feed
 					</Button>
 				</div>
 
 				{groupedSubscriptions.length === 0 ? (
 					<div className="flex flex-col items-center justify-center px-5 py-12 text-center">
-						<div className="mb-4 flex size-16 items-center justify-center rounded-lg bg-secondary/50">
-							<img
-								src={getProviderIconUrl("github", {
-									theme: resolvedTheme === "dark" ? "light" : "dark",
-								})}
-								alt="GitHub"
-								className="size-8 rounded"
-							/>
+						<div className="mb-4 flex size-16 items-center justify-center rounded-lg bg-[#F26522]/10">
+							<svg
+								className="size-8 text-[#F26522]"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+								strokeWidth={1.5}
+							>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									d="M12.75 19.5v-.75a7.5 7.5 0 0 0-7.5-7.5H4.5m0-6.75h.75c7.87 0 14.25 6.38 14.25 14.25v.75M6 18.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"
+								/>
+							</svg>
 						</div>
-						<h4 className="mb-1 font-medium text-fg">No subscriptions configured</h4>
+						<h4 className="mb-1 font-medium text-fg">No RSS feeds configured</h4>
 						<p className="mb-6 max-w-sm text-muted-fg text-sm">
-							Subscribe channels to GitHub repositories to receive notifications for pushes,
-							pull requests, issues, and more.
+							Subscribe channels to RSS or Atom feeds to automatically post new articles and
+							updates.
 						</p>
 						<Button intent="primary" onPress={() => setIsAddModalOpen(true)}>
 							<svg
@@ -258,27 +240,38 @@ export function GitHubSubscriptionsSection({ organizationId }: GitHubSubscriptio
 							>
 								<path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
 							</svg>
-							Add Your First Subscription
+							Add Your First Feed
 						</Button>
 					</div>
 				) : (
 					<div className="divide-y divide-border">
 						{groupedSubscriptions.map((group) => (
-							<div key={group.repositoryFullName}>
-								{/* Repository header */}
+							<div key={group.feedUrl}>
+								{/* Feed header */}
 								<div className="flex items-center gap-3 bg-bg-muted/20 px-5 py-2.5">
-									<div className="flex size-6 items-center justify-center rounded bg-bg-muted">
+									<div className="flex size-6 items-center justify-center rounded bg-[#F26522]/10">
 										<svg
-											className="size-3.5 text-muted-fg"
-											fill="currentColor"
-											viewBox="0 0 16 16"
+											className="size-3.5 text-[#F26522]"
+											fill="none"
+											viewBox="0 0 24 24"
+											stroke="currentColor"
+											strokeWidth={2}
 										>
-											<path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-.714 1.7.75.75 0 1 1-1.072 1.05A2.495 2.495 0 0 1 2 11.5Zm10.5-1h-8a1 1 0 0 0-1 1v6.708A2.486 2.486 0 0 1 4.5 9h8ZM5 12.25v3.25a.25.25 0 0 0 .4.2l1.45-1.087a.25.25 0 0 1 .3 0L8.6 15.7a.25.25 0 0 0 .4-.2v-3.25a.25.25 0 0 0-.25-.25h-3.5a.25.25 0 0 0-.25.25Z" />
+											<path
+												strokeLinecap="round"
+												strokeLinejoin="round"
+												d="M12.75 19.5v-.75a7.5 7.5 0 0 0-7.5-7.5H4.5m0-6.75h.75c7.87 0 14.25 6.38 14.25 14.25v.75M6 18.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"
+											/>
 										</svg>
 									</div>
-									<span className="font-medium text-fg text-sm">
-										{group.repositoryFullName}
-									</span>
+									<div className="min-w-0 flex-1">
+										<span className="font-medium text-fg text-sm">
+											{group.feedTitle ?? group.feedUrl}
+										</span>
+										{group.feedTitle && (
+											<p className="truncate text-muted-fg text-xs">{group.feedUrl}</p>
+										)}
+									</div>
 									<span className="text-muted-fg text-xs">
 										{group.subscriptions.length} channel
 										{group.subscriptions.length === 1 ? "" : "s"}
@@ -294,7 +287,6 @@ export function GitHubSubscriptionsSection({ organizationId }: GitHubSubscriptio
 											channelName={sub.channelName}
 											onToggle={() => handleToggle(sub)}
 											onDelete={() => handleDelete(sub)}
-											onEdit={() => handleEdit(sub, sub.channelName)}
 										/>
 									))}
 								</div>
@@ -304,35 +296,24 @@ export function GitHubSubscriptionsSection({ organizationId }: GitHubSubscriptio
 				)}
 			</div>
 
-			<AddGitHubSubscriptionModal
+			<AddRssSubscriptionModal
 				organizationId={organizationId}
 				isOpen={isAddModalOpen}
 				onClose={() => setIsAddModalOpen(false)}
 				onSuccess={() => fetchSubscriptions()}
 			/>
-
-			{editingSubscription && (
-				<EditGitHubSubscriptionModal
-					subscription={editingSubscription.subscription}
-					channelName={editingSubscription.channelName}
-					isOpen={true}
-					onClose={() => setEditingSubscription(null)}
-					onSuccess={() => fetchSubscriptions()}
-				/>
-			)}
 		</>
 	)
 }
 
 interface SubscriptionRowProps {
-	subscription: GitHubSubscriptionData
+	subscription: RssSubscriptionData
 	channelName: string
 	onToggle: () => void
 	onDelete: () => void
-	onEdit: () => void
 }
 
-function SubscriptionRow({ subscription, channelName, onToggle, onDelete, onEdit }: SubscriptionRowProps) {
+function SubscriptionRow({ subscription, channelName, onToggle, onDelete }: SubscriptionRowProps) {
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 	const [isToggling, setIsToggling] = useState(false)
 	const [isDeleting, setIsDeleting] = useState(false)
@@ -350,12 +331,14 @@ function SubscriptionRow({ subscription, channelName, onToggle, onDelete, onEdit
 		setShowDeleteDialog(false)
 	}
 
-	// Get first 2 event labels
-	const eventLabels = subscription.enabledEvents
-		.slice(0, 2)
-		.map((e) => EVENT_LABELS[e] ?? e)
-		.join(", ")
-	const remainingCount = subscription.enabledEvents.length - 2
+	// Format polling interval
+	const intervalLabel =
+		subscription.pollingIntervalMinutes >= 60
+			? `${subscription.pollingIntervalMinutes / 60}h`
+			: `${subscription.pollingIntervalMinutes}m`
+
+	// Error indicator
+	const hasErrors = subscription.consecutiveErrors > 0
 
 	return (
 		<div className="flex items-center justify-between gap-4 px-5 py-3 transition-colors hover:bg-bg-muted/30">
@@ -369,16 +352,21 @@ function SubscriptionRow({ subscription, channelName, onToggle, onDelete, onEdit
 						<Badge intent={subscription.isEnabled ? "success" : "secondary"} className="shrink-0">
 							{subscription.isEnabled ? "Active" : "Disabled"}
 						</Badge>
+						{hasErrors && (
+							<Badge intent="danger" className="shrink-0">
+								{subscription.consecutiveErrors} error
+								{subscription.consecutiveErrors === 1 ? "" : "s"}
+							</Badge>
+						)}
 					</div>
 					<div className="flex items-center gap-2 text-muted-fg text-xs">
-						<span>
-							{eventLabels}
-							{remainingCount > 0 && ` +${remainingCount}`}
-						</span>
-						{subscription.branchFilter && (
+						<span>Every {intervalLabel}</span>
+						{subscription.lastFetchedAt && (
 							<>
 								<span className="text-muted-fg/50">·</span>
-								<span className="font-mono">{subscription.branchFilter}</span>
+								<span>
+									Last fetched {new Date(subscription.lastFetchedAt).toLocaleDateString()}
+								</span>
 							</>
 						)}
 					</div>
@@ -390,10 +378,6 @@ function SubscriptionRow({ subscription, channelName, onToggle, onDelete, onEdit
 					<IconDotsVertical className="size-4" />
 				</Button>
 				<MenuContent placement="bottom end">
-					<MenuItem onAction={onEdit}>
-						<IconEdit className="size-4" />
-						<MenuLabel>Edit</MenuLabel>
-					</MenuItem>
 					<MenuItem onAction={handleToggle} isDisabled={isToggling}>
 						{subscription.isEnabled ? (
 							<IconCirclePause className="size-4" />
@@ -413,8 +397,8 @@ function SubscriptionRow({ subscription, channelName, onToggle, onDelete, onEdit
 			<Modal isOpen={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
 				<ModalContent role="alertdialog" size="xs">
 					<ModalHeader
-						title="Remove subscription?"
-						description="This will stop posting GitHub events to this channel."
+						title="Remove feed?"
+						description="This will stop posting updates from this RSS feed."
 					/>
 					<ModalFooter>
 						<ModalClose>Cancel</ModalClose>
