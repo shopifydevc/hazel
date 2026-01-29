@@ -70,7 +70,7 @@ function DomainRow({
 
 	const handleCopy = async () => {
 		if (domain.verificationToken) {
-			await navigator.clipboard.writeText(`workos-verify=${domain.verificationToken}`)
+			await navigator.clipboard.writeText(`verification_token=${domain.verificationToken}`)
 			setCopied(true)
 			setTimeout(() => setCopied(false), 2000)
 		}
@@ -80,9 +80,9 @@ function DomainRow({
 
 	return (
 		<div className="rounded-lg border border-border bg-bg-muted/20 p-4">
-			<div className="flex items-center justify-between gap-4">
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<div className="flex items-center gap-3">
-					<span className="font-medium text-fg">{domain.domain}</span>
+					<span className="break-all font-medium text-fg">{domain.domain}</span>
 					<DomainStatusBadge state={domain.state} />
 				</div>
 				<Button
@@ -90,6 +90,7 @@ function DomainRow({
 					size="sm"
 					onPress={() => onRemove(domain.id)}
 					isDisabled={isRemoving}
+					className="self-start sm:self-auto"
 				>
 					{isRemoving ? <Loader className="size-4" /> : <IconTrash data-slot="icon" />}
 					Remove
@@ -101,7 +102,7 @@ function DomainRow({
 					<p className="text-muted-fg text-sm">
 						Add a TXT record to your DNS settings to verify ownership:
 					</p>
-					<div className="grid gap-3 sm:grid-cols-[auto_auto_1fr]">
+					<div className="grid gap-3 lg:grid-cols-[auto_auto_1fr]">
 						<div className="space-y-1">
 							<p className="font-medium text-fg text-xs">Type</p>
 							<div className="rounded-md border border-border bg-bg px-3 py-2 font-mono text-sm">
@@ -116,11 +117,16 @@ function DomainRow({
 						</div>
 						<div className="space-y-1">
 							<p className="font-medium text-fg text-xs">Content</p>
-							<div className="flex items-center gap-2">
-								<div className="flex-1 rounded-md border border-border bg-bg px-3 py-2 font-mono text-sm">
-									workos-verify={domain.verificationToken}
+							<div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+								<div className="min-w-0 flex-1 overflow-hidden break-all rounded-md border border-border bg-bg px-3 py-2 font-mono text-sm">
+									verification_token={domain.verificationToken}
 								</div>
-								<Button intent="outline" size="sm" onPress={handleCopy}>
+								<Button
+									intent="outline"
+									size="sm"
+									onPress={handleCopy}
+									className="shrink-0 self-end lg:self-auto"
+								>
 									{copied ? (
 										<IconCheck data-slot="icon" className="text-success" />
 									) : (
@@ -261,7 +267,7 @@ function DomainManagement({
 				</div>
 			) : (
 				<p className="py-4 text-center text-muted-fg text-sm">
-					No domains configured. Add a domain to enable JIT provisioning.
+					No domains configured. Add a domain to let users with matching emails auto-join.
 				</p>
 			)}
 
@@ -372,9 +378,8 @@ function AuthenticationSettings() {
 							<h2 className="font-semibold text-fg text-lg">Domain Verification</h2>
 						</div>
 						<p className="text-muted-fg text-sm">
-							Verify ownership of your email domains. When verified, users with matching emails
-							are automatically added to your organization when they sign in via SSO (JIT
-							provisioning).
+							Verify ownership of your email domains. When verified, anyone who signs in with a
+							matching email address will automatically join your organization.
 						</p>
 					</div>
 				</div>

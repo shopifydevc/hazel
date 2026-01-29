@@ -51,7 +51,7 @@ export const joinViaPublicInviteMutation = HazelRpcClient.mutation("organization
 export const getAdminPortalLinkMutation = HazelRpcClient.mutation("organization.getAdminPortalLink")
 
 /**
- * Polling signal atom that emits every 15 seconds for domain verification.
+ * Polling signal atom that emits every 5 seconds for domain verification.
  * Uses setInterval with get.setSelf pattern similar to windowFocusSignal.
  * Auto-disposes when no components are subscribed.
  */
@@ -59,7 +59,7 @@ export const domainPollingSignal = Atom.readable<number>((get) => {
 	let count = 0
 	const intervalId = setInterval(() => {
 		get.setSelf(++count)
-	}, 15_000)
+	}, 5_000)
 	get.addFinalizer(() => {
 		clearInterval(intervalId)
 	})
@@ -68,7 +68,7 @@ export const domainPollingSignal = Atom.readable<number>((get) => {
 
 /**
  * Query atom factory for listing organization domains.
- * Auto-polls every 15 seconds to detect when pending domains become verified.
+ * Auto-polls every 5 seconds to detect when pending domains become verified.
  * Polling stops automatically when the user navigates away from the page.
  */
 export const listOrganizationDomainsQuery = (organizationId: OrganizationId) =>
