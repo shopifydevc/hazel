@@ -2,6 +2,7 @@
 
 import { Result, useAtomValue } from "@effect-atom/atom-react"
 import type { UserId } from "@hazel/schema"
+import { memo, useState } from "react"
 import { userWithPresenceAtomFamily } from "~/atoms/message-atoms"
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip"
 import { cn } from "~/lib/utils"
@@ -19,9 +20,17 @@ interface ReactionButtonProps {
 	currentUserId?: string
 }
 
-export function ReactionButton({ emoji, data, onReaction, currentUserId }: ReactionButtonProps) {
+export const ReactionButton = memo(function ReactionButton({
+	emoji,
+	data,
+	onReaction,
+	currentUserId,
+}: ReactionButtonProps) {
+	// Track tooltip open state to lazy-load user data
+	const [isTooltipOpen, setIsTooltipOpen] = useState(false)
+
 	return (
-		<Tooltip delay={300}>
+		<Tooltip delay={300} isOpen={isTooltipOpen} onOpenChange={setIsTooltipOpen}>
 			<TooltipTrigger
 				onPress={() => onReaction(emoji)}
 				className={cn(
@@ -36,12 +45,13 @@ export function ReactionButton({ emoji, data, onReaction, currentUserId }: React
 			<TooltipContent placement="top" className="flex items-center gap-3 px-3 py-2">
 				<span className="text-3xl">{emoji}</span>
 				<span className="text-sm">
-					<ReactionUserList userIds={data.users} currentUserId={currentUserId} />
+					{/* Only render user list (and subscribe to atoms) when tooltip is open */}
+					{isTooltipOpen && <ReactionUserList userIds={data.users} currentUserId={currentUserId} />}
 				</span>
 			</TooltipContent>
 		</Tooltip>
 	)
-}
+})
 
 interface ReactionUserListProps {
 	userIds: string[]

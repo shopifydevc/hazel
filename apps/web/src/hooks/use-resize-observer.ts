@@ -1,5 +1,18 @@
 import type { RefObject } from "@react-types/shared"
-import { useEffect } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef } from "react"
+
+/**
+ * Stabilizes a callback reference without needing it in dependency arrays.
+ * This is the "useEffectEvent" pattern - the callback always has access to
+ * the latest props/state but maintains a stable reference.
+ */
+function useEffectEvent<T extends (...args: unknown[]) => unknown>(fn: T): T {
+	const ref = useRef<T>(fn)
+	useLayoutEffect(() => {
+		ref.current = fn
+	}, [fn])
+	return useCallback((...args: Parameters<T>) => ref.current(...args), []) as T
+}
 
 /**
  * Checks if the ResizeObserver API is supported.
@@ -34,6 +47,9 @@ type useResizeObserverOptionsType<T> = {
 export function useResizeObserver<T extends Element>(options: useResizeObserverOptionsType<T>) {
 	const { ref, box, onResize } = options
 
+	// Stabilize callback reference to prevent effect re-runs when callback changes
+	const onResizeEvent = useEffectEvent(onResize)
+
 	useEffect(() => {
 		const element = ref?.current
 		if (!element) {
@@ -41,10 +57,10 @@ export function useResizeObserver<T extends Element>(options: useResizeObserverO
 		}
 
 		if (!hasResizeObserver()) {
-			window.addEventListener("resize", onResize, { passive: true })
+			window.addEventListener("resize", onResizeEvent, { passive: true })
 
 			return () => {
-				window.removeEventListener("resize", onResize)
+				window.removeEventListener("resize", onResizeEvent)
 			}
 		} else {
 			const resizeObserverInstance = new window.ResizeObserver((entries) => {
@@ -52,7 +68,7 @@ export function useResizeObserver<T extends Element>(options: useResizeObserverO
 					return
 				}
 
-				onResize()
+				onResizeEvent()
 			})
 
 			resizeObserverInstance.observe(element, { box })
@@ -63,5 +79,5 @@ export function useResizeObserver<T extends Element>(options: useResizeObserverO
 				}
 			}
 		}
-	}, [onResize, ref, box])
+	}, [onResizeEvent, ref, box])
 }

@@ -1,6 +1,7 @@
 import { useAtomValue } from "@effect-atom/atom-react"
+import type { MessageId } from "@hazel/schema"
 import { format } from "date-fns"
-import { memo, useRef } from "react"
+import { memo, useCallback, useMemo, useRef } from "react"
 import { useHover } from "react-aria"
 import type { MessageWithPinned } from "~/atoms/chat-query-atoms"
 import { processedReactionsAtomFamily } from "~/atoms/message-atoms"
@@ -112,10 +113,13 @@ export const MessageItem = memo(function MessageItem({
 	const showAvatar = isGroupStart || !!message?.replyToMessageId
 	const isRepliedTo = !!message?.replyToMessageId
 
-	// Use atom for reactions - automatically deduplicated and memoized
-	const aggregatedReactions = useAtomValue(
-		processedReactionsAtomFamily(`${message.id}:${currentUser?.id || ""}`),
+	// Stabilize atom key to prevent atom family recreation on every render
+	const reactionsAtomKey = useMemo(
+		() => `${message.id}:${currentUser?.id || ""}` as `${MessageId}:${string}`,
+		[message.id, currentUser?.id],
 	)
+	// Use atom for reactions - automatically deduplicated and memoized
+	const aggregatedReactions = useAtomValue(processedReactionsAtomFamily(reactionsAtomKey))
 
 	const { hoverProps } = useHover({
 		onHoverStart: () => {
@@ -126,12 +130,29 @@ export const MessageItem = memo(function MessageItem({
 		},
 	})
 
-	const handleReaction = (emoji: string) => {
-		if (!message) return
-		trackEmojiUsage(emoji)
-		// addReaction now handles the toggle logic internally
-		addReaction(message.id, message.channelId, emoji)
-	}
+	// Memoize reaction handler to prevent ReactionButton re-renders
+	const handleReaction = useCallback(
+		(emoji: string) => {
+			if (!message) return
+			trackEmojiUsage(emoji)
+			// addReaction now handles the toggle logic internally
+			addReaction(message.id, message.channelId, emoji)
+		},
+		[message?.id, message?.channelId, trackEmojiUsage, addReaction],
+	)
+
+	// Memoize reply click handler
+	const handleReplyClick = useCallback(() => {
+		if (!message.replyToMessageId) return
+		const replyElement = document.getElementById(`message-${message.replyToMessageId}`)
+		if (!replyElement) return
+		replyElement.scrollIntoView({ behavior: "smooth", block: "center" })
+		// Add a highlight effect
+		replyElement.classList.add("bg-secondary/30")
+		setTimeout(() => {
+			replyElement.classList.remove("bg-secondary/30")
+		}, 2000)
+	}, [message.replyToMessageId])
 
 	if (!message) return null
 
@@ -159,19 +180,7 @@ export const MessageItem = memo(function MessageItem({
 				{isRepliedTo && message.replyToMessageId && (
 					<MessageReplySection
 						replyToMessageId={message.replyToMessageId}
-						onClick={() => {
-							const replyElement = document.getElementById(
-								`message-${message.replyToMessageId}`,
-							)
-							if (replyElement) {
-								replyElement.scrollIntoView({ behavior: "smooth", block: "center" })
-								// Add a highlight effect
-								replyElement.classList.add("bg-secondary/30")
-								setTimeout(() => {
-									replyElement.classList.remove("bg-secondary/30")
-								}, 2000)
-							}
-						}}
+						onClick={handleReplyClick}
 					/>
 				)}
 
