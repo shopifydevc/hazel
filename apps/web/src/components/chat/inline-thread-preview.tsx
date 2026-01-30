@@ -87,7 +87,7 @@ export function InlineThreadPreview({
 				{/* Thread name if custom */}
 				{hasCustomName && (
 					<>
-						<span className="max-w-[150px] font-medium text-fg/80">{threadName}</span>
+						<span className="max-w-[150px] truncate font-medium text-fg/80">{threadName}</span>
 						<span className="shrink-0 text-muted-fg">·</span>
 					</>
 				)}
