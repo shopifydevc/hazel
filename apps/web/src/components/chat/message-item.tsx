@@ -114,7 +114,7 @@ export const MessageItem = memo(function MessageItem({
 
 	// Use atom for reactions - automatically deduplicated and memoized
 	const aggregatedReactions = useAtomValue(
-		processedReactionsAtomFamily({ messageId: message.id, currentUserId: currentUser?.id || "" }),
+		processedReactionsAtomFamily(`${message.id}:${currentUser?.id || ""}`),
 	)
 
 	const { hoverProps } = useHover({

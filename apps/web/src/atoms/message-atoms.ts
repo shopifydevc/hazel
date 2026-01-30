@@ -23,35 +23,39 @@ export const messageReactionsAtomFamily = Atom.family((messageId: MessageId) =>
 /**
  * Derived atom that processes raw reactions into aggregated format
  * Computation is memoized and only runs when reactions change
+ *
+ * Uses string key format `${messageId}:${currentUserId}` to prevent
+ * atom re-subscription from object key reference changes
  */
-export const processedReactionsAtomFamily = Atom.family(
-	({ messageId, currentUserId }: { messageId: MessageId; currentUserId: string }) =>
-		Atom.make((get) => {
-			const reactionsResult = get(messageReactionsAtomFamily(messageId))
-			const reactions = Result.getOrElse(reactionsResult, () => [])
+export const processedReactionsAtomFamily = Atom.family((key: `${MessageId}:${string}`) =>
+	Atom.make((get) => {
+		const [messageId] = key.split(":") as [MessageId, string]
+		const currentUserId = key.slice(messageId.length + 1) // Handle userId that may contain ":"
+		const reactionsResult = get(messageReactionsAtomFamily(messageId))
+		const reactions = Result.getOrElse(reactionsResult, () => [])
 
-			// Aggregate reactions by emoji
-			return Object.entries(
-				reactions.reduce(
-					(acc, reaction) => {
-						if (!acc[reaction.emoji]) {
-							acc[reaction.emoji] = {
-								count: 0,
-								users: [],
-								hasReacted: false,
-							}
+		// Aggregate reactions by emoji
+		return Object.entries(
+			reactions.reduce(
+				(acc, reaction) => {
+					if (!acc[reaction.emoji]) {
+						acc[reaction.emoji] = {
+							count: 0,
+							users: [],
+							hasReacted: false,
 						}
-						acc[reaction.emoji]!.count++
-						acc[reaction.emoji]!.users.push(reaction.userId)
-						if (reaction.userId === currentUserId) {
-							acc[reaction.emoji]!.hasReacted = true
-						}
-						return acc
-					},
-					{} as Record<string, { count: number; users: string[]; hasReacted: boolean }>,
-				),
-			)
-		}),
+					}
+					acc[reaction.emoji]!.count++
+					acc[reaction.emoji]!.users.push(reaction.userId)
+					if (reaction.userId === currentUserId) {
+						acc[reaction.emoji]!.hasReacted = true
+					}
+					return acc
+				},
+				{} as Record<string, { count: number; users: string[]; hasReacted: boolean }>,
+			),
+		)
+	}),
 )
 
 /**

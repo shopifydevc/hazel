@@ -12,6 +12,12 @@ import { Route } from "~/routes/_app/$orgSlug/chat/$id"
 import { MessageItem, type MessageGroupPosition, type MessageHighlight } from "./message-item"
 import { MessageToolbar } from "./message-toolbar"
 
+/** Viewability config for LegendList - hoisted to prevent re-creation on every render */
+const VIEWABILITY_CONFIG = {
+	itemVisiblePercentThreshold: 50,
+	minimumViewTime: 300,
+} as const
+
 /** Helper to convert boolean flags to group position */
 function toGroupPosition(isGroupStart: boolean, isGroupEnd: boolean): MessageGroupPosition {
 	if (isGroupStart && isGroupEnd) return "standalone"
@@ -66,10 +72,7 @@ const MessageVirtualList = memo(
 				keyExtractor={(it) => it.id}
 				initialScrollIndex={messageRows.length - 1}
 				stickyHeaderIndices={stickyIndices}
-				viewabilityConfig={{
-					itemVisiblePercentThreshold: 50,
-					minimumViewTime: 300,
-				}}
+				viewabilityConfig={VIEWABILITY_CONFIG}
 				onViewableItemsChanged={onViewableItemsChanged}
 				renderItem={(props) =>
 					props.item.type === "header" ? (

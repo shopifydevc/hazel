@@ -41,10 +41,10 @@ export function useResizeObserver<T extends Element>(options: useResizeObserverO
 		}
 
 		if (!hasResizeObserver()) {
-			window.addEventListener("resize", onResize, false)
+			window.addEventListener("resize", onResize, { passive: true })
 
 			return () => {
-				window.removeEventListener("resize", onResize, false)
+				window.removeEventListener("resize", onResize)
 			}
 		} else {
 			const resizeObserverInstance = new window.ResizeObserver((entries) => {
