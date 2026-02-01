@@ -119,7 +119,13 @@ function MessageContentProvider({ message, organizationId, children }: MessageCo
  * Renders the message text with embed URLs filtered out
  */
 function MessageText() {
-	const { processedUrls } = useMessageContent()
+	const { message, processedUrls } = useMessageContent()
+
+	// Don't render static text if message has live state (live state handles text display)
+	const hasLiveState = message.embeds?.some((embed) => embed.liveState?.enabled === true)
+	if (hasLiveState) {
+		return null
+	}
 
 	if (!processedUrls.displayContent) {
 		return null
@@ -183,7 +189,7 @@ function Embeds() {
 				)}
 
 			{/* Webhook/rich embeds */}
-			<MessageEmbeds embeds={message.embeds} />
+			<MessageEmbeds embeds={message.embeds} messageId={message.id} />
 		</>
 	)
 }

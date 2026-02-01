@@ -5,6 +5,7 @@ import tailwindcss from "@tailwindcss/vite"
 import { devtools } from "@tanstack/devtools-vite"
 import tanstackRouter from "@tanstack/router-plugin/vite"
 import viteReact from "@vitejs/plugin-react"
+import { visualizer } from "rollup-plugin-visualizer"
 import { defineConfig } from "vite"
 import { VitePWA } from "vite-plugin-pwa"
 
@@ -58,6 +59,27 @@ export default defineConfig({
 						"@tauri-apps/plugin-updater",
 						"@tauri-apps/plugin-window-state",
 					],
+			output: {
+				manualChunks: {
+					"vendor-react": ["react", "react-dom"],
+					"vendor-effect": [
+						"effect",
+						"@effect/platform",
+						"@effect/platform-browser",
+						"@effect/rpc",
+						"@effect/experimental",
+					],
+					"vendor-react-aria": ["react-aria", "react-aria-components", "react-stately"],
+					"vendor-slate": ["slate", "slate-react", "slate-history", "prismjs"],
+					"vendor-tanstack": [
+						"@tanstack/react-query",
+						"@tanstack/react-router",
+						"@tanstack/react-form",
+						"@tanstack/react-db",
+						"@tanstack/db",
+					],
+				},
+			},
 		},
 	},
 	plugins: [
@@ -95,6 +117,17 @@ export default defineConfig({
 			},
 		}),
 		tailwindcss(),
+		// Bundle visualizer - run with ANALYZE=true bun run build
+		...(process.env.ANALYZE
+			? [
+					visualizer({
+						filename: "stats.html",
+						open: false,
+						gzipSize: true,
+						brotliSize: true,
+					}),
+				]
+			: []),
 		// Only enable PWA for web builds (not Tauri - it has its own update mechanism)
 		...(isTauriBuild
 			? []

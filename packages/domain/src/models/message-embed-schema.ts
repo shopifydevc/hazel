@@ -54,6 +54,54 @@ export const MessageEmbedBadge = Schema.Struct({
 })
 export type MessageEmbedBadge = Schema.Schema.Type<typeof MessageEmbedBadge>
 
+// Agent step for cached state (matches actor's AgentStep)
+export const CachedAgentStep = Schema.Struct({
+	id: Schema.String,
+	type: Schema.Literal("thinking", "tool_call", "tool_result", "text", "error"),
+	status: Schema.Literal("pending", "active", "completed", "failed"),
+	content: Schema.optional(Schema.String),
+	toolName: Schema.optional(Schema.String),
+	toolInput: Schema.optional(Schema.Record({ key: Schema.String, value: Schema.Unknown })),
+	toolOutput: Schema.optional(Schema.Unknown),
+	toolError: Schema.optional(Schema.String),
+	startedAt: Schema.optional(Schema.Number),
+	completedAt: Schema.optional(Schema.Number),
+})
+export type CachedAgentStep = Schema.Schema.Type<typeof CachedAgentStep>
+
+// Live state cached snapshot for non-realtime clients
+export const MessageEmbedLiveStateCached = Schema.Struct({
+	status: Schema.Literal("idle", "active", "completed", "failed"),
+	data: Schema.Record({ key: Schema.String, value: Schema.Unknown }),
+	text: Schema.optional(Schema.String),
+	progress: Schema.optional(Schema.Number),
+	error: Schema.optional(Schema.String),
+	steps: Schema.optional(Schema.Array(CachedAgentStep)),
+})
+export type MessageEmbedLiveStateCached = Schema.Schema.Type<typeof MessageEmbedLiveStateCached>
+
+// Loading state configuration for AI streaming messages
+export const MessageEmbedLoadingState = Schema.Struct({
+	/** Text to display while loading (default: "Thinking...") */
+	text: Schema.optional(Schema.String),
+	/** Icon to display: "sparkle" or "brain" (default: "sparkle") */
+	icon: Schema.optional(Schema.Literal("sparkle", "brain")),
+	/** Whether to show spinning animation on the icon (default: true) */
+	showSpinner: Schema.optional(Schema.Boolean),
+	/** Whether to pulse/throb the entire loading indicator (default: false) */
+	throbbing: Schema.optional(Schema.Boolean),
+})
+export type MessageEmbedLoadingState = Schema.Schema.Type<typeof MessageEmbedLoadingState>
+
+// Live state configuration for real-time updates
+export const MessageEmbedLiveState = Schema.Struct({
+	enabled: Schema.Literal(true),
+	cached: Schema.optional(MessageEmbedLiveStateCached),
+	/** Loading state configuration for the initial loading indicator */
+	loading: Schema.optional(MessageEmbedLoadingState),
+})
+export type MessageEmbedLiveState = Schema.Schema.Type<typeof MessageEmbedLiveState>
+
 // Full embed schema (Discord-style)
 export const MessageEmbed = Schema.Struct({
 	title: Schema.optional(Schema.String.pipe(Schema.maxLength(256))),
@@ -67,6 +115,7 @@ export const MessageEmbed = Schema.Struct({
 	fields: Schema.optional(Schema.Array(MessageEmbedField).pipe(Schema.maxItems(25))),
 	timestamp: Schema.optional(Schema.String), // ISO 8601 timestamp
 	badge: Schema.optional(MessageEmbedBadge), // Status badge (e.g., "Deployed", "Failed")
+	liveState: Schema.optional(MessageEmbedLiveState), // Live state for real-time updates
 })
 export type MessageEmbed = Schema.Schema.Type<typeof MessageEmbed>
 

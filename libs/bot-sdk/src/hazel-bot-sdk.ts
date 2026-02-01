@@ -53,6 +53,18 @@ import {
 	EventDispatcher,
 	ShapeStreamSubscriber,
 } from "./services/index.ts"
+import { createActorsClient } from "@hazel/actors/client"
+import {
+	BotNotConfiguredError,
+	createAIStreamSessionInternal,
+	createStreamSessionInternal,
+	type ActorsClientService,
+	type AIStreamOptions,
+	type AIStreamSession,
+	type CreateStreamOptions,
+	type MessageActor,
+	type MessageUpdateFn,
+} from "./streaming/index.ts"
 import { extractTablesFromEventTypes } from "./types/events.ts"
 
 /**
@@ -134,6 +146,8 @@ export interface SendMessageOptions {
 	readonly threadChannelId?: ChannelId | null
 	/** Attachment IDs to include */
 	readonly attachmentIds?: readonly AttachmentId[]
+	/** Embeds to include (rich content, live state, etc.) */
+	readonly embeds?: import("@hazel/domain/models").MessageEmbed.MessageEmbeds | null
 }
 
 /**
@@ -246,6 +260,93 @@ export class HazelBotClient extends Effect.Service<HazelBotClient>()("HazelBotCl
 				}),
 		})
 
+		/**
+		 * Helper to create actors service from runtime config.
+		 * Shared between stream.create and ai.stream to avoid code duplication.
+		 */
+		const createActorsServiceFn = () =>
+			Option.match(runtimeConfigOption, {
+				onNone: () =>
+					Effect.fail(
+						new BotNotConfiguredError({
+							message: "Bot runtime config not available for streaming",
+						}),
+					),
+				onSome: (config) => {
+					const client = createActorsClient()
+					return Effect.succeed({
+						getMessageActor: (messageId: string) =>
+							Effect.sync(
+								() =>
+									// Cast to MessageActor to handle the @rivetkit/effect double-Promise typing issue
+									// The rivetkit client wraps action returns in Promise, but Action.effect already returns Promise,
+									// resulting in Promise<Promise<T>>. Our MessageActor interface has the corrected types.
+									client.message.getOrCreate([messageId], {
+										params: { token: config.botToken },
+									}) as unknown as MessageActor,
+							),
+						client,
+						botToken: config.botToken,
+					} satisfies ActorsClientService)
+				},
+			})
+
+		/**
+		 * Helper to create the message creation function.
+		 * Shared between stream.create and ai.stream to avoid code duplication.
+		 */
+		const createMessageFnHelper = (
+			chId: ChannelId,
+			content: string,
+			opts?: {
+				readonly replyToMessageId?: MessageId | null
+				readonly threadChannelId?: ChannelId | null
+				readonly embeds?:
+					| readonly {
+							readonly liveState?: {
+								readonly enabled: true
+								readonly loading?: {
+									readonly text?: string
+									readonly icon?: "sparkle" | "brain"
+									readonly showSpinner?: boolean
+									readonly throbbing?: boolean
+								}
+							}
+					  }[]
+					| null
+			},
+		) =>
+			messageLimiter(
+				httpApiClient["api-v1-messages"]
+					.createMessage({
+						payload: {
+							channelId: chId,
+							content,
+							replyToMessageId: opts?.replyToMessageId ?? null,
+							threadChannelId: opts?.threadChannelId ?? null,
+							embeds: opts?.embeds ?? null,
+						},
+					})
+					.pipe(Effect.map((r) => r.data)),
+			)
+
+		/**
+		 * Helper to update a message (for persisting streaming state).
+		 * Shared between stream.create and ai.stream to avoid code duplication.
+		 */
+		const updateMessageFnHelper: MessageUpdateFn = (messageId, payload) =>
+			messageLimiter(
+				httpApiClient["api-v1-messages"]
+					.updateMessage({
+						path: { id: messageId },
+						payload: {
+							content: payload.content,
+							embeds: payload.embeds ?? null,
+						},
+					})
+					.pipe(Effect.map((r) => r.data)),
+			)
+
 		return {
 			/**
 			 * Register a handler for new messages
@@ -305,7 +406,7 @@ export class HazelBotClient extends Effect.Service<HazelBotClient>()("HazelBotCl
 				 * Send a message to a channel
 				 * @param channelId - The channel to send the message to
 				 * @param content - Message content
-				 * @param options - Optional settings (reply, thread, attachments)
+				 * @param options - Optional settings (reply, thread, attachments, embeds)
 				 */
 				send: (channelId: ChannelId, content: string, options?: SendMessageOptions) =>
 					messageLimiter(
@@ -319,7 +420,7 @@ export class HazelBotClient extends Effect.Service<HazelBotClient>()("HazelBotCl
 									attachmentIds: options?.attachmentIds
 										? [...options.attachmentIds]
 										: undefined,
-									embeds: null,
+									embeds: options?.embeds ?? null,
 								},
 							})
 							.pipe(
@@ -632,7 +733,12 @@ export class HazelBotClient extends Effect.Service<HazelBotClient>()("HazelBotCl
 											onNone: () => Effect.succeed(event.arguments),
 											onSome: (def) =>
 												Schema.decodeUnknown(def.argsSchema)(event.arguments).pipe(
-													Effect.catchAll(() => Effect.succeed(event.arguments)),
+													Effect.catchAll((error) =>
+														Effect.logWarning(
+															`Failed to decode args for /${event.commandName}, using raw arguments`,
+															{ error, rawArgs: event.arguments },
+														).pipe(Effect.as(event.arguments)),
+													),
 												),
 										})
 
@@ -681,6 +787,139 @@ export class HazelBotClient extends Effect.Service<HazelBotClient>()("HazelBotCl
 			 * Get bot authentication context
 			 */
 			getAuthContext: bot.getAuthContext,
+
+			/**
+			 * Helper to create actors service from runtime config.
+			 * Uses Option.match for explicit handling of missing config.
+			 * Fails with BotNotConfiguredError if config is not available.
+			 */
+			createActorsService: createActorsServiceFn,
+
+			/**
+			 * Helper to create the message creation function.
+			 * Shared between stream.create and ai.stream.
+			 */
+			createMessageFn: createMessageFnHelper,
+
+			/**
+			 * Helper to update a message (for persisting streaming state).
+			 * @internal
+			 */
+			updateMessageFn: updateMessageFnHelper,
+
+			/**
+			 * Low-level streaming API for real-time message updates.
+			 * Creates messages with live state and provides direct control over the actor.
+			 *
+			 * @example
+			 * ```typescript
+			 * yield* Effect.scoped(
+			 *   Effect.gen(function* () {
+			 *     const stream = yield* bot.stream.create(channelId)
+			 *     yield* stream.appendText("Hello ")
+			 *     yield* stream.startThinking()
+			 *     yield* stream.complete()
+			 *   })
+			 * )
+			 * ```
+			 */
+			stream: {
+				/**
+				 * Create a new stream session for real-time message updates.
+				 * @param channelId - The channel to create the message in
+				 * @param options - Optional configuration (initialData, replyToMessageId, threadChannelId)
+				 */
+				create: (channelId: ChannelId, options?: CreateStreamOptions) =>
+					Effect.gen(function* () {
+						const actorsService = yield* createActorsServiceFn()
+
+						return yield* createStreamSessionInternal(
+							createMessageFnHelper,
+							updateMessageFnHelper,
+							actorsService,
+							channelId,
+							options,
+						)
+					}),
+			},
+
+			/**
+			 * High-level AI streaming API with helpers for processing AI model output.
+			 * Automatically handles thinking steps, tool calls, and text streaming.
+			 *
+			 * @example
+			 * ```typescript
+			 * yield* Effect.scoped(
+			 *   Effect.gen(function* () {
+			 *     const stream = yield* bot.ai.stream(channelId, { model: "claude-3.5-sonnet" })
+			 *     yield* stream.processChunk({ type: "text", text: "Hello" })
+			 *     yield* stream.complete()
+			 *   })
+			 * )
+			 * ```
+			 */
+			ai: {
+				/**
+				 * Create an AI stream session with helpers for processing AI model output.
+				 * @param channelId - The channel to create the message in
+				 * @param options - Optional configuration including model info
+				 */
+				stream: (channelId: ChannelId, options?: AIStreamOptions) =>
+					Effect.gen(function* () {
+						const actorsService = yield* createActorsServiceFn()
+
+						return yield* createAIStreamSessionInternal(
+							createMessageFnHelper,
+							updateMessageFnHelper,
+							actorsService,
+							channelId,
+							options,
+						)
+					}),
+
+				/**
+				 * Error handler for AI streaming sessions.
+				 * Unlike the generic `withErrorHandler`, this one:
+				 * 1. Marks the AI session as failed (calls `session.fail()`)
+				 * 2. Does NOT create a separate error message (the ErrorCard displays it inline)
+				 *
+				 * @param ctx - The command context
+				 * @param session - The AI stream session to mark as failed on error
+				 * @returns A function that wraps an effect with AI-aware error handling
+				 *
+				 * @example
+				 * ```typescript
+				 * yield* bot.onCommand(AskCommand, (ctx) =>
+				 *   Effect.gen(function* () {
+				 *     const session = yield* bot.ai.stream(ctx.channelId, {...})
+				 *
+				 *     yield* model.streamText({...}).pipe(
+				 *       Stream.runForEach((part) => session.processChunk(mapPart(part))),
+				 *     ).pipe(bot.ai.withErrorHandler(ctx, session))
+				 *
+				 *     yield* session.complete()
+				 *   })
+				 * )
+				 * ```
+				 */
+				withErrorHandler:
+					<Args>(ctx: TypedCommandContext<Args>, session: AIStreamSession) =>
+					<A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A | void, never, R> =>
+						effect.pipe(
+							Effect.catchAll((error) =>
+								Effect.gen(function* () {
+									yield* Effect.logError(`Error in AI streaming for /${ctx.commandName}`, {
+										error,
+									})
+									// Mark the session as failed - this updates the existing message
+									yield* session
+										.fail("An unexpected error occurred. Please try again.")
+										.pipe(Effect.ignore)
+									// Do NOT create a new message - the ErrorCard will show the error
+								}),
+							),
+						),
+			},
 		}
 	}),
 }) {}
@@ -702,6 +941,13 @@ export interface HazelBotConfig<Commands extends CommandGroup<any> = EmptyComman
 	 * @example "http://localhost:3003" // For local development
 	 */
 	readonly backendUrl?: string
+
+	/**
+	 * Actors/Rivet endpoint for live state streaming
+	 * @default Uses RIVET_PUBLIC_ENDPOINT or RIVET_URL env vars, falls back to "http://localhost:6420"
+	 * @example "http://localhost:6420" // For local development
+	 */
+	readonly actorsEndpoint?: string
 
 	/**
 	 * Bot authentication token (required)

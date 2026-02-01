@@ -7,11 +7,11 @@
 import { Atom } from "@effect-atom/atom-react"
 import {
 	DesktopConnectionError,
-	Http,
 	InvalidDesktopStateError,
 	MissingAuthCodeError,
 	OAuthCallbackError,
-} from "@hazel/domain"
+} from "@hazel/domain/errors"
+import { DesktopAuthState } from "@hazel/domain/http"
 import { Effect, Schedule } from "effect"
 import { runtime } from "~/lib/services/common/runtime"
 
@@ -24,7 +24,7 @@ import { runtime } from "~/lib/services/common/runtime"
  */
 export interface DesktopCallbackParams {
 	code?: string
-	state?: typeof Http.DesktopAuthState.Type
+	state?: typeof DesktopAuthState.Type
 	error?: string
 	error_description?: string
 }
@@ -100,12 +100,7 @@ function getErrorInfo(error: CallbackError): {
 /**
  * Connect to desktop app's local OAuth server
  */
-const connectToDesktop = (
-	port: number,
-	code: string,
-	state: typeof Http.DesktopAuthState.Type,
-	nonce: string,
-) =>
+const connectToDesktop = (port: number, code: string, state: typeof DesktopAuthState.Type, nonce: string) =>
 	Effect.tryPromise({
 		try: async () => {
 			console.log("[desktop-callback] Connecting to desktop app...", { port, nonce })

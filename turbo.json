@@ -8,6 +8,8 @@
 		"DATABASE_URL",
 		"CLUSTER_URL",
 		"EFFECT_DATABASE_URL",
+		"BACKEND_URL",
+		"INTERNAL_SECRET",
 		"WORKOS_API_KEY",
 		"WORKOS_WEBHOOK_SECRET",
 		"WORKOS_CLIENT_ID",
@@ -38,12 +40,13 @@
 		"OTEL_SERVICE_NAME",
 		"SIGNOZ_INGESTION_KEY",
 		"RAILWAY_GIT_COMMIT_SHA,",
-		"OPENROUTER_API_KEY"
+		"OPENROUTER_API_KEY",
+		"RIVET_URL"
 	],
 	"ui": "tui",
 	"tasks": {
 		"build": {
-			"outputs": ["dist/**"]
+			"outputs": ["dist/**", ".vercel/output/**"]
 		},
 		"typecheck": {
 			"dependsOn": ["^typecheck"]

@@ -1,22 +1,63 @@
+import type { MessageId } from "@hazel/schema"
 import type { Message } from "@hazel/domain/models"
 import { Embed } from "~/components/embeds"
+import { MessageLive } from "./message-live-state"
 
 // Extract embed type from the Message model
 type MessageEmbedType = NonNullable<typeof Message.Model.Type.embeds>[number]
 
 interface MessageEmbedsProps {
 	embeds: typeof Message.Model.Type.embeds
+	messageId?: MessageId
 }
 
-export function MessageEmbeds({ embeds }: MessageEmbedsProps) {
+export function MessageEmbeds({ embeds, messageId }: MessageEmbedsProps) {
 	if (!embeds?.length) return null
+
+	// Find the embed with live state enabled and extract cached state and loading config
+	const liveStateEmbed = embeds.find((embed) => embed.liveState?.enabled === true)
+	const hasLiveState = !!liveStateEmbed
+	const cachedState = liveStateEmbed?.liveState?.cached
+	const loadingConfig = liveStateEmbed?.liveState?.loading
+
+	// Filter out embeds that only have liveState (no visible content)
+	const visibleEmbeds = embeds.filter((embed) => hasVisibleContent(embed))
 
 	return (
 		<div className="mt-2 flex flex-col gap-2">
-			{embeds.map((embed, index) => (
+			{visibleEmbeds.map((embed, index) => (
 				<MessageEmbedCard key={index} embed={embed} />
 			))}
+			{/* Render live state UI if enabled and messageId is provided */}
+			{hasLiveState && messageId && (
+				<MessageLive.Provider
+					messageId={messageId}
+					enabled
+					cached={cachedState}
+					loading={loadingConfig}
+				>
+					<MessageLive.Root>
+						<MessageLive.Progress />
+						<MessageLive.Steps />
+						<MessageLive.Text />
+						<MessageLive.Error />
+					</MessageLive.Root>
+				</MessageLive.Provider>
+			)}
 		</div>
+	)
+}
+
+/** Check if an embed has any visible content (not just liveState) */
+function hasVisibleContent(embed: MessageEmbedType): boolean {
+	return !!(
+		embed.title ||
+		embed.description ||
+		embed.author ||
+		embed.footer ||
+		embed.image ||
+		embed.thumbnail ||
+		(embed.fields && embed.fields.length > 0)
 	)
 }
 
