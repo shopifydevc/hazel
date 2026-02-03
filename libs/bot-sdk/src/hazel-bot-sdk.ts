@@ -205,6 +205,24 @@ export class HazelBotClient extends Effect.Service<HazelBotClient>()("HazelBotCl
 			(ctx: TypedCommandContext<any>) => Effect.Effect<void, any, any>
 		>()
 
+		// Cache for enabled integrations (30s TTL)
+		const enabledIntegrationsCache = new Map<
+			string,
+			{ providers: Set<IntegrationConnection.IntegrationProvider>; expiresAt: number }
+		>()
+		const ENABLED_INTEGRATIONS_CACHE_TTL_MS = 30_000
+		const CACHE_PRUNE_THRESHOLD = 100
+
+		// Prune expired cache entries to prevent unbounded memory growth
+		const pruneExpiredCacheEntries = () => {
+			const now = Date.now()
+			for (const [key, entry] of enabledIntegrationsCache) {
+				if (entry.expiresAt < now) {
+					enabledIntegrationsCache.delete(key)
+				}
+			}
+		}
+
 		// Get command group from runtime config for schema decoding
 		const commandGroup = Option.map(runtimeConfigOption, (c) => c.commands)
 
@@ -653,6 +671,67 @@ export class HazelBotClient extends Effect.Service<HazelBotClient>()("HazelBotCl
 							attributes: { orgId, provider },
 						}),
 					),
+
+				/**
+				 * Get the set of enabled integration providers for an organization.
+				 * Returns the intersection of bot's allowedIntegrations and org's active connections.
+				 * Results are cached for 30 seconds to reduce API calls.
+				 *
+				 * @param orgId - The organization ID to check
+				 * @returns A Set of enabled integration providers
+				 *
+				 * @example
+				 * ```typescript
+				 * const enabled = yield* bot.integration.getEnabled(orgId)
+				 * if (enabled.has("linear")) {
+				 *   // Linear tools are available
+				 * }
+				 * ```
+				 */
+				getEnabled: (orgId: OrganizationId) =>
+					Effect.gen(function* () {
+						// Prune expired entries if cache is getting large
+						if (enabledIntegrationsCache.size > CACHE_PRUNE_THRESHOLD) {
+							pruneExpiredCacheEntries()
+						}
+
+						// Check cache first
+						const cacheKey = `enabled:${orgId}`
+						const cached = enabledIntegrationsCache.get(cacheKey)
+						if (cached && cached.expiresAt > Date.now()) {
+							// Return a defensive copy to prevent callers from mutating the cache
+							return new Set(cached.providers)
+						}
+
+						// Fetch from API
+						const response = yield* httpApiClient["bot-commands"]
+							.getEnabledIntegrations({ path: { orgId } })
+							.pipe(
+								Effect.withSpan("bot.integration.getEnabled", {
+									attributes: { orgId },
+								}),
+							)
+
+						// Cache the result
+						const providers = new Set(response.providers)
+						enabledIntegrationsCache.set(cacheKey, {
+							providers,
+							expiresAt: Date.now() + ENABLED_INTEGRATIONS_CACHE_TTL_MS,
+						})
+
+						return providers
+					}),
+
+				/**
+				 * Invalidate the enabled integrations cache for an organization.
+				 * Call this when you know the integration status has changed.
+				 *
+				 * @param orgId - The organization ID to invalidate cache for
+				 */
+				invalidateCache: (orgId: OrganizationId) =>
+					Effect.sync(() => {
+						enabledIntegrationsCache.delete(`enabled:${orgId}`)
+					}),
 			},
 
 			/**
