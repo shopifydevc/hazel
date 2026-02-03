@@ -1,13 +1,17 @@
 import { createContext, memo, use, useEffect, useMemo, useState } from "react"
 import { AnimatePresence, motion } from "motion/react"
 import { Button, Disclosure, DisclosurePanel, Heading } from "react-aria-components"
+import type { IntegrationConnection } from "@hazel/domain/models"
 import IconBrainSparkle from "~/components/icons/icon-brain-sparkle"
 import IconCheck from "~/components/icons/icon-check"
 import { IconChevronUp } from "~/components/icons/icon-chevron-up"
 import IconLoader from "~/components/icons/icon-loader"
 import IconSquareTerminal from "~/components/icons/icon-square-terminal"
 import IconXmark from "~/components/icons/icon-xmark"
+import { getIntegrationIconUrl, INTEGRATION_PROVIDERS } from "~/lib/bot-scopes"
 import { cn } from "~/lib/utils"
+
+type IntegrationProvider = IntegrationConnection.IntegrationProvider
 
 // ============================================================================
 // Helpers
@@ -31,6 +35,15 @@ function formatDuration(ms: number): string {
 		return `${minutes}m`
 	}
 	return `${minutes}m ${remainingSeconds}s`
+}
+
+function getToolIntegrationProvider(toolName: string | undefined): IntegrationProvider | null {
+	if (!toolName) return null
+	const prefix = toolName.split("_")[0]
+	if (prefix && prefix in INTEGRATION_PROVIDERS) {
+		return prefix as IntegrationProvider
+	}
+	return null
 }
 
 // ============================================================================
@@ -218,9 +231,43 @@ function ThinkingStep({ step, isActive = false, globalFailed = false }: Thinking
 	)
 }
 
+interface ToolIconProps {
+	toolName: string | undefined
+	className?: string
+}
+
+function ToolIcon({ toolName, className = "size-4 shrink-0" }: ToolIconProps) {
+	const [imgError, setImgError] = useState(false)
+	const provider = getToolIntegrationProvider(toolName)
+
+	if (!provider || imgError) {
+		return <IconSquareTerminal className={className} aria-hidden />
+	}
+
+	return (
+		<img
+			src={getIntegrationIconUrl(provider, 32)}
+			alt=""
+			className={cn(className, "rounded-sm")}
+			aria-hidden
+			onError={() => setImgError(true)}
+		/>
+	)
+}
+
 interface ToolCallStepProps {
 	step: AgentStep
 	isActive?: boolean
+}
+
+function getToolDisplayName(toolName: string | undefined): string {
+	if (!toolName) return ""
+	const provider = getToolIntegrationProvider(toolName)
+	if (provider) {
+		// Strip the provider prefix (e.g., "linear_create_issue" -> "create_issue")
+		return toolName.slice(provider.length + 1)
+	}
+	return toolName
 }
 
 function ToolCallStep({ step, isActive = false }: ToolCallStepProps) {
@@ -233,8 +280,8 @@ function ToolCallStep({ step, isActive = false }: ToolCallStepProps) {
 					slot="trigger"
 					className="flex w-full items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-muted-fg text-sm transition-colors hover:bg-muted/70"
 				>
-					<IconSquareTerminal className="size-4 shrink-0" aria-hidden />
-					<span className="flex-1 text-left font-mono">{step.toolName}</span>
+					<ToolIcon toolName={step.toolName} />
+					<span className="flex-1 text-left font-mono">{getToolDisplayName(step.toolName)}</span>
 					{step.status === "active" && isActive && (
 						<IconLoader className="size-4 animate-spin" aria-label="In progress" />
 					)}
