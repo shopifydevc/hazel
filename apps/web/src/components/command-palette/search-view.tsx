@@ -1,29 +1,25 @@
 "use client"
 
 import { useAtomSet, useAtomValue } from "@effect-atom/atom-react"
-import type { ChannelId, UserId } from "@hazel/schema"
+import type { UserId } from "@hazel/schema"
 import { useNavigate } from "@tanstack/react-router"
 import { formatDistanceToNow } from "date-fns"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef } from "react"
 import { Button } from "react-aria-components"
+import type { SearchPageState } from "~/atoms/command-palette-state"
+import { MAX_RECENT_SEARCHES, recentSearchesAtom, type RecentSearch } from "~/atoms/search-atoms"
 import IconClose from "~/components/icons/icon-close"
 import IconMagnifier from "~/components/icons/icon-magnifier-3"
 import { Loader } from "~/components/ui/loader"
 import { useOrganization } from "~/hooks/use-organization"
 import { useSearchQuery } from "~/hooks/use-search-query"
 import { useAuth } from "~/lib/auth"
-import { cn } from "~/lib/utils"
 import { parseSearchInput, type SearchFilter } from "~/lib/search-filter-parser"
-import {
-	initialSearchState,
-	MAX_RECENT_SEARCHES,
-	recentSearchesAtom,
-	searchStateAtom,
-	type RecentSearch,
-} from "~/atoms/search-atoms"
-import { SearchSlateEditor, type SearchSlateEditorRef } from "./search-slate-editor"
+import { cn } from "~/lib/utils"
+import { useCommandPaletteContext } from "./command-palette-context"
 import { SearchFilterChipGroup } from "./search-filter-chip"
 import { SearchResultItem } from "./search-result-item"
+import { SearchSlateEditor, type SearchSlateEditorRef } from "./search-slate-editor"
 
 interface SearchViewProps {
 	onClose: () => void
@@ -31,22 +27,27 @@ interface SearchViewProps {
 
 /**
  * Main search view for the command palette
+ * Uses unified state from command palette context
  */
 export function SearchView({ onClose }: SearchViewProps) {
 	const { slug: orgSlug, organizationId } = useOrganization()
 	const { user } = useAuth()
 	const navigate = useNavigate()
 
-	// Search state
-	const searchState = useAtomValue(searchStateAtom)
-	const setSearchState = useAtomSet(searchStateAtom)
+	// Use command palette context for state
+	const { currentPage, updateSearchState } = useCommandPaletteContext()
 
-	// Recent searches
+	// Type guard to ensure we're on the search page
+	if (currentPage.type !== "search") {
+		return null
+	}
+
+	const searchState = currentPage as SearchPageState
+
+	// Recent searches (persisted separately in localStorage)
 	const recentSearches = useAtomValue(recentSearchesAtom)
 	const setRecentSearches = useAtomSet(recentSearchesAtom)
 
-	// Local input state for controlled input
-	const [inputValue, setInputValue] = useState("")
 	const editorRef = useRef<SearchSlateEditorRef>(null)
 
 	// Focus editor on mount
@@ -65,43 +66,38 @@ export function SearchView({ onClose }: SearchViewProps) {
 	// Parse input and update search state
 	const handleInputChange = useCallback(
 		(value: string) => {
-			setInputValue(value)
-
 			const parsed = parseSearchInput(value)
 
-			setSearchState((prev) => ({
-				...prev,
+			updateSearchState(() => ({
 				rawInput: value,
 				query: parsed.textQuery,
 				selectedIndex: 0,
 			}))
 		},
-		[setSearchState],
+		[updateSearchState],
 	)
 
 	// Remove a filter
 	const removeFilter = useCallback(
 		(index: number) => {
-			setSearchState((prev) => ({
-				...prev,
+			updateSearchState((prev) => ({
 				filters: prev.filters.filter((_, i) => i !== index),
 				selectedIndex: 0,
 			}))
 			editorRef.current?.focus()
 		},
-		[setSearchState],
+		[updateSearchState],
 	)
 
 	// Handle filter selection from autocomplete
 	const handleFilterSelect = useCallback(
 		(filter: SearchFilter) => {
-			setSearchState((prev) => ({
-				...prev,
+			updateSearchState((prev) => ({
 				filters: [...prev.filters, filter],
 				selectedIndex: 0,
 			}))
 		},
-		[setSearchState],
+		[updateSearchState],
 	)
 
 	// Handle backspace at start of input to remove last filter
@@ -115,33 +111,16 @@ export function SearchView({ onClose }: SearchViewProps) {
 	const handleArrowDown = useCallback(() => {
 		const maxIndex = hasQuery ? results.length - 1 : recentSearches.length - 1
 		if (maxIndex < 0) return
-		setSearchState((prev) => ({
-			...prev,
+		updateSearchState((prev) => ({
 			selectedIndex: Math.min(prev.selectedIndex + 1, maxIndex),
 		}))
-	}, [hasQuery, results.length, recentSearches.length, setSearchState])
+	}, [hasQuery, results.length, recentSearches.length, updateSearchState])
 
 	const handleArrowUp = useCallback(() => {
-		setSearchState((prev) => ({
-			...prev,
+		updateSearchState((prev) => ({
 			selectedIndex: Math.max(prev.selectedIndex - 1, 0),
 		}))
-	}, [setSearchState])
-
-	// Handle result navigation and selection (or load recent search)
-	const handleSubmit = useCallback(() => {
-		if (hasQuery) {
-			const selectedResult = results[searchState.selectedIndex]
-			if (selectedResult) {
-				navigateToResult(selectedResult)
-			}
-		} else if (recentSearches.length > 0) {
-			const selectedRecent = recentSearches[searchState.selectedIndex]
-			if (selectedRecent) {
-				loadRecentSearch(selectedRecent)
-			}
-		}
-	}, [hasQuery, results, recentSearches, searchState.selectedIndex])
+	}, [updateSearchState])
 
 	// Navigate to a search result
 	const navigateToResult = useCallback(
@@ -184,27 +163,47 @@ export function SearchView({ onClose }: SearchViewProps) {
 				.join(" ")
 			const newInput = [filterString, recent.query].filter(Boolean).join(" ")
 
-			setInputValue(newInput)
-			setSearchState({
+			updateSearchState(() => ({
 				query: recent.query,
 				rawInput: newInput,
 				filters: [...recent.filters],
 				activeFilterType: null,
 				activeFilterPartial: "",
 				selectedIndex: 0,
-			})
+			}))
 
 			editorRef.current?.focus()
 		},
-		[setSearchState],
+		[updateSearchState],
 	)
+
+	// Handle result navigation and selection (or load recent search)
+	const handleSubmit = useCallback(() => {
+		if (hasQuery) {
+			const selectedResult = results[searchState.selectedIndex]
+			if (selectedResult) {
+				navigateToResult(selectedResult)
+			}
+		} else if (recentSearches.length > 0) {
+			const selectedRecent = recentSearches[searchState.selectedIndex]
+			if (selectedRecent) {
+				loadRecentSearch(selectedRecent)
+			}
+		}
+	}, [hasQuery, results, recentSearches, searchState.selectedIndex, navigateToResult, loadRecentSearch])
 
 	// Clear search
 	const clearSearch = useCallback(() => {
-		setInputValue("")
-		setSearchState(initialSearchState)
+		updateSearchState(() => ({
+			query: "",
+			rawInput: "",
+			filters: [],
+			activeFilterType: null,
+			activeFilterPartial: "",
+			selectedIndex: 0,
+		}))
 		editorRef.current?.focus()
-	}, [setSearchState])
+	}, [updateSearchState])
 
 	return (
 		<div className="flex max-h-[inherit] flex-col overflow-hidden">
@@ -218,7 +217,7 @@ export function SearchView({ onClose }: SearchViewProps) {
 				{/* Slate editor with syntax highlighting and autocomplete */}
 				<SearchSlateEditor
 					ref={editorRef}
-					value={inputValue}
+					value={searchState.rawInput}
 					onChange={handleInputChange}
 					onSubmit={handleSubmit}
 					onFilterSelect={handleFilterSelect}
@@ -236,7 +235,7 @@ export function SearchView({ onClose }: SearchViewProps) {
 				{isLoading ? (
 					<Loader className="size-4" variant="spin" />
 				) : (
-					(inputValue || searchState.filters.length > 0) && (
+					(searchState.rawInput || searchState.filters.length > 0) && (
 						<Button
 							onPress={clearSearch}
 							aria-label="Clear search"
@@ -311,7 +310,7 @@ export function SearchView({ onClose }: SearchViewProps) {
 					<kbd className="mx-1 inline-grid h-4 min-w-4 place-content-center rounded-xs bg-secondary px-1">
 						esc
 					</kbd>
-					to close
+					to go back
 				</span>
 			</div>
 		</div>

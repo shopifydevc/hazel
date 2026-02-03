@@ -1,7 +1,7 @@
 import type { ChannelId } from "@hazel/schema"
 import { createFileRoute, Outlet } from "@tanstack/react-router"
 import { lazy, Suspense, useEffect, useRef, useState } from "react"
-import type { CommandPalettePage } from "~/atoms/command-palette-atoms"
+import type { CommandPalettePageType } from "~/atoms/command-palette-state"
 import { useModal } from "~/atoms/modal-atoms"
 import { Loader } from "~/components/loader"
 import { MobileNav } from "~/components/mobile-nav"
@@ -70,7 +70,7 @@ export const Route = createFileRoute("/_app/$orgSlug")({
 
 function RouteComponent() {
 	const [openCmd, setOpenCmd] = useState(false)
-	const [initialPage, setInitialPage] = useState<CommandPalettePage>("home")
+	const [initialPage, setInitialPage] = useState<CommandPalettePageType>("home")
 	const { user, login } = useAuth()
 	const { organizationId, isLoading: isOrgLoading } = useOrganization()
 	const isRedirecting = useRef(false)
@@ -85,7 +85,7 @@ function RouteComponent() {
 	const deleteChannelModal = useModal("delete-channel")
 
 	const openChannelsBrowser = () => {
-		setInitialPage("channels")
+		setInitialPage("join-channel")
 		setOpenCmd(true)
 	}
 

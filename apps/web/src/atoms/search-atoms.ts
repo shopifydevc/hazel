@@ -1,7 +1,6 @@
 import { Atom } from "@effect-atom/atom-react"
 import { Schema } from "effect"
 import { platformStorageRuntime } from "~/lib/platform-storage"
-import type { FilterType, SearchFilter } from "~/lib/search-filter-parser"
 
 export const MAX_RECENT_SEARCHES = 10
 
@@ -33,61 +32,12 @@ const RecentSearchesSchema = Schema.Array(RecentSearchSchema)
 
 /**
  * Atom that stores recent searches in localStorage
+ * This is persisted separately from the command palette state
+ * because recent searches should persist across sessions
  */
 export const recentSearchesAtom = Atom.kvs({
 	runtime: platformStorageRuntime,
 	key: "recentSearches",
 	schema: RecentSearchesSchema,
 	defaultValue: () => [] as RecentSearch[],
-}).pipe(Atom.keepAlive)
-
-/**
- * Search state for active search session
- */
-export interface SearchState {
-	/** Text query (excludes filter syntax) */
-	query: string
-	/** Full raw input including filter syntax */
-	rawInput: string
-	/** Resolved filters with IDs */
-	filters: SearchFilter[]
-	/** Filter type currently being typed (for autocomplete) */
-	activeFilterType: FilterType | null
-	/** Partial value being typed for active filter */
-	activeFilterPartial: string
-	/** Selected result index for keyboard navigation */
-	selectedIndex: number
-}
-
-/**
- * Initial search state
- */
-export const initialSearchState: SearchState = {
-	query: "",
-	rawInput: "",
-	filters: [],
-	activeFilterType: null,
-	activeFilterPartial: "",
-	selectedIndex: 0,
-}
-
-/**
- * Main search state atom for the current search session
- */
-export const searchStateAtom = Atom.make<SearchState>(initialSearchState).pipe(Atom.keepAlive)
-
-/**
- * Derived atom that checks if search is active (has query or filters)
- */
-export const hasActiveSearchAtom = Atom.make((get) => {
-	const state = get(searchStateAtom)
-	return state.query.length > 0 || state.filters.length > 0
-}).pipe(Atom.keepAlive)
-
-/**
- * Derived atom that checks if autocomplete suggestions should show
- */
-export const showAutocompleteSuggestionsAtom = Atom.make((get) => {
-	const state = get(searchStateAtom)
-	return state.activeFilterType !== null
 }).pipe(Atom.keepAlive)

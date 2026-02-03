@@ -71,6 +71,10 @@ interface CommandMenuProps extends AutocompleteProps, MenuTriggerProps, CommandM
 	size?: keyof typeof sizes
 	/** When true, renders children directly without Autocomplete wrapper (for form pages) */
 	isFormPage?: boolean
+	/** When true, prevents ESC from dismissing the modal (useful for custom ESC handling) */
+	isKeyboardDismissDisabled?: boolean
+	/** Custom keyboard handler for the modal overlay */
+	onKeyDown?: (e: React.KeyboardEvent) => void
 }
 
 const CommandMenu = ({
@@ -83,6 +87,8 @@ const CommandMenu = ({
 	isBlurred,
 	shortcut,
 	isFormPage = false,
+	isKeyboardDismissDisabled = false,
+	onKeyDown,
 	...props
 }: CommandMenuProps) => {
 	const { contains } = useFilter({ sensitivity: "base" })
@@ -100,6 +106,7 @@ const CommandMenu = ({
 			<ModalContext value={{ isOpen: props.isOpen, onOpenChange: onOpenChange }}>
 				<ModalOverlay
 					isDismissable={isDismissable}
+					isKeyboardDismissDisabled={isKeyboardDismissDisabled}
 					className={twJoin(
 						"fixed inset-0 z-50 h-(--visual-viewport-height,100vh) w-screen overflow-hidden bg-overlay-backdrop",
 						"grid grid-rows-[1fr_auto] justify-items-center text-center sm:grid-rows-[1fr_auto_3fr]",
@@ -124,13 +131,15 @@ const CommandMenu = ({
 							aria-label={props["aria-label"] ?? "Command Menu"}
 							className="flex max-h-[inherit] flex-col overflow-hidden outline-hidden"
 						>
-							{isFormPage ? (
-								// For form pages, render children directly without Autocomplete wrapper
-								props.children
-							) : (
-								// For list pages, use Autocomplete for search/filter functionality
-								<Autocomplete filter={filter} {...props} />
-							)}
+							<div onKeyDown={onKeyDown} className="contents">
+								{isFormPage ? (
+									// For form pages, render children directly without Autocomplete wrapper
+									props.children
+								) : (
+									// For list pages, use Autocomplete for search/filter functionality
+									<Autocomplete filter={filter} {...props} />
+								)}
+							</div>
 						</Dialog>
 					</Modal>
 				</ModalOverlay>
