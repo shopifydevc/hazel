@@ -11,7 +11,12 @@ import { ChatTabBar } from "~/components/chat/chat-tab-bar"
 import type { MessageListRef } from "~/components/chat/message-list"
 import { ThreadPanel } from "~/components/chat/thread-panel"
 import { SplitPanel, SplitPanelContent, SplitPanelRoot } from "~/components/ui/split-panel"
-import { messageCollection, pinnedMessageCollection, userCollection } from "~/db/collections"
+import {
+	messageCollection,
+	messageReactionCollection,
+	pinnedMessageCollection,
+	userCollection,
+} from "~/db/collections"
 import { useChat } from "~/hooks/use-chat"
 import { useOrganization } from "~/hooks/use-organization"
 import { ChatProvider } from "~/providers/chat-provider"
@@ -49,11 +54,21 @@ export const Route = createFileRoute("/_app/$orgSlug/chat/$id")({
 					.offset(0),
 		})
 
-		// Preload the collection before navigation completes
-		await messagesInfiniteQuery.preload()
+		// Create reactions query for this channel to preload alongside messages
+		// This prevents layout shift from reactions loading after messages render
+		const reactionsQuery = createLiveQueryCollection({
+			query: (q) =>
+				q
+					.from({ reactions: messageReactionCollection })
+					.where(({ reactions }) => eq(reactions.channelId, channelId)),
+		})
+
+		// Preload both in parallel before navigation completes
+		await Promise.all([messagesInfiniteQuery.preload(), reactionsQuery.preload()])
 
 		return {
 			messagesInfiniteQuery,
+			reactionsQuery,
 		}
 	},
 })
