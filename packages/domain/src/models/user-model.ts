@@ -1,5 +1,6 @@
 import { UserId } from "@hazel/schema"
 import { Schema } from "effect"
+import { UserThemeSettings } from "./theme-model"
 import * as M from "./utils"
 import { baseFields } from "./utils"
 
@@ -23,6 +24,7 @@ export const UserSettingsSchema = Schema.Struct({
 	quietHoursStart: Schema.optional(TimeString),
 	quietHoursEnd: Schema.optional(TimeString),
 	showQuietHoursInStatus: Schema.optional(Schema.Boolean),
+	theme: Schema.optional(UserThemeSettings),
 })
 export type UserSettings = Schema.Schema.Type<typeof UserSettingsSchema>
 
