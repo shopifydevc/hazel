@@ -17,6 +17,9 @@ import { ToolLoopAgent, tool, jsonSchema } from "ai"
 import { createOpenRouter } from "@openrouter/ai-sdk-provider"
 import type { TextStreamPart, Tool } from "ai"
 
+// Supermemory integration - using @supermemory/tools for explicit memory operations
+import { supermemoryTools } from "@supermemory/tools/ai-sdk"
+
 // ============================================================================
 // Effect Schema to Vercel AI SDK Helper
 // ============================================================================
@@ -605,7 +608,23 @@ runHazelBot({
 					)
 
 					const apiKey = yield* Config.redacted("OPENROUTER_API_KEY")
-					const openrouter = createOpenRouter({ apiKey: Redacted.value(apiKey) })
+					const supermemoryApiKey = yield* Config.string("SUPERMEMORY_API_KEY")
+
+					// Memory tools from @supermemory/tools - provides addMemory and searchMemories
+					// The Memory Router proxy auto-handles conversation memory via headers
+					// Use containerTags with orgId to scope memories per organization
+					const memoryTools = supermemoryTools(supermemoryApiKey, {
+						containerTags: [`org:${ctx.orgId}`],
+					})
+
+					const openrouter = createOpenRouter({
+						baseUrl: "https://api.supermemory.ai/v3/https://openrouter.ai/api/v1",
+						headers: {
+							"x-supermemory-api-key": supermemoryApiKey,
+							"x-sm-user-id": ctx.orgId,
+						},
+						apiKey: Redacted.value(apiKey),
+					})
 
 					// Create AI streaming session
 					const session = yield* bot.ai.stream(ctx.channelId, {
@@ -627,6 +646,8 @@ runHazelBot({
 Your capabilities:
 - Get current date/time
 - Perform arithmetic
+- Remember information using the addMemory tool
+- Search past memories using the searchMemories tool
 ${integrationInstructions}
 
 Formatting (GFM markdown supported):
@@ -640,6 +661,7 @@ Rules:
 - Answer in 1-3 sentences when possible. Only elaborate if truly necessary
 - Never reveal secrets (tokens, API keys, credentials)
 - Use formatting sparingly to highlight key info
+- When you learn important information, use the addMemory tool to save it for future reference
 
 Remember: This is a team chat with real humans. Be helpful but don't dominate the conversation.`
 
@@ -647,7 +669,7 @@ Remember: This is a team chat with real humans. Be helpful but don't dominate th
 					const codebaseAgent = new ToolLoopAgent({
 						model: openrouter("moonshotai/kimi-k2.5"),
 						instructions: systemInstructions,
-						tools: { ...baseTools, ...integrationTools },
+						tools: { ...baseTools, ...integrationTools, ...memoryTools },
 						toolChoice: "auto",
 					})
 

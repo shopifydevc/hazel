@@ -54,6 +54,7 @@ export const Route = createFileRoute("/_app/$orgSlug")({
 			organizationMemberCollection,
 			userCollection,
 		} = await import("~/db/collections")
+		const { threadWithMemberCollection } = await import("~/db/materialized-collections")
 		await Promise.all([
 			channelCollection.preload(),
 			channelMemberCollection.preload(),
@@ -62,6 +63,7 @@ export const Route = createFileRoute("/_app/$orgSlug")({
 			organizationCollection.preload(),
 			organizationMemberCollection.preload(),
 			userCollection.preload(),
+			threadWithMemberCollection.preload(),
 		])
 
 		return null
