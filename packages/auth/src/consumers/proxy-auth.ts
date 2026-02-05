@@ -55,7 +55,7 @@ export class ProxyAuth extends Effect.Service<ProxyAuth>()("@hazel/auth/ProxyAut
 			)
 
 			if (Option.isSome(cached)) {
-				yield* Effect.annotateCurrentSpan("cache.hit", true)
+				yield* Effect.annotateCurrentSpan("cache.result", "hit")
 				return Option.some(cached.value.internalUserId)
 			}
 

@@ -42,6 +42,11 @@ export class SessionCache extends Effect.Service<SessionCache>()("@hazel/auth/Se
 			Effect.gen(function* () {
 				const startTime = Date.now()
 
+				// Add cache context attributes
+				yield* Effect.annotateCurrentSpan("cache.system", "redis")
+				yield* Effect.annotateCurrentSpan("cache.name", SESSION_CACHE_PREFIX)
+				yield* Effect.annotateCurrentSpan("cache.operation", "get")
+
 				const hash = yield* hashSessionCookie(sessionCookie)
 				const request = new SessionCacheRequest({ sessionHash: hash })
 
@@ -60,21 +65,21 @@ export class SessionCache extends Effect.Service<SessionCache>()("@hazel/auth/Se
 
 				if (Option.isNone(cached)) {
 					yield* Metric.increment(sessionCacheMisses)
-					yield* Effect.annotateCurrentSpan("cache.hit", false)
+					yield* Effect.annotateCurrentSpan("cache.result", "miss")
 					return Option.none<ValidatedSession>()
 				}
 
 				// Exit contains Success or Failure
 				if (cached.value._tag === "Success") {
 					yield* Metric.increment(sessionCacheHits)
-					yield* Effect.annotateCurrentSpan("cache.hit", true)
+					yield* Effect.annotateCurrentSpan("cache.result", "hit")
 					return Option.some(cached.value.value)
 				}
 
 				// Cached a failure - treat as cache miss
 				yield* Metric.increment(sessionCacheMisses)
-				yield* Effect.annotateCurrentSpan("cache.hit", false)
-				yield* Effect.annotateCurrentSpan("cache.failure_cached", true)
+				yield* Effect.annotateCurrentSpan("cache.result", "miss")
+				yield* Effect.annotateCurrentSpan("cache.skip_reason", "failure_cached")
 				return Option.none<ValidatedSession>()
 			}).pipe(Effect.withSpan("SessionCache.get"))
 
@@ -85,6 +90,11 @@ export class SessionCache extends Effect.Service<SessionCache>()("@hazel/auth/Se
 			Effect.gen(function* () {
 				const startTime = Date.now()
 				const ttlMs = Duration.toMillis(calculateCacheTtl(session.expiresAt))
+
+				// Add cache context attributes
+				yield* Effect.annotateCurrentSpan("cache.system", "redis")
+				yield* Effect.annotateCurrentSpan("cache.name", SESSION_CACHE_PREFIX)
+				yield* Effect.annotateCurrentSpan("cache.operation", "set")
 
 				// Don't cache if TTL is zero
 				if (ttlMs <= 0) {
@@ -109,13 +119,18 @@ export class SessionCache extends Effect.Service<SessionCache>()("@hazel/auth/Se
 
 				// Record latency and attributes
 				yield* Metric.update(cacheOperationLatency, Date.now() - startTime)
-				yield* Effect.annotateCurrentSpan("cache.ttl_ms", ttlMs)
+				yield* Effect.annotateCurrentSpan("cache.item.ttl_ms", ttlMs)
 
 				yield* Effect.logDebug(`Cached session with TTL ${ttlMs}ms`)
 			}).pipe(Effect.withSpan("SessionCache.set"))
 
 		const invalidate = (sessionCookie: string): Effect.Effect<void, SessionCacheError> =>
 			Effect.gen(function* () {
+				// Add cache context attributes
+				yield* Effect.annotateCurrentSpan("cache.system", "redis")
+				yield* Effect.annotateCurrentSpan("cache.name", SESSION_CACHE_PREFIX)
+				yield* Effect.annotateCurrentSpan("cache.operation", "invalidate")
+
 				const hash = yield* hashSessionCookie(sessionCookie)
 				const request = new SessionCacheRequest({ sessionHash: hash })
 

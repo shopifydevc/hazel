@@ -38,6 +38,11 @@ export class UserLookupCache extends Effect.Service<UserLookupCache>()("@hazel/a
 			Effect.gen(function* () {
 				const startTime = Date.now()
 
+				// Add cache context attributes
+				yield* Effect.annotateCurrentSpan("cache.system", "redis")
+				yield* Effect.annotateCurrentSpan("cache.name", USER_LOOKUP_CACHE_PREFIX)
+				yield* Effect.annotateCurrentSpan("cache.operation", "get")
+
 				const request = new UserLookupCacheRequest({ workosUserId })
 
 				const cached = yield* store.get(request).pipe(
@@ -55,21 +60,21 @@ export class UserLookupCache extends Effect.Service<UserLookupCache>()("@hazel/a
 
 				if (Option.isNone(cached)) {
 					yield* Metric.increment(userLookupCacheMisses)
-					yield* Effect.annotateCurrentSpan("cache.hit", false)
+					yield* Effect.annotateCurrentSpan("cache.result", "miss")
 					return Option.none<UserLookupResult>()
 				}
 
 				// Exit contains Success or Failure
 				if (cached.value._tag === "Success") {
 					yield* Metric.increment(userLookupCacheHits)
-					yield* Effect.annotateCurrentSpan("cache.hit", true)
+					yield* Effect.annotateCurrentSpan("cache.result", "hit")
 					return Option.some(cached.value.value)
 				}
 
 				// Cached a failure - treat as cache miss
 				yield* Metric.increment(userLookupCacheMisses)
-				yield* Effect.annotateCurrentSpan("cache.hit", false)
-				yield* Effect.annotateCurrentSpan("cache.failure_cached", true)
+				yield* Effect.annotateCurrentSpan("cache.result", "miss")
+				yield* Effect.annotateCurrentSpan("cache.skip_reason", "failure_cached")
 				return Option.none<UserLookupResult>()
 			}).pipe(Effect.withSpan("UserLookupCache.get"))
 
@@ -79,6 +84,11 @@ export class UserLookupCache extends Effect.Service<UserLookupCache>()("@hazel/a
 		): Effect.Effect<void, UserLookupCacheError> =>
 			Effect.gen(function* () {
 				const startTime = Date.now()
+
+				// Add cache context attributes
+				yield* Effect.annotateCurrentSpan("cache.system", "redis")
+				yield* Effect.annotateCurrentSpan("cache.name", USER_LOOKUP_CACHE_PREFIX)
+				yield* Effect.annotateCurrentSpan("cache.operation", "set")
 
 				const request = new UserLookupCacheRequest({ workosUserId })
 				const result: UserLookupResult = { internalUserId }
@@ -95,13 +105,21 @@ export class UserLookupCache extends Effect.Service<UserLookupCache>()("@hazel/a
 
 				// Record latency
 				yield* Metric.update(userLookupCacheOperationLatency, Date.now() - startTime)
-				yield* Effect.annotateCurrentSpan("cache.ttl_ms", Duration.toMillis(USER_LOOKUP_CACHE_TTL))
+				yield* Effect.annotateCurrentSpan(
+					"cache.item.ttl_ms",
+					Duration.toMillis(USER_LOOKUP_CACHE_TTL),
+				)
 
 				yield* Effect.logDebug(`Cached user lookup: ${workosUserId} -> ${internalUserId}`)
 			}).pipe(Effect.withSpan("UserLookupCache.set"))
 
 		const invalidate = (workosUserId: string): Effect.Effect<void, UserLookupCacheError> =>
 			Effect.gen(function* () {
+				// Add cache context attributes
+				yield* Effect.annotateCurrentSpan("cache.system", "redis")
+				yield* Effect.annotateCurrentSpan("cache.name", USER_LOOKUP_CACHE_PREFIX)
+				yield* Effect.annotateCurrentSpan("cache.operation", "invalidate")
+
 				const request = new UserLookupCacheRequest({ workosUserId })
 
 				yield* store.remove(request).pipe(
