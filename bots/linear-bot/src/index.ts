@@ -1,38 +1,9 @@
 import { Config, Effect, Redacted, Schema } from "effect"
-import { Command, CommandGroup, runHazelBot } from "@hazel/bot-sdk"
+import { runHazelBot } from "@hazel/bot-sdk"
 import { LinearApiClient } from "@hazel/integrations/linear"
 import { generateText } from "ai"
 import { createOpenRouter } from "@openrouter/ai-sdk-provider"
-
-// ============================================================================
-// Schema for AI-generated issue
-// ============================================================================
-
-const GeneratedIssueSchema = Schema.Struct({
-	title: Schema.String,
-	description: Schema.String,
-})
-
-// ============================================================================
-// Commands
-// ============================================================================
-
-const IssueCommand = Command.make("issue", {
-	description: "Create a Linear issue",
-	args: {
-		title: Schema.String,
-		description: Schema.optional(Schema.String),
-	},
-	usageExample: "/issue Fix the login bug",
-})
-
-const IssueifyCommand = Command.make("issueify", {
-	description: "Create a Linear issue from the conversation in this channel",
-	args: {},
-	usageExample: "/issueify 20",
-})
-
-const commands = CommandGroup.make(IssueCommand, IssueifyCommand)
+import { commands, IssueCommand, IssueifyCommand, GeneratedIssueSchema } from "./commands.ts"
 
 // ============================================================================
 // Bot Setup

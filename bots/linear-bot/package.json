@@ -5,8 +5,8 @@
 	"description": "Linear integration bot using @hazel/bot-sdk",
 	"type": "module",
 	"scripts": {
-		"start": "bun run index.ts",
-		"dev": "bun run --watch index.ts"
+		"start": "bun run src/index.ts",
+		"dev": "bun run --watch src/index.ts"
 	},
 	"dependencies": {
 		"@effect/platform": "catalog:effect",
