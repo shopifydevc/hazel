@@ -175,7 +175,41 @@ const createSessionFromActor = (
 			yield* wrapActorCall("stopStreaming", () => actor.stopStreaming())
 		}),
 
-	fail: (error: string) => wrapActorCall("fail", () => actor.fail(error)),
+	fail: (error: string) =>
+		Effect.gen(function* () {
+			// Fail the actor state (updates state + broadcasts to connected clients)
+			yield* wrapActorCall("fail", () => actor.fail(error))
+
+			// Persist failed state to database so it survives page refresh
+			if (options.updateMessage) {
+				const finalState = yield* wrapActorCall("getState", () => actor.getState())
+
+				const cached = {
+					status: finalState.status,
+					data: finalState.data,
+					text: finalState.text || undefined,
+					progress: finalState.progress ?? undefined,
+					error: finalState.error ?? undefined,
+					steps: finalState.steps.length > 0 ? finalState.steps : undefined,
+				}
+
+				yield* options
+					.updateMessage(messageId, {
+						content: finalState.text || undefined,
+						embeds: [{ liveState: { enabled: true, cached } }],
+					})
+					.pipe(
+						Effect.catchAll((persistError) =>
+							Effect.logWarning("Failed to persist failed streaming state to database", {
+								messageId,
+								error: String(persistError),
+								errorType:
+									persistError instanceof Error ? persistError.name : typeof persistError,
+							}),
+						),
+					)
+			}
+		}),
 })
 
 /**

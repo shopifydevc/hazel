@@ -39,6 +39,7 @@ const commands = CommandGroup.make(IssueCommand, IssueifyCommand)
 // ============================================================================
 
 runHazelBot({
+	serviceName: "linear-bot",
 	commands,
 	layers: [LinearApiClient.Default],
 	setup: (bot) =>
