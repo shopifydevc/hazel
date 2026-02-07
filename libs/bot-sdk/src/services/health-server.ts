@@ -165,7 +165,7 @@ export class BotHealthServer extends Effect.Service<BotHealthServer>()("BotHealt
 				}),
 		)
 
-		yield* Effect.logInfo(`Health server listening`, { port: server.port, path: "/health" }).pipe(
+		yield* Effect.logDebug(`Health server listening`, { port: server.port, path: "/health" }).pipe(
 			Effect.annotateLogs("service", "BotHealthServer"),
 		)
 

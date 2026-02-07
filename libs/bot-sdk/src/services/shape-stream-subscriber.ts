@@ -226,7 +226,7 @@ export class ShapeStreamSubscriber extends Effect.Service<ShapeStreamSubscriber>
 
 				yield* Ref.update(connectionStatusRef, (m) => new Map(m).set(subscription.table, true))
 
-				yield* Effect.logInfo(`Shape stream subscription active`, {
+				yield* Effect.logDebug(`Shape stream subscription active`, {
 					table: subscription.table,
 				}).pipe(Effect.annotateLogs("service", "ShapeStreamSubscriber"))
 
@@ -271,7 +271,7 @@ export class ShapeStreamSubscriber extends Effect.Service<ShapeStreamSubscriber>
 							.filter((s) => !requiredTables.has(s.table))
 							.map((s) => s.table)
 						if (skippedTables.length > 0) {
-							yield* Effect.logInfo(`Skipping shape streams for unused tables`, {
+							yield* Effect.logDebug(`Skipping shape streams for unused tables`, {
 								skippedTables: skippedTables.join(", "),
 							}).pipe(Effect.annotateLogs("service", "ShapeStreamSubscriber"))
 						}
@@ -284,7 +284,7 @@ export class ShapeStreamSubscriber extends Effect.Service<ShapeStreamSubscriber>
 						return
 					}
 
-					yield* Effect.logInfo(`Starting shape stream subscriptions`, {
+					yield* Effect.logDebug(`Starting shape stream subscriptions`, {
 						tablesCount: activeSubscriptions.length,
 						tables: activeSubscriptions.map((s) => s.table).join(", "),
 					}).pipe(Effect.annotateLogs("service", "ShapeStreamSubscriber"))
@@ -324,7 +324,7 @@ export class ShapeStreamSubscriber extends Effect.Service<ShapeStreamSubscriber>
 						{ concurrency: "unbounded" },
 					)
 
-					yield* Effect.logInfo("All shape stream subscriptions started successfully").pipe(
+					yield* Effect.logDebug("All shape stream subscriptions started successfully").pipe(
 						Effect.annotateLogs("service", "ShapeStreamSubscriber"),
 					)
 				}),

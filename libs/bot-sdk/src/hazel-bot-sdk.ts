@@ -35,7 +35,7 @@ import {
 	Schema,
 } from "effect"
 import { BotAuth, createAuthContextFromToken } from "./auth.ts"
-import { createLoggerLayer, type BotLogConfig, type LogFormat } from "./log-config.ts"
+import { createLoggerLayer, logLevelFromString, type BotLogConfig, type LogFormat } from "./log-config.ts"
 import { createCommandLogContext, withLogContext, type BotIdentity } from "./log-context.ts"
 import { createBotClientTag } from "./bot-client.ts"
 import {
@@ -1441,7 +1441,7 @@ export const startBotEventPipeline = (
 		// Derive required tables from registered event handlers
 		const eventTypes = yield* dispatcher.registeredEventTypes
 		if (eventTypes.length === 0) {
-			yield* Effect.logInfo(
+			yield* Effect.logDebug(
 				"No DB event handlers registered; skipping shape streams and dispatcher startup",
 			).pipe(Effect.annotateLogs("service", "BotClient"))
 			return
@@ -1589,13 +1589,19 @@ export const createHazelBot = <Commands extends CommandGroup<any> = EmptyCommand
 
 	// Create logger layer with configurable level and format
 	// Defaults: INFO level, format based on NODE_ENV
+	// LOG_LEVEL env var overrides config (e.g. LOG_LEVEL=debug bun run dev)
 	const LoggerLayer = Layer.unwrapEffect(
 		Effect.gen(function* () {
 			const nodeEnv = yield* Config.string("NODE_ENV").pipe(Config.withDefault("development"))
+			const envLogLevel = yield* Config.string("LOG_LEVEL").pipe(Config.withDefault(""))
 			const defaultFormat: LogFormat = nodeEnv === "production" ? "structured" : "pretty"
 
+			const resolvedLevel = envLogLevel
+				? logLevelFromString(envLogLevel)
+				: (config.logging?.level ?? LogLevel.Info)
+
 			const logConfig: BotLogConfig = {
-				level: config.logging?.level ?? LogLevel.Info,
+				level: resolvedLevel,
 				format: config.logging?.format ?? defaultFormat,
 			}
 

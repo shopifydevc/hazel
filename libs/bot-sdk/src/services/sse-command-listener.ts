@@ -225,7 +225,7 @@ export class SseCommandListener extends Effect.Service<SseCommandListener>()("Ss
 			}
 
 			yield* Ref.set(isRunningRef, true)
-			yield* Effect.logInfo(`SSE stream connected`, { url: sseUrl, botId, botName }).pipe(
+			yield* Effect.logDebug(`SSE stream connected`, { url: sseUrl, botId, botName }).pipe(
 				Effect.annotateLogs("service", "SseCommandListener"),
 			)
 
@@ -386,7 +386,7 @@ export class SseCommandListener extends Effect.Service<SseCommandListener>()("Ss
 			),
 		).pipe(Effect.forkScoped)
 
-		yield* Effect.logInfo(`Listening for commands via SSE`, { url: sseUrl, botId, botName }).pipe(
+		yield* Effect.logDebug(`Listening for commands via SSE`, { url: sseUrl, botId, botName }).pipe(
 			Effect.annotateLogs("service", "SseCommandListener"),
 		)
 

@@ -290,7 +290,7 @@ export class EventDispatcher extends Effect.Service<EventDispatcher>()("EventDis
 					return sum + (handlers?.size ?? 0)
 				}, 0)
 
-				yield* Effect.logInfo("Starting event dispatcher", {
+				yield* Effect.logDebug("Starting event dispatcher", {
 					eventTypesCount: eventTypes.length,
 					totalHandlers,
 					concurrency: concurrency === "unbounded" ? "unbounded" : concurrency,

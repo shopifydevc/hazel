@@ -21,26 +21,27 @@ export interface BotLogConfig {
 	 *
 	 * Log Level Guidelines:
 	 *
-	 * DEBUG:
+	 * DEBUG (internal SDK plumbing - use LOG_LEVEL=debug to see):
 	 * - Handler start/complete with timing
 	 * - Queue operations (create, size updates)
 	 * - Shape stream events (table, operation, eventId)
+	 * - Shape stream subscription lifecycle (active, starting, skipped)
 	 * - Internal state changes
 	 * - SSE event parsing details
+	 * - SSE stream connected / listening
+	 * - Event dispatcher starting
+	 * - Health server listening
 	 *
-	 * INFO:
+	 * INFO (business-relevant events only):
 	 * - Bot authenticated
-	 * - SSE connected
 	 * - Command received (name only)
-	 * - Message sent
-	 * - Command synced
-	 * - Shape stream subscription active
 	 *
 	 * WARNING:
 	 * - Queue full (dropping events)
 	 * - Schema validation failed
 	 * - No handler for command
 	 * - Retry attempts
+	 * - Shape stream reconnecting
 	 *
 	 * ERROR:
 	 * - Handler failed after retries
@@ -50,6 +51,7 @@ export interface BotLogConfig {
 	 * Note:
 	 * - SSE retry exhaustion per cycle is logged at WARNING with metrics.
 	 *   This indicates degraded connectivity, not a terminal bot failure.
+	 * - Set LOG_LEVEL=debug env var to see all startup/lifecycle logs.
 	 */
 	readonly level: LogLevel.LogLevel
 
