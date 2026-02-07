@@ -85,7 +85,7 @@ function MessageLiveLoading({ config }: { config?: LoadingConfig }) {
 	const IconComponent = icon === "brain" ? IconBrainSparkle : IconSparkles
 
 	return (
-		<div className="mt-2 flex items-center gap-2 text-muted-fg text-sm">
+		<div className="flex items-center gap-2 text-muted-fg text-sm">
 			<IconComponent className="size-4" aria-hidden />
 			<span className="flex items-center gap-1">
 				{text}
@@ -115,7 +115,7 @@ interface MessageLiveRootProps {
 }
 
 function MessageLiveRoot({ children, className }: MessageLiveRootProps) {
-	return <div className={cn("mt-2 space-y-2", className)}>{children}</div>
+	return <div className={cn("space-y-2", className)}>{children}</div>
 }
 
 function MessageLiveProgress() {
