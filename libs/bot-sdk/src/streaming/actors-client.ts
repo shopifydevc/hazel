@@ -104,7 +104,7 @@ export interface ActorsClientService {
  * Configuration for ActorsClient
  */
 export interface ActorsClientConfig {
-	/** The actors endpoint URL (defaults to https://rivet.hazel.sh) */
+	/** The actors endpoint URL (defaults to Rivet BYOC production endpoint) */
 	readonly endpoint?: string
 	/** The bot token for authentication (hzl_bot_xxxxx) */
 	readonly botToken: string
@@ -137,7 +137,9 @@ export interface ActorsClientConfig {
 export class ActorsClient extends Effect.Service<ActorsClient>()("@hazel/bot-sdk/ActorsClient", {
 	accessors: true,
 	effect: Effect.fn("ActorsClient.create")(function* (config: ActorsClientConfig) {
-		const endpoint = config.endpoint ?? "https://rivet.hazel.sh"
+		const endpoint =
+			config.endpoint ??
+			"https://hazel-d9c8-production-e8b3:pk_UecfBPkebh46hBcaDkKrAWD6ot3SPvDsB4ybSlOVtf3p8z6EKQiyaOWPLkUqUBBT@api.rivet.dev"
 		const client = createActorsClient(endpoint)
 
 		yield* Effect.annotateCurrentSpan("endpoint", endpoint)

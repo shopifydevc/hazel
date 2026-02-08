@@ -26,7 +26,10 @@ export const BotEnvConfig = Config.all({
 		Config.withDescription("Backend API URL (also used for SSE command streaming)"),
 	),
 	actorsUrl: Config.string("ACTORS_URL").pipe(
-		Config.withDefault("https://rivet.hazel.sh"),
+		Config.orElse(() => Config.string("RIVET_PUBLIC_ENDPOINT")),
+		Config.withDefault(
+			"https://hazel-d9c8-production-e8b3:pk_UecfBPkebh46hBcaDkKrAWD6ot3SPvDsB4ybSlOVtf3p8z6EKQiyaOWPLkUqUBBT@api.rivet.dev",
+		),
 		Config.withDescription("Actors/Rivet endpoint for live state streaming"),
 	),
 	healthPort: Config.number("PORT").pipe(

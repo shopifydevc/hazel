@@ -76,7 +76,8 @@ describe("HazelBotClient mention handling", () => {
 							botToken: "test-bot-token",
 							commands: EmptyCommandGroup,
 							mentionable: true,
-							actorsEndpoint: "https://rivet.hazel.sh",
+							actorsEndpoint:
+								"https://hazel-d9c8-production-e8b3:pk_UecfBPkebh46hBcaDkKrAWD6ot3SPvDsB4ybSlOVtf3p8z6EKQiyaOWPLkUqUBBT@api.rivet.dev",
 						}),
 					),
 				)

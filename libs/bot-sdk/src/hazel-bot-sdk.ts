@@ -1342,7 +1342,7 @@ export interface HazelBotConfig<Commands extends CommandGroup<any> = EmptyComman
 
 	/**
 	 * Actors/Rivet endpoint for live state streaming
-	 * @default "https://rivet.hazel.sh"
+	 * @default "https://hazel-d9c8-production-e8b3:pk_UecfBPkebh46hBcaDkKrAWD6ot3SPvDsB4ybSlOVtf3p8z6EKQiyaOWPLkUqUBBT@api.rivet.dev"
 	 * @example "http://localhost:6420" // For local development
 	 */
 	readonly actorsEndpoint?: string
@@ -1503,7 +1503,10 @@ export const createHazelBot = <Commands extends CommandGroup<any> = EmptyCommand
 	// Apply defaults for URLs
 	const electricUrl = config.electricUrl ?? "https://electric.hazel.sh/v1/shape"
 	const backendUrl = config.backendUrl ?? "https://api.hazel.sh"
-	const actorsEndpoint = config.actorsEndpoint ?? "https://rivet.hazel.sh"
+	const actorsEndpoint =
+		config.actorsEndpoint ??
+		process.env.RIVET_PUBLIC_ENDPOINT ??
+		"https://hazel-d9c8-production-e8b3:pk_UecfBPkebh46hBcaDkKrAWD6ot3SPvDsB4ybSlOVtf3p8z6EKQiyaOWPLkUqUBBT@api.rivet.dev"
 
 	// Create all the required layers using layerConfig pattern
 	const EventQueueLayer = ElectricEventQueue.layerConfig(
