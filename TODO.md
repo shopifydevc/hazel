@@ -1,8 +1,6 @@
 # Today
 
-- voice to text
-- improve AI UI and better tool calling
-
+- add better tracing + metrics shape proxy
 - rework notification sound system / native notification support
 
 - replace tanstack form with effect based form
@@ -20,6 +18,7 @@
 
 # Later
 
+- voice to text
 - setup sequin locally with config as code
 
 - Connect with Google Calendar and auto set status when in meeting OOO etc.

@@ -1,0 +1,81 @@
+import { describe, expect, it } from "@effect/vitest"
+import { CraftApiError, CraftNotFoundError, CraftRateLimitError } from "@hazel/integrations/craft"
+import { Effect, Either } from "effect"
+import { mapCraftConnectApiKeyError, validateCraftBaseUrl } from "./integrations.http.ts"
+
+const expectInvalidBaseUrl = async (url: string) => {
+	const result = await Effect.runPromise(validateCraftBaseUrl(url).pipe(Effect.either))
+	expect(Either.isLeft(result)).toBe(true)
+	if (Either.isLeft(result)) {
+		expect(result.left._tag).toBe("InvalidApiKeyError")
+	}
+}
+
+describe("integration connect API key helpers", () => {
+	describe("validateCraftBaseUrl", () => {
+		it("accepts and normalizes a valid Craft connect URL", async () => {
+			const result = await Effect.runPromise(
+				validateCraftBaseUrl("https://connect.craft.do/links/link_123/api/v1/").pipe(Effect.either),
+			)
+
+			expect(Either.isRight(result)).toBe(true)
+			if (Either.isRight(result)) {
+				expect(result.right).toBe("https://connect.craft.do/links/link_123/api/v1")
+			}
+		})
+
+		it("rejects non-https URLs", async () => {
+			await expectInvalidBaseUrl("http://connect.craft.do/links/link_123/api/v1")
+		})
+
+		it("rejects untrusted hosts", async () => {
+			await expectInvalidBaseUrl("https://example.com/links/link_123/api/v1")
+		})
+
+		it("rejects URL query params", async () => {
+			await expectInvalidBaseUrl("https://connect.craft.do/links/link_123/api/v1?x=1")
+		})
+	})
+
+	describe("mapCraftConnectApiKeyError", () => {
+		it("maps Craft 401 failures to InvalidApiKeyError", () => {
+			const mapped = mapCraftConnectApiKeyError(
+				new CraftApiError({ message: "unauthorized", status: 401 }),
+			)
+			expect(mapped._tag).toBe("InvalidApiKeyError")
+		})
+
+		it("maps Craft not found failures to InvalidApiKeyError", () => {
+			const mapped = mapCraftConnectApiKeyError(
+				new CraftNotFoundError({ resourceType: "space", resourceId: "missing" }),
+			)
+			expect(mapped._tag).toBe("InvalidApiKeyError")
+		})
+
+		it("maps Craft rate limits to InternalServerError", () => {
+			const mapped = mapCraftConnectApiKeyError(
+				new CraftRateLimitError({ message: "too many requests", retryAfter: 60 }),
+			)
+			expect(mapped._tag).toBe("InternalServerError")
+		})
+
+		it("maps Craft 5xx failures to InternalServerError", () => {
+			const mapped = mapCraftConnectApiKeyError(
+				new CraftApiError({ message: "server error", status: 503 }),
+			)
+			expect(mapped._tag).toBe("InternalServerError")
+		})
+
+		it("maps Craft 4xx failures to InvalidApiKeyError", () => {
+			const mapped = mapCraftConnectApiKeyError(
+				new CraftApiError({ message: "bad request", status: 400 }),
+			)
+			expect(mapped._tag).toBe("InvalidApiKeyError")
+		})
+
+		it("maps Craft failures without status to InternalServerError", () => {
+			const mapped = mapCraftConnectApiKeyError(new CraftApiError({ message: "network error" }))
+			expect(mapped._tag).toBe("InternalServerError")
+		})
+	})
+})

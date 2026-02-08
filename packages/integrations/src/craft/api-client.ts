@@ -8,7 +8,7 @@
  * and Bearer tokens instead of a single OAuth endpoint.
  */
 
-import { FetchHttpClient, HttpBody, HttpClient, HttpClientRequest, HttpClientResponse } from "@effect/platform"
+import { FetchHttpClient, HttpBody, HttpClient, HttpClientRequest } from "@effect/platform"
 import { Duration, Effect, Schedule, Schema } from "effect"
 
 // ============================================================================
@@ -22,6 +22,16 @@ const DEFAULT_TIMEOUT = Duration.seconds(30)
 // ============================================================================
 
 export const CraftBlockType = Schema.Literal(
+	"text",
+	"line",
+	"page",
+	"code",
+	"image",
+	"file",
+	"drawing",
+	"richUrl",
+	"video",
+	"collection",
 	"textBlock",
 	"horizontalRuleBlock",
 	"tableBlock",
@@ -38,7 +48,8 @@ export type CraftBlockType = typeof CraftBlockType.Type
 export const CraftBlock = Schema.Struct({
 	id: Schema.String,
 	type: Schema.String,
-	content: Schema.optional(Schema.String),
+	markdown: Schema.optional(Schema.String),
+	content: Schema.optional(Schema.Unknown),
 	style: Schema.optional(Schema.Unknown),
 	subblocks: Schema.optional(Schema.Array(Schema.Unknown)),
 	hasSubblocks: Schema.optional(Schema.Boolean),
@@ -50,25 +61,34 @@ export type CraftBlock = typeof CraftBlock.Type
 
 export const CraftDocument = Schema.Struct({
 	id: Schema.String,
+	name: Schema.optional(Schema.String),
 	title: Schema.optional(Schema.String),
 	type: Schema.optional(Schema.String),
 	createdAt: Schema.optional(Schema.String),
 	updatedAt: Schema.optional(Schema.String),
+	lastModifiedAt: Schema.optional(Schema.String),
 	folderId: Schema.optional(Schema.NullOr(Schema.String)),
+	dailyNoteDate: Schema.optional(Schema.String),
+	clickableLink: Schema.optional(Schema.String),
 })
 export type CraftDocument = typeof CraftDocument.Type
 
 export const CraftFolder = Schema.Struct({
 	id: Schema.String,
+	name: Schema.optional(Schema.String),
 	title: Schema.optional(Schema.String),
 	createdAt: Schema.optional(Schema.String),
 	updatedAt: Schema.optional(Schema.String),
 	parentId: Schema.optional(Schema.NullOr(Schema.String)),
+	folders: Schema.optional(Schema.Array(Schema.Unknown)),
+	documentCount: Schema.optional(Schema.Number),
 })
 export type CraftFolder = typeof CraftFolder.Type
 
 export const CraftTask = Schema.Struct({
 	id: Schema.String,
+	markdown: Schema.optional(Schema.String),
+	taskInfo: Schema.optional(Schema.Unknown),
 	content: Schema.optional(Schema.String),
 	isDone: Schema.optional(Schema.Boolean),
 	documentId: Schema.optional(Schema.String),
@@ -79,6 +99,7 @@ export type CraftTask = typeof CraftTask.Type
 
 export const CraftCollection = Schema.Struct({
 	id: Schema.String,
+	name: Schema.optional(Schema.String),
 	title: Schema.optional(Schema.String),
 	type: Schema.optional(Schema.String),
 })
@@ -115,32 +136,52 @@ export class CraftRateLimitError extends Schema.TaggedError<CraftRateLimitError>
 // Internal Response Schemas
 // ============================================================================
 
-const SpaceInfoResponse = Schema.Struct({
+const ConnectionInfoResponse = Schema.Struct({
 	id: Schema.optional(Schema.String),
 	name: Schema.optional(Schema.String),
 	type: Schema.optional(Schema.String),
+	space: Schema.optional(CraftSpaceInfo),
 })
 
-const BlocksResponse = Schema.Array(CraftBlock)
+type CraftConnectionInfo = typeof ConnectionInfoResponse.Type
 
-const DocumentsResponse = Schema.Array(CraftDocument)
-
-const FoldersResponse = Schema.Array(CraftFolder)
-
-const TasksResponse = Schema.Array(CraftTask)
-
-const CollectionsResponse = Schema.Array(CraftCollection)
-
-const CollectionSchemaResponse = Schema.Struct({
-	id: Schema.optional(Schema.String),
-	fields: Schema.optional(Schema.Array(Schema.Unknown)),
+export const normalizeCraftConnectionInfo = (response: CraftConnectionInfo): CraftSpaceInfo => ({
+	id: response.space?.id ?? response.id,
+	name: response.space?.name ?? response.name,
+	type: response.space?.type ?? response.type,
 })
 
-const CollectionItemsResponse = Schema.Array(Schema.Unknown)
+export const normalizeCraftSearchDocumentsResponse = (raw: unknown): unknown[] => {
+	if (Array.isArray(raw)) {
+		return raw
+	}
+	if (
+		raw &&
+		typeof raw === "object" &&
+		"items" in raw &&
+		Array.isArray((raw as { items: unknown }).items)
+	) {
+		return (raw as { items: unknown[] }).items
+	}
+	return []
+}
 
-const SearchResultsResponse = Schema.Struct({
-	results: Schema.optional(Schema.Array(Schema.Unknown)),
-})
+const normalizeCraftItemsResponse = (raw: unknown): unknown[] => {
+	if (Array.isArray(raw)) {
+		return raw
+	}
+
+	if (
+		raw &&
+		typeof raw === "object" &&
+		"items" in raw &&
+		Array.isArray((raw as { items: unknown }).items)
+	) {
+		return (raw as { items: unknown[] }).items
+	}
+
+	return []
+}
 
 // ============================================================================
 // Retry Strategy
@@ -206,27 +247,22 @@ export class CraftApiClient extends Effect.Service<CraftApiClient>()("CraftApiCl
 		/**
 		 * Execute an HTTP request and handle all errors
 		 */
-		const executeRequest = <R>(
+		const executeRequest = (
 			client: HttpClient.HttpClient,
 			method: "GET" | "POST" | "PUT" | "DELETE",
 			path: string,
 			body?: unknown,
-		): Effect.Effect<R, CraftApiError | CraftRateLimitError | CraftNotFoundError> =>
+		): Effect.Effect<unknown, CraftApiError | CraftRateLimitError | CraftNotFoundError> =>
 			Effect.gen(function* () {
+				const jsonBody = body ? HttpBody.text(JSON.stringify(body), "application/json") : undefined
 				const request =
 					method === "GET"
 						? client.get(path)
 						: method === "POST"
-							? client.post(path, {
-									body: body ? HttpBody.json(body) : undefined,
-								})
+							? client.post(path, { body: jsonBody })
 							: method === "PUT"
-								? client.put(path, {
-										body: body ? HttpBody.json(body) : undefined,
-									})
-								: client.del(path, {
-										body: body ? HttpBody.json(body) : undefined,
-									})
+								? client.put(path, { body: jsonBody })
+								: client.del(path, { body: jsonBody })
 
 				const response = yield* request.pipe(Effect.scoped, Effect.timeout(DEFAULT_TIMEOUT))
 
@@ -267,10 +303,10 @@ export class CraftApiClient extends Effect.Service<CraftApiClient>()("CraftApiCl
 
 				// For 204 No Content, return empty
 				if (response.status === 204) {
-					return undefined as R
+					return undefined
 				}
 
-				return yield* response.json as Effect.Effect<R>
+				return yield* response.json
 			}).pipe(
 				Effect.catchTag("TimeoutException", () =>
 					Effect.fail(new CraftApiError({ message: "Request timed out" })),
@@ -292,14 +328,6 @@ export class CraftApiClient extends Effect.Service<CraftApiClient>()("CraftApiCl
 						}),
 					),
 				),
-				Effect.catchTag("HttpBodyError", (error) =>
-					Effect.fail(
-						new CraftApiError({
-							message: `Body encoding error: ${String(error)}`,
-							cause: error,
-						}),
-					),
-				),
 			)
 
 		// ====================================================================
@@ -309,10 +337,18 @@ export class CraftApiClient extends Effect.Service<CraftApiClient>()("CraftApiCl
 		const getSpaceInfo = (baseUrl: string, accessToken: string) =>
 			Effect.gen(function* () {
 				const client = makeClient(baseUrl, accessToken)
-				const raw = yield* executeRequest(client, "GET", "/space")
-				return yield* Schema.decodeUnknown(SpaceInfoResponse)(raw).pipe(
-					Effect.mapError(
-						(e) => new CraftApiError({ message: "Unexpected response format", cause: e }),
+				return yield* executeRequest(client, "GET", "/connection").pipe(
+					Effect.flatMap((raw) =>
+						Schema.decodeUnknown(ConnectionInfoResponse)(raw).pipe(
+							Effect.map(normalizeCraftConnectionInfo),
+							Effect.mapError(
+								(e) =>
+									new CraftApiError({
+										message: "Unexpected response format for /connection endpoint",
+										cause: e,
+									}),
+							),
+						),
 					),
 				)
 			}).pipe(
@@ -327,12 +363,18 @@ export class CraftApiClient extends Effect.Service<CraftApiClient>()("CraftApiCl
 		const getBlocks = (baseUrl: string, accessToken: string, documentId: string, blockId?: string) =>
 			Effect.gen(function* () {
 				const client = makeClient(baseUrl, accessToken)
-				const path = blockId
-					? `/documents/${documentId}/blocks/${blockId}`
-					: `/documents/${documentId}/blocks`
+				const resolvedBlockId = blockId ?? documentId
+				const path = `/blocks?id=${encodeURIComponent(resolvedBlockId)}`
 				const raw = yield* executeRequest(client, "GET", path)
-				return yield* Schema.decodeUnknown(BlocksResponse)(raw).pipe(
-					Effect.catchAll(() => Effect.succeed(Array.isArray(raw) ? (raw as CraftBlock[]) : [raw as CraftBlock])),
+				const normalizedBlocks = normalizeCraftItemsResponse(raw)
+				return yield* Schema.decodeUnknown(Schema.Array(CraftBlock))(normalizedBlocks).pipe(
+					Effect.catchAll(() =>
+						Effect.succeed(
+							normalizedBlocks.length > 0
+								? (normalizedBlocks as CraftBlock[])
+								: [raw as CraftBlock],
+						),
+					),
 				)
 			}).pipe(
 				Effect.retry({ schedule: makeRetrySchedule, while: isRetryableError }),
@@ -348,10 +390,20 @@ export class CraftApiClient extends Effect.Service<CraftApiClient>()("CraftApiCl
 		) =>
 			Effect.gen(function* () {
 				const client = makeClient(baseUrl, accessToken)
-				const path = parentBlockId
-					? `/documents/${documentId}/blocks/${parentBlockId}/blocks`
-					: `/documents/${documentId}/blocks`
-				return yield* executeRequest(client, "POST", path, { blocks })
+				const pageId = parentBlockId ?? documentId
+				const transformedBlocks = blocks.map((block) => ({
+					type: block.type === "textBlock" ? "text" : block.type,
+					markdown: block.content ?? "",
+					...(block.listStyle !== undefined ? { listStyle: block.listStyle } : {}),
+				}))
+
+				return yield* executeRequest(client, "POST", "/blocks", {
+					blocks: transformedBlocks,
+					position: {
+						position: "end",
+						pageId,
+					},
+				})
 			}).pipe(
 				Effect.retry({ schedule: makeRetrySchedule, while: isRetryableError }),
 				Effect.withSpan("CraftApiClient.insertBlocks", { attributes: { documentId } }),
@@ -365,7 +417,12 @@ export class CraftApiClient extends Effect.Service<CraftApiClient>()("CraftApiCl
 		) =>
 			Effect.gen(function* () {
 				const client = makeClient(baseUrl, accessToken)
-				return yield* executeRequest(client, "PUT", `/documents/${documentId}/blocks`, { blocks })
+				const transformedBlocks = blocks.map((block) => ({
+					id: block.id,
+					...(block.content !== undefined ? { markdown: block.content } : {}),
+					...(block.style !== undefined ? { style: block.style } : {}),
+				}))
+				return yield* executeRequest(client, "PUT", "/blocks", { blocks: transformedBlocks })
 			}).pipe(
 				Effect.retry({ schedule: makeRetrySchedule, while: isRetryableError }),
 				Effect.withSpan("CraftApiClient.updateBlocks", { attributes: { documentId } }),
@@ -379,7 +436,9 @@ export class CraftApiClient extends Effect.Service<CraftApiClient>()("CraftApiCl
 		) =>
 			Effect.gen(function* () {
 				const client = makeClient(baseUrl, accessToken)
-				return yield* executeRequest(client, "DELETE", `/documents/${documentId}/blocks`, { blockIds })
+				return yield* executeRequest(client, "DELETE", "/blocks", {
+					blockIds,
+				})
 			}).pipe(
 				Effect.retry({ schedule: makeRetrySchedule, while: isRetryableError }),
 				Effect.withSpan("CraftApiClient.deleteBlocks", { attributes: { documentId } }),
@@ -395,10 +454,20 @@ export class CraftApiClient extends Effect.Service<CraftApiClient>()("CraftApiCl
 		) =>
 			Effect.gen(function* () {
 				const client = makeClient(baseUrl, accessToken)
-				return yield* executeRequest(client, "POST", `/documents/${documentId}/blocks/move`, {
+				const destinationPosition =
+					position === "inside"
+						? {
+								position: "end" as const,
+								pageId: targetBlockId,
+							}
+						: {
+								position: (position ?? "after") as "before" | "after",
+								siblingId: targetBlockId,
+							}
+
+				return yield* executeRequest(client, "PUT", "/blocks/move", {
 					blockIds,
-					targetBlockId,
-					position: position ?? "after",
+					position: destinationPosition,
 				})
 			}).pipe(
 				Effect.retry({ schedule: makeRetrySchedule, while: isRetryableError }),
@@ -408,10 +477,9 @@ export class CraftApiClient extends Effect.Service<CraftApiClient>()("CraftApiCl
 		const searchBlocks = (baseUrl: string, accessToken: string, documentId: string, query: string) =>
 			Effect.gen(function* () {
 				const client = makeClient(baseUrl, accessToken)
-				const raw = yield* executeRequest(client, "POST", `/documents/${documentId}/blocks/search`, {
-					query,
-				})
-				return raw as unknown[]
+				const path = `/blocks/search?blockId=${encodeURIComponent(documentId)}&pattern=${encodeURIComponent(query)}`
+				const raw = yield* executeRequest(client, "GET", path)
+				return normalizeCraftItemsResponse(raw)
 			}).pipe(
 				Effect.retry({ schedule: makeRetrySchedule, while: isRetryableError }),
 				Effect.withSpan("CraftApiClient.searchBlocks", { attributes: { documentId, query } }),
@@ -421,17 +489,14 @@ export class CraftApiClient extends Effect.Service<CraftApiClient>()("CraftApiCl
 		// Documents
 		// ====================================================================
 
-		const listDocuments = (
-			baseUrl: string,
-			accessToken: string,
-			folderId?: string,
-		) =>
+		const listDocuments = (baseUrl: string, accessToken: string, folderId?: string) =>
 			Effect.gen(function* () {
 				const client = makeClient(baseUrl, accessToken)
-				const path = folderId ? `/folders/${folderId}/documents` : "/documents"
+				const path = folderId ? `/documents?folderId=${encodeURIComponent(folderId)}` : "/documents"
 				const raw = yield* executeRequest(client, "GET", path)
-				return yield* Schema.decodeUnknown(DocumentsResponse)(raw).pipe(
-					Effect.catchAll(() => Effect.succeed(Array.isArray(raw) ? (raw as CraftDocument[]) : [])),
+				const normalizedDocuments = normalizeCraftItemsResponse(raw)
+				return yield* Schema.decodeUnknown(Schema.Array(CraftDocument))(normalizedDocuments).pipe(
+					Effect.catchAll(() => Effect.succeed(normalizedDocuments as CraftDocument[])),
 				)
 			}).pipe(
 				Effect.retry({ schedule: makeRetrySchedule, while: isRetryableError }),
@@ -441,8 +506,9 @@ export class CraftApiClient extends Effect.Service<CraftApiClient>()("CraftApiCl
 		const searchDocuments = (baseUrl: string, accessToken: string, query: string) =>
 			Effect.gen(function* () {
 				const client = makeClient(baseUrl, accessToken)
-				const raw = yield* executeRequest(client, "POST", "/documents/search", { query })
-				return raw as unknown[]
+				const searchPath = `/documents/search?include=${encodeURIComponent(query)}`
+				const raw = yield* executeRequest(client, "GET", searchPath)
+				return normalizeCraftSearchDocumentsResponse(raw)
 			}).pipe(
 				Effect.retry({ schedule: makeRetrySchedule, while: isRetryableError }),
 				Effect.withSpan("CraftApiClient.searchDocuments", { attributes: { query } }),
@@ -455,17 +521,46 @@ export class CraftApiClient extends Effect.Service<CraftApiClient>()("CraftApiCl
 		) =>
 			Effect.gen(function* () {
 				const client = makeClient(baseUrl, accessToken)
-				return yield* executeRequest(client, "POST", "/documents", { documents })
+				const destinationFolderId = documents.find(
+					(document) => document.folderId !== undefined,
+				)?.folderId
+				const createPayload = {
+					documents: documents.map((document) => ({ title: document.title })),
+					...(destinationFolderId ? { destination: { folderId: destinationFolderId } } : {}),
+				}
+				const created = yield* executeRequest(client, "POST", "/documents", createPayload)
+				const createdItems = normalizeCraftItemsResponse(created)
+
+				yield* Effect.forEach(
+					documents.map((document, index) => ({
+						content: document.content,
+						documentId:
+							createdItems[index] &&
+							typeof createdItems[index] === "object" &&
+							"id" in createdItems[index]
+								? String((createdItems[index] as { id: unknown }).id)
+								: undefined,
+					})),
+					(item) =>
+						item.content && item.documentId
+							? executeRequest(client, "POST", "/blocks", {
+									markdown: item.content,
+									position: {
+										position: "end",
+										pageId: item.documentId,
+									},
+								}).pipe(Effect.asVoid)
+							: Effect.void,
+					{ concurrency: 1 },
+				)
+
+				return created
 			}).pipe(
 				Effect.retry({ schedule: makeRetrySchedule, while: isRetryableError }),
 				Effect.withSpan("CraftApiClient.createDocuments"),
 			)
 
-		const deleteDocuments = (
-			baseUrl: string,
-			accessToken: string,
-			documentIds: ReadonlyArray<string>,
-		) =>
+		const deleteDocuments = (baseUrl: string, accessToken: string, documentIds: ReadonlyArray<string>) =>
 			Effect.gen(function* () {
 				const client = makeClient(baseUrl, accessToken)
 				return yield* executeRequest(client, "DELETE", "/documents", { documentIds })
@@ -482,9 +577,11 @@ export class CraftApiClient extends Effect.Service<CraftApiClient>()("CraftApiCl
 		) =>
 			Effect.gen(function* () {
 				const client = makeClient(baseUrl, accessToken)
-				return yield* executeRequest(client, "POST", "/documents/move", {
+				return yield* executeRequest(client, "PUT", "/documents/move", {
 					documentIds,
-					targetFolderId,
+					destination: {
+						folderId: targetFolderId,
+					},
 				})
 			}).pipe(
 				Effect.retry({ schedule: makeRetrySchedule, while: isRetryableError }),
@@ -499,8 +596,9 @@ export class CraftApiClient extends Effect.Service<CraftApiClient>()("CraftApiCl
 			Effect.gen(function* () {
 				const client = makeClient(baseUrl, accessToken)
 				const raw = yield* executeRequest(client, "GET", "/folders")
-				return yield* Schema.decodeUnknown(FoldersResponse)(raw).pipe(
-					Effect.catchAll(() => Effect.succeed(Array.isArray(raw) ? (raw as CraftFolder[]) : [])),
+				const normalizedFolders = normalizeCraftItemsResponse(raw)
+				return yield* Schema.decodeUnknown(Schema.Array(CraftFolder))(normalizedFolders).pipe(
+					Effect.catchAll(() => Effect.succeed(normalizedFolders as CraftFolder[])),
 				)
 			}).pipe(
 				Effect.retry({ schedule: makeRetrySchedule, while: isRetryableError }),
@@ -514,17 +612,18 @@ export class CraftApiClient extends Effect.Service<CraftApiClient>()("CraftApiCl
 		) =>
 			Effect.gen(function* () {
 				const client = makeClient(baseUrl, accessToken)
-				return yield* executeRequest(client, "POST", "/folders", { folders })
+				return yield* executeRequest(client, "POST", "/folders", {
+					folders: folders.map((folder) => ({
+						name: folder.title,
+						...(folder.parentId ? { parentFolderId: folder.parentId } : {}),
+					})),
+				})
 			}).pipe(
 				Effect.retry({ schedule: makeRetrySchedule, while: isRetryableError }),
 				Effect.withSpan("CraftApiClient.createFolders"),
 			)
 
-		const deleteFolders = (
-			baseUrl: string,
-			accessToken: string,
-			folderIds: ReadonlyArray<string>,
-		) =>
+		const deleteFolders = (baseUrl: string, accessToken: string, folderIds: ReadonlyArray<string>) =>
 			Effect.gen(function* () {
 				const client = makeClient(baseUrl, accessToken)
 				return yield* executeRequest(client, "DELETE", "/folders", { folderIds })
@@ -541,9 +640,11 @@ export class CraftApiClient extends Effect.Service<CraftApiClient>()("CraftApiCl
 		) =>
 			Effect.gen(function* () {
 				const client = makeClient(baseUrl, accessToken)
-				return yield* executeRequest(client, "POST", "/folders/move", {
+				return yield* executeRequest(client, "PUT", "/folders/move", {
 					folderIds,
-					targetParentId,
+					destination: {
+						parentFolderId: targetParentId,
+					},
 				})
 			}).pipe(
 				Effect.retry({ schedule: makeRetrySchedule, while: isRetryableError }),
@@ -561,14 +662,16 @@ export class CraftApiClient extends Effect.Service<CraftApiClient>()("CraftApiCl
 		) =>
 			Effect.gen(function* () {
 				const client = makeClient(baseUrl, accessToken)
-				const path = scope ? `/tasks?scope=${scope}` : "/tasks"
+				const resolvedScope = scope ?? "active"
+				const path = `/tasks?scope=${resolvedScope}`
 				const raw = yield* executeRequest(client, "GET", path)
-				return yield* Schema.decodeUnknown(TasksResponse)(raw).pipe(
-					Effect.catchAll(() => Effect.succeed(Array.isArray(raw) ? (raw as CraftTask[]) : [])),
+				const normalizedTasks = normalizeCraftItemsResponse(raw)
+				return yield* Schema.decodeUnknown(Schema.Array(CraftTask))(normalizedTasks).pipe(
+					Effect.catchAll(() => Effect.succeed(normalizedTasks as CraftTask[])),
 				)
 			}).pipe(
 				Effect.retry({ schedule: makeRetrySchedule, while: isRetryableError }),
-				Effect.withSpan("CraftApiClient.getTasks", { attributes: { scope: scope ?? "all" } }),
+				Effect.withSpan("CraftApiClient.getTasks", { attributes: { scope: scope ?? "active" } }),
 			)
 
 		const createTasks = (
@@ -578,7 +681,17 @@ export class CraftApiClient extends Effect.Service<CraftApiClient>()("CraftApiCl
 		) =>
 			Effect.gen(function* () {
 				const client = makeClient(baseUrl, accessToken)
-				return yield* executeRequest(client, "POST", "/tasks", { tasks })
+				return yield* executeRequest(client, "POST", "/tasks", {
+					tasks: tasks.map((task) => ({
+						markdown: task.content,
+						location: task.documentId
+							? {
+									type: "document",
+									documentId: task.documentId,
+								}
+							: { type: "inbox" },
+					})),
+				})
 			}).pipe(
 				Effect.retry({ schedule: makeRetrySchedule, while: isRetryableError }),
 				Effect.withSpan("CraftApiClient.createTasks"),
@@ -591,20 +704,24 @@ export class CraftApiClient extends Effect.Service<CraftApiClient>()("CraftApiCl
 		) =>
 			Effect.gen(function* () {
 				const client = makeClient(baseUrl, accessToken)
-				return yield* executeRequest(client, "PUT", "/tasks", { tasks })
+				return yield* executeRequest(client, "PUT", "/tasks", {
+					tasksToUpdate: tasks.map((task) => ({
+						id: task.id,
+						...(task.content !== undefined ? { markdown: task.content } : {}),
+						...(task.isDone !== undefined
+							? { taskInfo: { state: task.isDone ? "done" : "todo" } }
+							: {}),
+					})),
+				})
 			}).pipe(
 				Effect.retry({ schedule: makeRetrySchedule, while: isRetryableError }),
 				Effect.withSpan("CraftApiClient.updateTasks"),
 			)
 
-		const deleteTasks = (
-			baseUrl: string,
-			accessToken: string,
-			taskIds: ReadonlyArray<string>,
-		) =>
+		const deleteTasks = (baseUrl: string, accessToken: string, taskIds: ReadonlyArray<string>) =>
 			Effect.gen(function* () {
 				const client = makeClient(baseUrl, accessToken)
-				return yield* executeRequest(client, "DELETE", "/tasks", { taskIds })
+				return yield* executeRequest(client, "DELETE", "/tasks", { idsToDelete: taskIds })
 			}).pipe(
 				Effect.retry({ schedule: makeRetrySchedule, while: isRetryableError }),
 				Effect.withSpan("CraftApiClient.deleteTasks"),
@@ -618,8 +735,9 @@ export class CraftApiClient extends Effect.Service<CraftApiClient>()("CraftApiCl
 			Effect.gen(function* () {
 				const client = makeClient(baseUrl, accessToken)
 				const raw = yield* executeRequest(client, "GET", "/collections")
-				return yield* Schema.decodeUnknown(CollectionsResponse)(raw).pipe(
-					Effect.catchAll(() => Effect.succeed(Array.isArray(raw) ? (raw as CraftCollection[]) : [])),
+				const normalizedCollections = normalizeCraftItemsResponse(raw)
+				return yield* Schema.decodeUnknown(Schema.Array(CraftCollection))(normalizedCollections).pipe(
+					Effect.catchAll(() => Effect.succeed(normalizedCollections as CraftCollection[])),
 				)
 			}).pipe(
 				Effect.retry({ schedule: makeRetrySchedule, while: isRetryableError }),
@@ -639,7 +757,7 @@ export class CraftApiClient extends Effect.Service<CraftApiClient>()("CraftApiCl
 			Effect.gen(function* () {
 				const client = makeClient(baseUrl, accessToken)
 				const raw = yield* executeRequest(client, "GET", `/collections/${collectionId}/items`)
-				return Array.isArray(raw) ? (raw as unknown[]) : []
+				return normalizeCraftItemsResponse(raw)
 			}).pipe(
 				Effect.retry({ schedule: makeRetrySchedule, while: isRetryableError }),
 				Effect.withSpan("CraftApiClient.getCollectionItems", { attributes: { collectionId } }),
@@ -667,7 +785,9 @@ export class CraftApiClient extends Effect.Service<CraftApiClient>()("CraftApiCl
 		) =>
 			Effect.gen(function* () {
 				const client = makeClient(baseUrl, accessToken)
-				return yield* executeRequest(client, "PUT", `/collections/${collectionId}/items`, { items })
+				return yield* executeRequest(client, "PUT", `/collections/${collectionId}/items`, {
+					itemsToUpdate: items,
+				})
 			}).pipe(
 				Effect.retry({ schedule: makeRetrySchedule, while: isRetryableError }),
 				Effect.withSpan("CraftApiClient.updateCollectionItems", { attributes: { collectionId } }),
@@ -682,7 +802,7 @@ export class CraftApiClient extends Effect.Service<CraftApiClient>()("CraftApiCl
 			Effect.gen(function* () {
 				const client = makeClient(baseUrl, accessToken)
 				return yield* executeRequest(client, "DELETE", `/collections/${collectionId}/items`, {
-					itemIds,
+					idsToDelete: itemIds,
 				})
 			}).pipe(
 				Effect.retry({ schedule: makeRetrySchedule, while: isRetryableError }),
@@ -702,12 +822,12 @@ export class CraftApiClient extends Effect.Service<CraftApiClient>()("CraftApiCl
 		) =>
 			Effect.gen(function* () {
 				const client = makeClient(baseUrl, accessToken)
-				return yield* executeRequest(
-					client,
-					"POST",
-					`/documents/${documentId}/blocks/${blockId}/comments`,
-					{ comments },
-				)
+				return yield* executeRequest(client, "POST", "/comments", {
+					comments: comments.map((comment) => ({
+						blockId,
+						content: comment.content,
+					})),
+				})
 			}).pipe(
 				Effect.retry({ schedule: makeRetrySchedule, while: isRetryableError }),
 				Effect.withSpan("CraftApiClient.addComments", { attributes: { documentId, blockId } }),

@@ -2,6 +2,7 @@ import { runHazelBot } from "@hazel/bot-sdk"
 import type { OrganizationId } from "@hazel/schema"
 import { Effect } from "effect"
 import { LinearApiClient } from "@hazel/integrations/linear"
+import { CraftApiClient } from "@hazel/integrations/craft"
 
 import { commands, AskCommand } from "./commands.ts"
 import { handleAIRequest } from "./handler.ts"
@@ -12,7 +13,7 @@ runHazelBot({
 	serviceName: "hazel-bot",
 	commands,
 	mentionable: true,
-	layers: [LinearApiClient.Default],
+	layers: [LinearApiClient.Default, CraftApiClient.Default],
 	setup: (bot) =>
 		Effect.gen(function* () {
 			// Track thread channelId -> orgId for threads where the bot should respond

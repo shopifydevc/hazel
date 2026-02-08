@@ -3,6 +3,9 @@ import { Config, Effect, type Redacted } from "effect"
 
 export type IntegrationProvider = IntegrationConnection.IntegrationProvider
 
+/** Subset of providers that use OAuth (excludes API-key-based providers like Craft) */
+export type OAuthIntegrationProvider = Exclude<IntegrationProvider, "craft">
+
 /**
  * Configuration for an OAuth provider.
  * Each provider needs these settings to perform the OAuth flow.
@@ -52,7 +55,7 @@ export interface OAuthAccountInfo {
  * These define the OAuth endpoints and settings for each provider.
  */
 export const PROVIDER_CONFIGS: Record<
-	IntegrationProvider,
+	OAuthIntegrationProvider,
 	Omit<OAuthProviderConfig, "clientId" | "clientSecret" | "redirectUri">
 > = {
 	linear: {
@@ -114,7 +117,7 @@ export const PROVIDER_CONFIGS: Record<
  * - LINEAR_CLIENT_SECRET=xxx
  * → Redirect URI: https://api.hazel.sh/integrations/linear/callback
  */
-export const loadProviderConfig = (provider: IntegrationProvider) => {
+export const loadProviderConfig = (provider: OAuthIntegrationProvider) => {
 	const prefix = provider.toUpperCase()
 	const staticConfig = PROVIDER_CONFIGS[provider]
 

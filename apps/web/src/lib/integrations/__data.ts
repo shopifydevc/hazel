@@ -19,6 +19,8 @@ export type Integration = {
 	features: string[]
 	configOptions: ConfigOption[]
 	comingSoon?: boolean
+	/** Connection type: "oauth" (default), "api-key", or "webhook" */
+	connectionType?: "oauth" | "api-key" | "webhook"
 }
 
 // Helper to generate Brandfetch CDN URLs
@@ -170,6 +172,25 @@ export const integrations: Integration[] = [
 			},
 		],
 		comingSoon: true,
+	},
+	{
+		id: "craft",
+		name: "Craft",
+		description: "Connect your Craft workspace for documents, tasks, and notes.",
+		fullDescription:
+			"Connect your Craft space to search documents, manage tasks, and add content directly from conversations. Access your notes, folders, and collections without leaving the chat.",
+		logoDomain: "craft.do",
+		logoType: "icon",
+		brandColor: "#1C1C1E",
+		category: "productivity",
+		connectionType: "api-key",
+		features: [
+			"Search documents and blocks",
+			"Create and edit documents",
+			"Manage tasks (inbox, active, upcoming)",
+			"Browse folders and collections",
+		],
+		configOptions: [],
 	},
 	{
 		id: "openstatus",

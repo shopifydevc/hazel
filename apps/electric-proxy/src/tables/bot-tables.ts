@@ -1,7 +1,7 @@
 import { schema } from "@hazel/db"
 import { Effect, Match, Schema } from "effect"
 import type { AuthenticatedBot } from "../auth/bot-auth"
-import { buildInClauseWithDeletedAt, type WhereClauseResult } from "./where-clause-builder"
+import type { WhereClauseResult } from "./where-clause-builder"
 
 /**
  * Error thrown when bot table access is denied or where clause cannot be generated
@@ -70,38 +70,32 @@ export function getBotWhereClauseForTable(
 	table: BotAllowedTable,
 	bot: AuthenticatedBot,
 ): Effect.Effect<WhereClauseResult, BotTableAccessError> {
+	const botOrgSubquery = `(SELECT "organizationId" FROM bot_installations WHERE "botId" = $1)`
+	const botVisibleChannelSubquery = `(SELECT "id" FROM channels WHERE "deletedAt" IS NULL AND "organizationId" IN ${botOrgSubquery})`
+
 	return Match.value(table).pipe(
 		Match.when("messages", () =>
-			// Messages only from channels the bot is a member of
-			Effect.succeed(
-				buildInClauseWithDeletedAt(
-					schema.messagesTable.channelId,
-					bot.accessContext.channelIds,
-					schema.messagesTable.deletedAt,
-				),
-			),
+			// Messages from all non-deleted channels in orgs where the bot is installed.
+			Effect.succeed({
+				whereClause: `"${schema.messagesTable.deletedAt.name}" IS NULL AND "${schema.messagesTable.channelId.name}" IN ${botVisibleChannelSubquery}`,
+				params: [bot.botId],
+			}),
 		),
 
 		Match.when("channels", () =>
-			// Channels the bot is a member of
-			Effect.succeed(
-				buildInClauseWithDeletedAt(
-					schema.channelsTable.id,
-					bot.accessContext.channelIds,
-					schema.channelsTable.deletedAt,
-				),
-			),
+			// Channels from orgs where the bot is installed.
+			Effect.succeed({
+				whereClause: `"${schema.channelsTable.deletedAt.name}" IS NULL AND "${schema.channelsTable.organizationId.name}" IN ${botOrgSubquery}`,
+				params: [bot.botId],
+			}),
 		),
 
 		Match.when("channel_members", () =>
-			// Channel members from channels the bot is a member of
-			Effect.succeed(
-				buildInClauseWithDeletedAt(
-					schema.channelMembersTable.channelId,
-					bot.accessContext.channelIds,
-					schema.channelMembersTable.deletedAt,
-				),
-			),
+			// Channel members in channels from orgs where the bot is installed.
+			Effect.succeed({
+				whereClause: `"${schema.channelMembersTable.deletedAt.name}" IS NULL AND "${schema.channelMembersTable.channelId.name}" IN ${botVisibleChannelSubquery}`,
+				params: [bot.botId],
+			}),
 		),
 
 		Match.orElse((table) =>

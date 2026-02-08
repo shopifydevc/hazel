@@ -8,7 +8,7 @@ import { Effect, Option, PartitionedSemaphore, Redacted, Schema } from "effect"
 import { DatabaseLive } from "./database"
 import { type EncryptedToken, IntegrationEncryption } from "./integration-encryption"
 import { OAuthHttpClient } from "./oauth/oauth-http-client"
-import { loadProviderConfig } from "./oauth/provider-config"
+import { type OAuthIntegrationProvider, loadProviderConfig } from "./oauth/provider-config"
 
 export class TokenNotFoundError extends Schema.TaggedError<TokenNotFoundError>()("TokenNotFoundError", {
 	connectionId: IntegrationConnectionIdSchema,
@@ -41,7 +41,7 @@ interface OAuthTokenResponse {
 
 // Helper to refresh OAuth tokens for each provider using Effect HttpClient
 const refreshOAuthToken = (
-	provider: IntegrationConnection.IntegrationProvider,
+	provider: OAuthIntegrationProvider,
 	refreshToken: string,
 	clientId: string,
 	clientSecret: string,
@@ -106,7 +106,9 @@ export class IntegrationTokenService extends Effect.Service<IntegrationTokenServ
 					})
 
 					// Check if this is an app-based provider (uses JWT regeneration)
-					const isAppBased = APP_BASED_PROVIDERS.includes(connection.provider)
+					const isAppBased = (APP_BASED_PROVIDERS as readonly string[]).includes(
+						connection.provider,
+					)
 
 					if (isAppBased) {
 						// App-based providers (like GitHub App) regenerate tokens via JWT
@@ -226,7 +228,9 @@ export class IntegrationTokenService extends Effect.Service<IntegrationTokenServ
 				})
 
 				// Load provider config to get client credentials
-				const providerConfig = yield* loadProviderConfig(connection.provider).pipe(
+				const providerConfig = yield* loadProviderConfig(
+					connection.provider as OAuthIntegrationProvider,
+				).pipe(
 					Effect.mapError(
 						(cause) =>
 							new TokenRefreshError({
@@ -240,7 +244,7 @@ export class IntegrationTokenService extends Effect.Service<IntegrationTokenServ
 
 				// Call provider's token refresh endpoint
 				const newTokens = yield* refreshOAuthToken(
-					connection.provider,
+					connection.provider as OAuthIntegrationProvider,
 					decryptedRefreshToken,
 					providerConfig.clientId,
 					Redacted.value(providerConfig.clientSecret),

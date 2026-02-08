@@ -4,12 +4,21 @@ import { IntegrationConnectionRepo, OrganizationRepo } from "@hazel/backend-core
 import { CurrentUser, InternalServerError, UnauthorizedError, withSystemActor } from "@hazel/domain"
 import type { OrganizationId, UserId } from "@hazel/schema"
 import {
+	ConnectApiKeyResponse,
 	ConnectionStatusResponse,
 	IntegrationNotConnectedError,
+	InvalidApiKeyError,
 	InvalidOAuthStateError,
+	UnsupportedProviderError,
 } from "@hazel/domain/http"
+import {
+	CraftApiClient,
+	CraftApiError,
+	CraftNotFoundError,
+	CraftRateLimitError,
+} from "@hazel/integrations/craft"
 import type { IntegrationConnection } from "@hazel/domain/models"
-import { Config, Effect, Option, Schedule, Schema } from "effect"
+import { Config, Effect, Layer, Option, Schedule, Schema } from "effect"
 import * as Duration from "effect/Duration"
 import { HazelApi } from "../api"
 import { IntegrationTokenService } from "../services/integration-token-service"
@@ -34,6 +43,101 @@ const OAuthState = Schema.Struct({
  * Retries up to 3 times with exponential backoff (100ms, 200ms, 400ms)
  */
 const oauthRetrySchedule = Schedule.exponential("100 millis").pipe(Schedule.intersect(Schedule.recurs(3)))
+
+const CRAFT_ALLOWED_HOST = "connect.craft.do"
+const CRAFT_BASE_URL_PATH_PATTERN = /^\/links\/[^/]+\/api\/v1$/
+
+const invalidCraftBaseUrlError = () =>
+	new InvalidApiKeyError({
+		message: "Invalid Craft base URL. Use the link URL from Craft Connect.",
+	})
+
+const invalidCraftCredentialsError = () =>
+	new InvalidApiKeyError({
+		message: "Invalid Craft API token or base URL",
+	})
+
+export const validateCraftBaseUrl = (rawBaseUrl: string) =>
+	Effect.gen(function* () {
+		const parsed = yield* Effect.try({
+			try: () => new URL(rawBaseUrl),
+			catch: () => invalidCraftBaseUrlError(),
+		})
+
+		const normalizedPath = parsed.pathname.replace(/\/+$/, "")
+		const isValid =
+			parsed.protocol === "https:" &&
+			parsed.hostname.toLowerCase() === CRAFT_ALLOWED_HOST &&
+			CRAFT_BASE_URL_PATH_PATTERN.test(normalizedPath) &&
+			parsed.username.length === 0 &&
+			parsed.password.length === 0 &&
+			parsed.port.length === 0 &&
+			parsed.search.length === 0 &&
+			parsed.hash.length === 0
+
+		if (!isValid) {
+			return yield* Effect.fail(invalidCraftBaseUrlError())
+		}
+
+		return `${parsed.origin}${normalizedPath}`
+	})
+
+type CraftConnectApiKeyError = CraftApiError | CraftNotFoundError | CraftRateLimitError
+
+export const mapCraftConnectApiKeyError = (
+	error: CraftConnectApiKeyError,
+): InvalidApiKeyError | InternalServerError => {
+	if (error._tag === "CraftNotFoundError") {
+		return invalidCraftCredentialsError()
+	}
+
+	if (error._tag === "CraftRateLimitError") {
+		return new InternalServerError({
+			message: "Craft API is temporarily unavailable",
+			detail: error.message,
+		})
+	}
+
+	const status = error.status
+	if (status === undefined || status === 429 || status >= 500) {
+		return new InternalServerError({
+			message: "Craft API is temporarily unavailable",
+			detail: error.message,
+		})
+	}
+
+	if (status >= 400 && status < 500) {
+		return invalidCraftCredentialsError()
+	}
+
+	return new InternalServerError({
+		message: "Craft API is temporarily unavailable",
+		detail: error.message,
+	})
+}
+
+const craftConnectApiKeyErrorLogFields = (error: CraftConnectApiKeyError): Record<string, unknown> => {
+	switch (error._tag) {
+		case "CraftApiError":
+			return {
+				errorTag: error._tag,
+				errorMessage: error.message,
+				errorStatus: error.status ?? null,
+			}
+		case "CraftNotFoundError":
+			return {
+				errorTag: error._tag,
+				resourceType: error.resourceType,
+				resourceId: error.resourceId,
+			}
+		case "CraftRateLimitError":
+			return {
+				errorTag: error._tag,
+				errorMessage: error.message,
+				retryAfter: error.retryAfter ?? null,
+			}
+	}
+}
 
 /**
  * Error codes for OAuth callback failures (used in redirect URL params)
@@ -679,7 +783,6 @@ const handleOAuthCallback = Effect.fn("integrations.oauthCallback")(function* (
 	// Bot user should already exist from seed script - this just adds org membership
 	// This is best-effort - OAuth has already succeeded, so we just log and continue on error
 	yield* IntegrationBotService.addBotToOrg(provider, parsedState.organizationId as OrganizationId).pipe(
-		Effect.provide(IntegrationBotService.Default),
 		Effect.tap((result) =>
 			Option.isSome(result)
 				? Effect.logInfo("Integration bot added to organization", {
@@ -716,6 +819,120 @@ const handleOAuthCallback = Effect.fn("integrations.oauthCallback")(function* (
 	})
 
 	return buildRedirectWithCookieClear(successUrl)
+})
+
+/**
+ * Connect an integration using an API key (non-OAuth providers like Craft).
+ * Validates the token by calling the provider's API, then stores the connection.
+ */
+const handleConnectApiKey = Effect.fn("integrations.connectApiKey")(function* (
+	path: {
+		orgId: OrganizationId
+		provider: IntegrationConnection.IntegrationProvider
+	},
+	payload: { token: string; baseUrl: string },
+) {
+	const currentUser = yield* CurrentUser.Context
+	const { orgId, provider } = path
+	const { token, baseUrl } = payload
+
+	// Validate credentials by calling the provider's API
+	let externalAccountName: string | null = null
+	let validatedBaseUrl = baseUrl
+
+	if (provider === "craft") {
+		validatedBaseUrl = yield* validateCraftBaseUrl(baseUrl)
+		const parsedBaseUrl = new URL(validatedBaseUrl)
+		const spaceInfo = yield* CraftApiClient.getSpaceInfo(validatedBaseUrl, token).pipe(
+			Effect.catchTags({
+				CraftApiError: (error) =>
+					Effect.logWarning("Craft API key validation failed", {
+						event: "craft_api_key_validation_failed",
+						provider,
+						organizationId: orgId,
+						baseUrlHost: parsedBaseUrl.hostname,
+						baseUrlPath: parsedBaseUrl.pathname,
+						...craftConnectApiKeyErrorLogFields(error),
+					}).pipe(Effect.zipRight(Effect.fail(mapCraftConnectApiKeyError(error)))),
+				CraftNotFoundError: (error) =>
+					Effect.logWarning("Craft API key validation failed", {
+						event: "craft_api_key_validation_failed",
+						provider,
+						organizationId: orgId,
+						baseUrlHost: parsedBaseUrl.hostname,
+						baseUrlPath: parsedBaseUrl.pathname,
+						...craftConnectApiKeyErrorLogFields(error),
+					}).pipe(Effect.zipRight(Effect.fail(mapCraftConnectApiKeyError(error)))),
+				CraftRateLimitError: (error) =>
+					Effect.logWarning("Craft API key validation failed", {
+						event: "craft_api_key_validation_failed",
+						provider,
+						organizationId: orgId,
+						baseUrlHost: parsedBaseUrl.hostname,
+						baseUrlPath: parsedBaseUrl.pathname,
+						...craftConnectApiKeyErrorLogFields(error),
+					}).pipe(Effect.zipRight(Effect.fail(mapCraftConnectApiKeyError(error)))),
+			}),
+		)
+		externalAccountName = spaceInfo.name ?? "Craft Space"
+	} else {
+		return yield* Effect.fail(new UnsupportedProviderError({ provider }))
+	}
+
+	const connectionRepo = yield* IntegrationConnectionRepo
+
+	// Upsert connection with settings containing the base URL
+	const connection = yield* connectionRepo
+		.upsertByOrgAndProvider({
+			provider,
+			organizationId: orgId,
+			userId: null,
+			level: "organization",
+			status: "active",
+			externalAccountId: null,
+			externalAccountName,
+			connectedBy: currentUser.id,
+			settings: { baseUrl: validatedBaseUrl },
+			metadata: null,
+			errorMessage: null,
+			lastUsedAt: null,
+			deletedAt: null,
+		})
+		.pipe(withSystemActor)
+
+	// Store the encrypted token (no refresh token, no expiry for API keys)
+	const tokenService = yield* IntegrationTokenService
+	yield* tokenService.storeTokens(connection.id, {
+		accessToken: token,
+	})
+
+	yield* Effect.logInfo("AUDIT: Integration connected via API key", {
+		event: "integration_api_key_connected",
+		provider,
+		organizationId: orgId,
+		userId: currentUser.id,
+		level: "organization",
+		externalAccountName,
+		connectionId: connection.id,
+	})
+
+	// Best-effort: add integration bot to org
+	yield* IntegrationBotService.addBotToOrg(provider, orgId).pipe(
+		Effect.catchAll((error) =>
+			Effect.logWarning("Failed to add integration bot to org (non-critical)", {
+				event: "integration_bot_add_failed",
+				provider,
+				organizationId: orgId,
+				error: String(error),
+			}),
+		),
+	)
+
+	return new ConnectApiKeyResponse({
+		connected: true,
+		provider,
+		externalAccountName,
+	})
 })
 
 /**
@@ -802,6 +1019,33 @@ export const HttpIntegrationLive = HttpApiBuilder.group(HazelApi, "integrations"
 				),
 			),
 		)
+		.handle("connectApiKey", ({ path, payload }) =>
+			handleConnectApiKey(path, payload).pipe(
+				Effect.catchTags({
+					DatabaseError: (error) =>
+						Effect.fail(
+							new InternalServerError({
+								message: "Database error during API key connection",
+								detail: String(error),
+							}),
+						),
+					ParseError: (error) =>
+						Effect.fail(
+							new InternalServerError({
+								message: "Failed to parse API response",
+								detail: String(error),
+							}),
+						),
+					IntegrationEncryptionError: (error) =>
+						Effect.fail(
+							new InternalServerError({
+								message: "Failed to encrypt token",
+								detail: String(error),
+							}),
+						),
+				}),
+			),
+		)
 		.handle("getConnectionStatus", ({ path }) =>
 			handleGetConnectionStatus(path).pipe(
 				Effect.catchTag("DatabaseError", (error) =>
@@ -826,4 +1070,4 @@ export const HttpIntegrationLive = HttpApiBuilder.group(HazelApi, "integrations"
 				),
 			),
 		),
-)
+).pipe(Layer.provide(CraftApiClient.Default), Layer.provide(IntegrationBotService.Default))

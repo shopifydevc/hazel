@@ -98,6 +98,7 @@ export class IntegrationTokenResponse extends Schema.Class<IntegrationTokenRespo
 	accessToken: Schema.String,
 	provider: IntegrationProvider,
 	expiresAt: Schema.NullOr(Schema.String),
+	settings: Schema.optional(Schema.NullOr(Schema.Record({ key: Schema.String, value: Schema.Unknown }))),
 }) {}
 
 export class EnabledIntegrationsResponse extends Schema.Class<EnabledIntegrationsResponse>(

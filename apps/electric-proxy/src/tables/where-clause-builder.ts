@@ -9,6 +9,79 @@ export interface WhereClauseResult {
 }
 
 /**
+ * Summary of placeholder/param usage in a WHERE clause.
+ */
+export interface WhereClauseParamStats {
+	paramsCount: number
+	uniquePlaceholderCount: number
+	maxPlaceholderIndex: number
+	startsAtOne: boolean
+	hasGaps: boolean
+}
+
+/**
+ * Error thrown when WHERE clause placeholders do not match params.
+ */
+export class WhereClauseParamMismatchError extends Error {
+	readonly stats: WhereClauseParamStats
+
+	constructor(result: WhereClauseResult, stats: WhereClauseParamStats) {
+		super(
+			`Invalid WHERE clause params: placeholders must be sequential from $1 with max index equal to params length (params=${stats.paramsCount}, uniquePlaceholders=${stats.uniquePlaceholderCount}, maxPlaceholder=${stats.maxPlaceholderIndex}, startsAtOne=${stats.startsAtOne}, hasGaps=${stats.hasGaps})`,
+		)
+		this.name = "WhereClauseParamMismatchError"
+		this.stats = stats
+	}
+}
+
+/**
+ * Calculate placeholder/param stats for a WHERE clause.
+ */
+export function getWhereClauseParamStats(result: WhereClauseResult): WhereClauseParamStats {
+	const placeholderMatches = [...result.whereClause.matchAll(/\$(\d+)/g)]
+	const placeholders = placeholderMatches
+		.map((match) => Number(match[1]))
+		.filter((index) => Number.isInteger(index) && index > 0)
+	const uniqueSorted = [...new Set(placeholders)].sort((a, b) => a - b)
+
+	let hasGaps = false
+	for (let i = 0; i < uniqueSorted.length; i++) {
+		if (uniqueSorted[i] !== i + 1) {
+			hasGaps = true
+			break
+		}
+	}
+
+	return {
+		paramsCount: result.params.length,
+		uniquePlaceholderCount: uniqueSorted.length,
+		maxPlaceholderIndex: uniqueSorted[uniqueSorted.length - 1] ?? 0,
+		startsAtOne: uniqueSorted.length === 0 ? result.params.length === 0 : uniqueSorted[0] === 1,
+		hasGaps,
+	}
+}
+
+/**
+ * Ensure placeholder numbering and params length are compatible with Electric SQL.
+ */
+export function assertWhereClauseParamsAreSequential(result: WhereClauseResult): void {
+	const stats = getWhereClauseParamStats(result)
+
+	// No placeholders is only valid when there are also no params.
+	if (stats.uniquePlaceholderCount === 0) {
+		if (stats.paramsCount === 0) {
+			return
+		}
+		throw new WhereClauseParamMismatchError(result, stats)
+	}
+
+	// Placeholders must start at $1, have no gaps, and the max index must match params length.
+	if (!stats.startsAtOne || stats.hasGaps || stats.maxPlaceholderIndex !== stats.paramsCount) {
+		throw new WhereClauseParamMismatchError(result, stats)
+	}
+}
+
+/**
  * Build IN clause with sorted IDs using unqualified column name.
  * Uses column.name for Electric SQL compatibility (Electric requires unqualified column names).
  *
@@ -221,6 +294,7 @@ export function buildIntegrationConnectionClause(
  * @returns The final URL string with unencoded bracket params
  */
 export function applyWhereToElectricUrl(url: URL, result: WhereClauseResult): string {
+	assertWhereClauseParamsAreSequential(result)
 	url.searchParams.set("where", result.whereClause)
 
 	// Append params with unencoded brackets directly to the URL string.

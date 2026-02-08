@@ -46,6 +46,21 @@ export class UnsupportedProviderError extends Schema.TaggedError<UnsupportedProv
 	},
 ) {}
 
+export class InvalidApiKeyError extends Schema.TaggedError<InvalidApiKeyError>()("InvalidApiKeyError", {
+	message: Schema.String,
+}) {}
+
+export class ConnectApiKeyRequest extends Schema.Class<ConnectApiKeyRequest>("ConnectApiKeyRequest")({
+	token: Schema.String,
+	baseUrl: Schema.String,
+}) {}
+
+export class ConnectApiKeyResponse extends Schema.Class<ConnectApiKeyResponse>("ConnectApiKeyResponse")({
+	connected: Schema.Boolean,
+	provider: IntegrationProvider,
+	externalAccountName: Schema.NullOr(Schema.String),
+}) {}
+
 export class IntegrationGroup extends HttpApiGroup.make("integrations")
 	// Initiate OAuth flow - returns authorization URL for SPA redirect
 	.add(
@@ -121,6 +136,31 @@ export class IntegrationGroup extends HttpApiGroup.make("integrations")
 					title: "Get Connection Status",
 					description: "Check the connection status for a provider",
 					summary: "Get integration status",
+				}),
+			),
+	)
+	// Connect via API key (non-OAuth providers like Craft)
+	.add(
+		HttpApiEndpoint.post("connectApiKey", `/:orgId/:provider/api-key`)
+			.addSuccess(ConnectApiKeyResponse)
+			.addError(InvalidApiKeyError)
+			.addError(UnsupportedProviderError)
+			.addError(UnauthorizedError)
+			.addError(InternalServerError)
+			.setPath(
+				Schema.Struct({
+					orgId: OrganizationId,
+					provider: IntegrationProvider,
+				}),
+			)
+			.setPayload(ConnectApiKeyRequest)
+			.middleware(CurrentUser.Authorization)
+			.annotateContext(
+				OpenApi.annotations({
+					title: "Connect via API Key",
+					description:
+						"Connect an integration using an API key/token instead of OAuth. Validates the credentials against the provider and stores the connection.",
+					summary: "Connect with API key",
 				}),
 			),
 	)

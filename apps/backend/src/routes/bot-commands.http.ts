@@ -425,6 +425,7 @@ export const HttpBotCommandsLive = HttpApiBuilder.group(HazelApi, "bot-commands"
 					accessToken,
 					provider,
 					expiresAt: connection.lastUsedAt?.toISOString() ?? null,
+					settings: connection.settings as Record<string, unknown> | null,
 				})
 			}).pipe(
 				Effect.catchTag("DatabaseError", () =>

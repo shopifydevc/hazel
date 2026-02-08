@@ -43,7 +43,7 @@ async function hashToken(token: string): Promise<string> {
  * 1. Extract Bearer token from Authorization header
  * 2. Hash token with SHA-256
  * 3. Query bots table by apiTokenHash
- * 4. Query channel_members for bot's userId
+ * 4. Resolve bot access context from cache/database
  * 5. Return AuthenticatedBot with channel access context
  */
 export const validateBotToken = Effect.fn("ElectricProxy.validateBotToken")(function* (request: Request) {

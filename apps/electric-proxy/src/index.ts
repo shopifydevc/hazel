@@ -14,7 +14,7 @@ import { TracerLive } from "./observability/tracer"
 import { type ElectricProxyError, prepareElectricUrl, proxyElectricRequest } from "./proxy/electric-client"
 import { type BotTableAccessError, getBotWhereClauseForTable, validateBotTable } from "./tables/bot-tables"
 import { getWhereClauseForTable, type TableAccessError, validateTable } from "./tables/user-tables"
-import { applyWhereToElectricUrl } from "./tables/where-clause-builder"
+import { applyWhereToElectricUrl, getWhereClauseParamStats } from "./tables/where-clause-builder"
 
 // =============================================================================
 // CORS HELPERS
@@ -104,8 +104,21 @@ const handleUserRequest = (request: Request) =>
 
 		// Generate WHERE clause
 		const whereResult = yield* getWhereClauseForTable(tableValidation.table!, user)
-		yield* Effect.log("Generated WHERE clause", { table: tableValidation.table, whereResult })
+		const whereStats = getWhereClauseParamStats(whereResult)
+		yield* Effect.log("Generated WHERE clause", {
+			table: tableValidation.table,
+			paramsCount: whereStats.paramsCount,
+			uniquePlaceholderCount: whereStats.uniquePlaceholderCount,
+			maxPlaceholderIndex: whereStats.maxPlaceholderIndex,
+			startsAtOne: whereStats.startsAtOne,
+			hasGaps: whereStats.hasGaps,
+		})
 		const finalUrl = applyWhereToElectricUrl(originUrl, whereResult)
+		yield* Effect.log("Prepared Electric URL", {
+			table: tableValidation.table,
+			urlLength: finalUrl.length,
+			whereLength: whereResult.whereClause.length,
+		})
 
 		// Proxy request to Electric
 		const response = yield* proxyElectricRequest(finalUrl)
@@ -246,8 +259,21 @@ const handleBotRequest = (request: Request) =>
 
 		// Generate WHERE clause
 		const whereResult = yield* getBotWhereClauseForTable(tableValidation.table!, bot)
-		yield* Effect.log("Generated bot WHERE clause", { table: tableValidation.table, whereResult })
+		const whereStats = getWhereClauseParamStats(whereResult)
+		yield* Effect.log("Generated bot WHERE clause", {
+			table: tableValidation.table,
+			paramsCount: whereStats.paramsCount,
+			uniquePlaceholderCount: whereStats.uniquePlaceholderCount,
+			maxPlaceholderIndex: whereStats.maxPlaceholderIndex,
+			startsAtOne: whereStats.startsAtOne,
+			hasGaps: whereStats.hasGaps,
+		})
 		const finalUrl = applyWhereToElectricUrl(originUrl, whereResult)
+		yield* Effect.log("Prepared bot Electric URL", {
+			table: tableValidation.table,
+			urlLength: finalUrl.length,
+			whereLength: whereResult.whereClause.length,
+		})
 
 		// Proxy request to Electric
 		const response = yield* proxyElectricRequest(finalUrl)

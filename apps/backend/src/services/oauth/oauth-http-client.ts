@@ -8,7 +8,7 @@
 import { FetchHttpClient, HttpBody, HttpClient } from "@effect/platform"
 import { Duration, Effect, Schema } from "effect"
 import { TreeFormatter } from "effect/ParseResult"
-import type { IntegrationProvider } from "./provider-config"
+import type { OAuthIntegrationProvider } from "./provider-config"
 
 // ============================================================================
 // Configuration
@@ -54,7 +54,7 @@ export interface OAuthTokenResult {
 // Token URL Map
 // ============================================================================
 
-const TOKEN_URLS: Record<IntegrationProvider, string> = {
+const TOKEN_URLS: Record<OAuthIntegrationProvider, string> = {
 	linear: "https://api.linear.app/oauth/token",
 	github: "https://github.com/login/oauth/access_token",
 	figma: "https://www.figma.com/api/oauth/refresh",
@@ -155,7 +155,7 @@ export class OAuthHttpClient extends Effect.Service<OAuthHttpClient>()("OAuthHtt
 		 * Refresh expired access token.
 		 */
 		const refreshToken = Effect.fn("OAuthHttpClient.refreshToken")(function* (
-			provider: IntegrationProvider,
+			provider: OAuthIntegrationProvider,
 			params: {
 				refreshToken: string
 				clientId: string
@@ -246,7 +246,7 @@ export class OAuthHttpClient extends Effect.Service<OAuthHttpClient>()("OAuthHtt
 			)
 
 		const wrappedRefreshToken = (
-			provider: IntegrationProvider,
+			provider: OAuthIntegrationProvider,
 			params: { refreshToken: string; clientId: string; clientSecret: string },
 		) =>
 			refreshToken(provider, params).pipe(

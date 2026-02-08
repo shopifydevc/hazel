@@ -15,6 +15,7 @@
 		"./openstatus/browser": "./src/openstatus/browser.ts",
 		"./railway": "./src/railway/index.ts",
 		"./railway/browser": "./src/railway/browser.ts",
+		"./craft": "./src/craft/index.ts",
 		"./rss": "./src/rss/index.ts"
 	},
 	"dependencies": {

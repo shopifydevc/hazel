@@ -9,13 +9,13 @@
 		"dev": "bun run --watch src/index.ts"
 	},
 	"dependencies": {
+		"@effect/ai": "catalog:effect",
+		"@effect/ai-openrouter": "catalog:effect",
 		"@effect/platform": "catalog:effect",
 		"@hazel/bot-sdk": "workspace:*",
 		"@hazel/db": "workspace:*",
 		"@hazel/domain": "workspace:*",
 		"@hazel/integrations": "workspace:*",
-		"@effect/ai": "catalog:effect",
-		"@effect/ai-openrouter": "catalog:effect",
 		"drizzle-orm": "^0.45.1",
 		"effect": "catalog:effect"
 	},

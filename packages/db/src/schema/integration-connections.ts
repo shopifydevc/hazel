@@ -26,7 +26,9 @@ export const integrationConnectionsTable = pgTable(
 	"integration_connections",
 	{
 		id: uuid().primaryKey().defaultRandom().$type<IntegrationConnectionId>(),
-		provider: varchar({ length: 50 }).notNull(),
+		provider: varchar({ length: 50 })
+			.notNull()
+			.$type<"linear" | "github" | "figma" | "notion" | "discord" | "craft">(),
 		organizationId: uuid().notNull().$type<OrganizationId>(),
 		userId: uuid().$type<UserId>(), // null for org-level, populated for user-level
 		level: connectionLevelEnum().notNull(),

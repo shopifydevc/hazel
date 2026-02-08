@@ -9,7 +9,9 @@ export const messageIntegrationLinksTable = pgTable(
 		id: uuid().primaryKey().defaultRandom().$type<MessageIntegrationLinkId>(),
 		messageId: uuid().notNull().$type<MessageId>(),
 		connectionId: uuid().notNull().$type<IntegrationConnectionId>(),
-		provider: integrationProviderEnum().notNull(),
+		provider: varchar({ length: 50 })
+			.notNull()
+			.$type<"linear" | "github" | "figma" | "notion" | "discord" | "craft">(),
 
 		// External item info
 		externalId: varchar({ length: 255 }).notNull(),

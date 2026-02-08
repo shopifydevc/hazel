@@ -129,6 +129,11 @@ function IntegrationConfigPage() {
 		mode: "promiseExit",
 	})
 
+	// Mutation for API key connection
+	const connectApiKeyMutation = useAtomSet(HazelApiClient.mutation("integrations", "connectApiKey"), {
+		mode: "promiseExit",
+	})
+
 	// Mutation for disconnect
 	const disconnectMutation = useAtomSet(HazelApiClient.mutation("integrations", "disconnect"), {
 		mode: "promiseExit",
@@ -184,6 +189,42 @@ function IntegrationConfigPage() {
 		setIsDisconnecting(false)
 	}
 
+	const handleConnectApiKey = async (token: string, baseUrl: string) => {
+		if (!organizationId) return
+		setIsConnecting(true)
+
+		const exit = await connectApiKeyMutation({
+			path: { orgId: organizationId, provider: integrationId as IntegrationProvider },
+			payload: { token, baseUrl },
+		})
+
+		if (Exit.isSuccess(exit)) {
+			toast.success(`Connected to ${integration?.name ?? "integration"}`, {
+				description: `Connected as ${exit.value.externalAccountName ?? "your space"}.`,
+			})
+		} else {
+			exitToast(exit)
+				.onErrorTag("InvalidApiKeyError", (error) => ({
+					title: "Invalid credentials",
+					description: error.message,
+					isRetryable: true,
+				}))
+				.onErrorTag("UnsupportedProviderError", (error) => ({
+					title: "Unsupported provider",
+					description: `The provider "${error.provider}" does not support API key connections.`,
+					isRetryable: false,
+				}))
+				.onError(() => ({
+					title: "Connection failed",
+					description: "Could not connect this integration. Please try again.",
+					isRetryable: true,
+				}))
+				.run()
+		}
+
+		setIsConnecting(false)
+	}
+
 	const handleBack = () => {
 		navigate({ to: "/$orgSlug/settings/integrations", params: { orgSlug } })
 	}
@@ -191,6 +232,8 @@ function IntegrationConfigPage() {
 	// OpenStatus, Railway, and RSS use webhook/polling-based integration (per-channel), not OAuth
 	const isWebhookIntegration =
 		integrationId === "openstatus" || integrationId === "railway" || integrationId === "rss"
+
+	const isApiKeyIntegration = integration?.connectionType === "api-key"
 
 	return (
 		<div className="flex flex-col gap-6 px-4 lg:px-8">
@@ -251,6 +294,32 @@ function IntegrationConfigPage() {
 						) : integrationId === "rss" ? (
 							<RssSubscriptionsSection organizationId={organizationId} />
 						) : null)
+					) : isApiKeyIntegration ? (
+						<>
+							{/* API-key integration: Connection card */}
+							<div className="overflow-hidden rounded-xl border border-border bg-bg">
+								<div className="border-border border-b bg-bg-muted/30 px-5 py-3">
+									<h3 className="font-semibold text-fg text-sm">Connection</h3>
+								</div>
+								<div className="p-5">
+									{isConnected ? (
+										<ConnectedState
+											integration={integration}
+											connection={connection}
+											externalAccountName={externalAccountName}
+											isDisconnecting={isDisconnecting}
+											onDisconnect={handleDisconnect}
+										/>
+									) : (
+										<ApiKeyConnectionForm
+											integration={integration}
+											isConnecting={isConnecting}
+											onConnect={handleConnectApiKey}
+										/>
+									)}
+								</div>
+							</div>
+						</>
 					) : (
 						<>
 							{/* OAuth-based integration: Connection card */}
@@ -534,6 +603,108 @@ function ConnectedState({
 				</Button>
 			)}
 		</div>
+	)
+}
+
+function ApiKeyConnectionForm({
+	integration,
+	isConnecting,
+	onConnect,
+}: {
+	integration: Integration
+	isConnecting: boolean
+	onConnect: (token: string, baseUrl: string) => void
+}) {
+	const [token, setToken] = useState("")
+	const [baseUrl, setBaseUrl] = useState("")
+
+	const handleSubmit = (e: React.FormEvent) => {
+		e.preventDefault()
+		if (token.trim() && baseUrl.trim()) {
+			onConnect(token.trim(), baseUrl.trim())
+		}
+	}
+
+	return (
+		<form onSubmit={handleSubmit} className="flex flex-col gap-5 py-2">
+			<div className="flex flex-col gap-1.5">
+				<label htmlFor="api-token" className="font-medium text-fg text-sm">
+					Bearer Token
+				</label>
+				<InputGroup>
+					<Input
+						id="api-token"
+						type="password"
+						placeholder="Enter your API token"
+						value={token}
+						onChange={(e: React.ChangeEvent<HTMLInputElement>) => setToken(e.target.value)}
+						className="text-sm"
+						autoComplete="off"
+					/>
+				</InputGroup>
+				<p className="text-muted-fg text-xs">
+					You can find this in your {integration.name} API settings.
+				</p>
+			</div>
+			<div className="flex flex-col gap-1.5">
+				<label htmlFor="api-base-url" className="font-medium text-fg text-sm">
+					Base URL
+				</label>
+				<InputGroup>
+					<Input
+						id="api-base-url"
+						type="url"
+						placeholder="https://connect.craft.do/links/{linkId}/api/v1"
+						value={baseUrl}
+						onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBaseUrl(e.target.value)}
+						className="text-sm"
+						autoComplete="off"
+					/>
+				</InputGroup>
+				<p className="text-muted-fg text-xs">The API endpoint URL for your space.</p>
+			</div>
+			<Button
+				type="submit"
+				intent="primary"
+				size="md"
+				className="self-start"
+				isDisabled={isConnecting || !token.trim() || !baseUrl.trim()}
+				style={{ backgroundColor: integration.brandColor }}
+			>
+				{isConnecting ? (
+					<>
+						<svg className="size-4 animate-spin" fill="none" viewBox="0 0 24 24">
+							<circle
+								className="opacity-25"
+								cx="12"
+								cy="12"
+								r="10"
+								stroke="currentColor"
+								strokeWidth="4"
+							/>
+							<path
+								className="opacity-75"
+								fill="currentColor"
+								d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+							/>
+						</svg>
+						Connecting...
+					</>
+				) : (
+					<>
+						<img
+							src={getBrandfetchIcon(integration.logoDomain, {
+								theme: "light",
+								type: integration.logoType,
+							})}
+							alt=""
+							className="size-4 rounded object-contain"
+						/>
+						Connect
+					</>
+				)}
+			</Button>
+		</form>
 	)
 }
 

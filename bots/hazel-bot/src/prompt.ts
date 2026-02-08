@@ -16,6 +16,18 @@ export const INTEGRATION_INSTRUCTIONS = {
 - Prefer fetching context first (e.g., fetch an issue before summarizing or making suggestions).
 - When filtering issues, first get available teams and states if you need their IDs.
 - Use issue identifiers like "ENG-123" when referring to specific issues.`,
+	craft: `
+- Manage Craft documents and tasks:
+  - Search documents across the space
+  - Fetch document content (blocks)
+  - Create new documents
+  - Add content blocks to existing documents
+  - Search within a specific document
+  - List, create, and view tasks (inbox, active, upcoming, logbook)
+  - List folders in the space
+- Before creating a document or task, restate what you plan to do and confirm the user wants you to proceed.
+- Prefer searching or fetching content first before making changes.
+- Craft documents are composed of blocks (text, code, images, etc.).`,
 } as const
 
 export const buildSystemPrompt = (integrationInstructions: string): string =>
