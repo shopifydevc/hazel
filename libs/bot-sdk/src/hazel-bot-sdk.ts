@@ -91,6 +91,7 @@ export interface HazelBotRuntimeConfig<Commands extends CommandGroup<any> = Comm
 	readonly botToken: string
 	readonly commands: Commands
 	readonly mentionable: boolean
+	readonly actorsEndpoint: string
 }
 
 export class HazelBotRuntimeConfigTag extends Context.Tag("@hazel/bot-sdk/HazelBotRuntimeConfig")<
@@ -362,7 +363,7 @@ export class HazelBotClient extends Effect.Service<HazelBotClient>()("HazelBotCl
 						}),
 					),
 				onSome: (config) => {
-					const client = createActorsClient()
+					const client = createActorsClient(config.actorsEndpoint)
 					return Effect.succeed({
 						getMessageActor: (messageId: string) =>
 							Effect.sync(
@@ -1339,7 +1340,7 @@ export interface HazelBotConfig<Commands extends CommandGroup<any> = EmptyComman
 
 	/**
 	 * Actors/Rivet endpoint for live state streaming
-	 * @default Uses RIVET_PUBLIC_ENDPOINT or RIVET_URL env vars, falls back to "http://localhost:6420"
+	 * @default "https://rivet.hazel.sh"
 	 * @example "http://localhost:6420" // For local development
 	 */
 	readonly actorsEndpoint?: string
@@ -1500,6 +1501,7 @@ export const createHazelBot = <Commands extends CommandGroup<any> = EmptyCommand
 	// Apply defaults for URLs
 	const electricUrl = config.electricUrl ?? "https://electric.hazel.sh/v1/shape"
 	const backendUrl = config.backendUrl ?? "https://api.hazel.sh"
+	const actorsEndpoint = config.actorsEndpoint ?? "https://rivet.hazel.sh"
 
 	// Create all the required layers using layerConfig pattern
 	const EventQueueLayer = ElectricEventQueue.layerConfig(
@@ -1563,6 +1565,7 @@ export const createHazelBot = <Commands extends CommandGroup<any> = EmptyCommand
 				botToken: config.botToken,
 				commands: config.commands ?? EmptyCommandGroup,
 				mentionable: config.mentionable ?? false,
+				actorsEndpoint,
 			})
 		: Layer.empty
 

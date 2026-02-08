@@ -103,6 +103,7 @@ export const runHazelBot = <Commands extends CommandGroup<any> = EmptyCommands>(
 			botToken: Redacted.value(envConfig.botToken),
 			electricUrl: options.config?.electricUrl ?? envConfig.electricUrl,
 			backendUrl: options.config?.backendUrl ?? envConfig.backendUrl,
+			actorsEndpoint: options.config?.actorsEndpoint ?? envConfig.actorsUrl,
 			commands: options.commands,
 			mentionable: options.mentionable,
 			healthPort: options.healthPort ?? envConfig.healthPort,
