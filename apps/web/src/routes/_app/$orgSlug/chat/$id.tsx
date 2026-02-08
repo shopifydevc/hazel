@@ -116,6 +116,7 @@ function ChatLayout() {
 			>
 				{activeThreadChannelId && activeThreadMessageId && (
 					<ThreadPanel
+						key={activeThreadMessageId}
 						organizationId={organizationId}
 						threadChannelId={activeThreadChannelId}
 						originalMessageId={activeThreadMessageId}
