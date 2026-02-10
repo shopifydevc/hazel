@@ -79,7 +79,7 @@ export function ComposerActions({ className, minimal = false }: ComposerActionsP
 					<GifPickerDialog onGifSelect={handleGifSelect}>
 						<AriaButton
 							type="button"
-							className="inline-flex items-center gap-1.5 rounded-xs p-0 font-semibold text-muted-fg text-xs transition-colors hover:text-fg"
+							className="inline-flex items-center gap-1.5 rounded-xs p-0 font-semibold text-muted-fg text-xs outline-none transition-colors hover:text-fg"
 						>
 							<IconGif className="size-4 text-muted-fg" />
 							{!minimal && "GIF"}
@@ -90,7 +90,7 @@ export function ComposerActions({ className, minimal = false }: ComposerActionsP
 					<EmojiPickerDialog onEmojiSelect={handleEmojiSelect}>
 						<AriaButton
 							type="button"
-							className="inline-flex items-center gap-1.5 rounded-xs p-0 font-semibold text-muted-fg text-xs transition-colors hover:text-fg"
+							className="inline-flex items-center gap-1.5 rounded-xs p-0 font-semibold text-muted-fg text-xs outline-none transition-colors hover:text-fg"
 						>
 							<IconEmoji1 className="size-4 text-muted-fg" />
 							{!minimal && "Emoji"}

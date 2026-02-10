@@ -1,5 +1,6 @@
 import type { GiphyGif } from "@hazel/domain/http"
 import { Collection, GridList, GridListItem, GridListLoadMoreItem } from "react-aria-components"
+import { Loader } from "../ui/loader"
 
 interface GifPickerGridProps {
 	gifs: GiphyGif[]
@@ -18,26 +19,26 @@ export function GifPickerGrid({
 	onLoadMore,
 	onGifSelect,
 }: GifPickerGridProps) {
+	const canLoadMore = hasMore && !isLoading && gifs.length > 0
+
 	return (
 		<GridList
 			aria-label="GIF results"
 			layout="grid"
 			disallowTypeAhead
 			escapeKeyBehavior="none"
-			className="flex-1 columns-2 gap-2 overflow-y-auto overflow-x-hidden px-3 scrollbar-thin"
+			className="flex-1 columns-2 gap-2 overflow-y-auto overflow-x-hidden px-3 scrollbar-thin relative"
 			onAction={(key) => {
 				const gif = gifs.find((g) => g.id === key)
 				if (gif) onGifSelect(gif.images.original.url)
 			}}
 			renderEmptyState={() =>
 				isLoading ? (
-					<div className="flex flex-1 items-center justify-center py-8">
-						<div className="size-5 animate-spin rounded-full border-2 border-fg/20 border-t-fg/60" />
+					<div className="absolute inset-0 flex items-center justify-center">
+						<Loader />
 					</div>
 				) : (
-					<div className="flex flex-1 items-center justify-center text-sm text-muted-fg">
-						No GIFs found
-					</div>
+					<div className="absolute inset-0 flex items-center justify-center">No GIFs found</div>
 				)
 			}
 		>
@@ -78,11 +79,13 @@ export function GifPickerGrid({
 			</Collection>
 			<GridListLoadMoreItem
 				isLoading={isLoadingMore}
-				onLoadMore={hasMore ? onLoadMore : undefined}
+				onLoadMore={canLoadMore ? onLoadMore : undefined}
 				scrollOffset={0.5}
-				className="flex justify-center py-4"
+				className={isLoadingMore ? "flex justify-center py-4" : "h-0"}
 			>
-				<div className="size-5 animate-spin rounded-full border-2 border-fg/20 border-t-fg/60" />
+				{isLoadingMore ? (
+					<div className="size-5 animate-spin rounded-full border-2 border-fg/20 border-t-fg/60" />
+				) : null}
 			</GridListLoadMoreItem>
 		</GridList>
 	)
