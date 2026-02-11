@@ -13,7 +13,7 @@ import {
 } from "./menu"
 
 interface ContextMenuTriggerContextType {
-	buttonRef: React.RefObject<HTMLButtonElement | null>
+	buttonRef: React.RefObject<HTMLDivElement | null>
 	contextMenuOffset: { offset: number; crossOffset: number } | null
 	setContextMenuOffset: React.Dispatch<React.SetStateAction<{ offset: number; crossOffset: number } | null>>
 }
@@ -37,7 +37,7 @@ const ContextMenu = ({ children }: ContextMenuProps) => {
 		offset: number
 		crossOffset: number
 	} | null>(null)
-	const buttonRef = useRef<HTMLButtonElement>(null)
+	const buttonRef = useRef<HTMLDivElement>(null)
 	return (
 		<ContextMenuTriggerContext.Provider value={{ buttonRef, contextMenuOffset, setContextMenuOffset }}>
 			{children}
@@ -45,12 +45,12 @@ const ContextMenu = ({ children }: ContextMenuProps) => {
 	)
 }
 
-type ContextMenuTriggerProps = React.ButtonHTMLAttributes<HTMLButtonElement>
+type ContextMenuTriggerProps = React.HTMLAttributes<HTMLDivElement>
 
 const ContextMenuTrigger = ({ className, ...props }: ContextMenuTriggerProps) => {
 	const { buttonRef, setContextMenuOffset } = useContextMenuTrigger()
 
-	const onContextMenu = (e: React.MouseEvent<HTMLButtonElement>) => {
+	const onContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
 		e.preventDefault()
 		const rect = e.currentTarget.getBoundingClientRect()
 		setContextMenuOffset({
@@ -59,11 +59,8 @@ const ContextMenuTrigger = ({ className, ...props }: ContextMenuTriggerProps) =>
 		})
 	}
 	return (
-		<button
-			className={twMerge(
-				"cursor-default focus:outline-hidden disabled:opacity-60 disabled:forced-colors:disabled:text-[GrayText]",
-				className,
-			)}
+		<div
+			className={twMerge("cursor-default focus:outline-hidden", className)}
 			ref={buttonRef}
 			aria-haspopup="menu"
 			onContextMenu={onContextMenu}
@@ -87,7 +84,7 @@ const ContextMenuContent = <T extends object>(props: ContextMenuContentProps<T>)
 		const handleContextMenu = (e: MouseEvent) => {
 			// Don't interfere if right-clicking on another context menu trigger
 			const target = e.target as HTMLElement
-			if (target.closest('button[aria-haspopup="menu"]')) {
+			if (target.closest('[aria-haspopup="menu"]')) {
 				return
 			}
 
