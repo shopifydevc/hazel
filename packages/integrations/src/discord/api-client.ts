@@ -288,7 +288,7 @@ export class DiscordApiClient extends Effect.Service<DiscordApiClient>()("Discor
 				.post(`${DISCORD_API_BASE_URL}/channels/${params.channelId}/webhooks`, {
 					body: HttpBody.text(
 						JSON.stringify({
-							name: "Hazel Discord Sync",
+							name: "Hazel Sync",
 						}),
 						"application/json",
 					),
@@ -350,12 +350,15 @@ export class DiscordApiClient extends Effect.Service<DiscordApiClient>()("Discor
 			}
 
 			const response = yield* httpClient
-				.post(`${DISCORD_API_BASE_URL}/webhooks/${params.webhookId}/${params.webhookToken}/messages?wait=true`, {
-					body: HttpBody.text(JSON.stringify(payload), "application/json"),
-					headers: {
-						"Content-Type": "application/json",
+				.post(
+					`${DISCORD_API_BASE_URL}/webhooks/${params.webhookId}/${params.webhookToken}/messages?wait=true`,
+					{
+						body: HttpBody.text(JSON.stringify(payload), "application/json"),
+						headers: {
+							"Content-Type": "application/json",
+						},
 					},
-				})
+				)
 				.pipe(Effect.scoped, Effect.timeout(DEFAULT_TIMEOUT))
 
 			if (response.status >= 400) {
