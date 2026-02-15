@@ -542,6 +542,27 @@ export interface QuietHoursInfo {
 }
 
 /**
+ * Lightweight hook that only subscribes to the current user's
+ * presence record from the database. Does NOT subscribe to
+ * presenceNowSignal, afkStateAtom, computedPresenceStatusAtom,
+ * or any other frequently-changing atoms.
+ *
+ * Use this when you only need statusEmoji, customMessage,
+ * statusExpiresAt, or suppressNotifications.
+ */
+export function useCurrentUserStatus() {
+	const presenceResult = useAtomValue(currentUserPresenceAtom)
+	const currentPresence = Result.getOrElse(presenceResult, () => undefined)
+
+	return {
+		statusEmoji: currentPresence?.statusEmoji ?? null,
+		customMessage: currentPresence?.customMessage ?? null,
+		statusExpiresAt: currentPresence?.statusExpiresAt ?? null,
+		suppressNotifications: currentPresence?.suppressNotifications ?? false,
+	}
+}
+
+/**
  * Hook to get another user's presence
  */
 export function useUserPresence(userId: UserId) {

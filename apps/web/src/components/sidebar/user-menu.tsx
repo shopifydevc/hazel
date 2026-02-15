@@ -1,5 +1,5 @@
 import { IconChevronUpDown } from "~/components/icons/icon-chevron-up-down"
-import { useState } from "react"
+import { memo, useState } from "react"
 import { twJoin } from "tailwind-merge"
 import { FeedbackModal } from "~/components/modals/feedback-modal"
 import { SetStatusModal } from "~/components/modals/set-status-modal"
@@ -18,7 +18,7 @@ import {
 } from "~/components/ui/menu"
 import { SidebarLabel } from "~/components/ui/sidebar"
 import { useOrganization } from "~/hooks/use-organization"
-import { usePresence } from "~/hooks/use-presence"
+import { useCurrentUserStatus } from "~/hooks/use-presence"
 import { useAuth } from "~/lib/auth"
 import IconEmoji1 from "../icons/icon-emoji-1"
 import IconGear from "../icons/icon-gear"
@@ -26,10 +26,10 @@ import IconLogout from "../icons/icon-logout"
 import IconProfiles2 from "../icons/icon-persons-2"
 import IconSupport from "../icons/icon-support"
 
-export function UserMenu() {
+export const UserMenu = memo(function UserMenu() {
 	const { user, logout } = useAuth()
 	const { slug: orgSlug } = useOrganization()
-	const { statusEmoji, customMessage, statusExpiresAt } = usePresence()
+	const { statusEmoji, customMessage, statusExpiresAt } = useCurrentUserStatus()
 	const [feedbackModalOpen, setFeedbackModalOpen] = useState(false)
 	const [statusModalOpen, setStatusModalOpen] = useState(false)
 
@@ -134,4 +134,4 @@ export function UserMenu() {
 			<SetStatusModal isOpen={statusModalOpen} onOpenChange={setStatusModalOpen} />
 		</>
 	)
-}
+})
