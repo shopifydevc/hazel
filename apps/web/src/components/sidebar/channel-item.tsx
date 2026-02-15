@@ -2,6 +2,7 @@ import { useAtomSet } from "@effect-atom/atom-react"
 import type { Channel, ChannelMember } from "@hazel/db/schema"
 import type { ChannelSectionId } from "@hazel/schema"
 import { useNavigate } from "@tanstack/react-router"
+import { memo } from "react"
 import { useModal } from "~/atoms/modal-atoms"
 import { ChannelIcon } from "~/components/channel-icon"
 import IconDots from "~/components/icons/icon-dots"
@@ -36,7 +37,7 @@ interface ChannelItemProps {
 
 export const CHANNEL_DRAG_TYPE = "application/x-hazel-channel"
 
-export function ChannelItem({
+export const ChannelItem = memo(function ChannelItem({
 	channel,
 	member,
 	notificationCount,
@@ -209,4 +210,4 @@ export function ChannelItem({
 			</SidebarTreeItem>
 		</>
 	)
-}
+})

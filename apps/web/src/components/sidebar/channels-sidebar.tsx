@@ -72,6 +72,8 @@ interface ChannelSectionProps {
 	>
 	/** Available sections for "move to section" menu */
 	sections?: Array<{ id: ChannelSectionId; name: string }>
+	/** Map of channel IDs to their unread notification counts */
+	unreadByChannel: Map<string, number>
 }
 
 const ChannelSection = ({
@@ -84,9 +86,9 @@ const ChannelSection = ({
 	isEditable = false,
 	threadsByParent,
 	sections,
+	unreadByChannel,
 }: ChannelSectionProps) => {
 	const { user } = useAuth()
-	const { unreadByChannel } = useChannelUnreadCountMap()
 
 	const { data: userChannels } = useLiveQuery(
 		(q) => {
@@ -182,9 +184,12 @@ const ChannelSection = ({
 	)
 }
 
-const DmChannelGroup = (props: { organizationId: OrganizationId; onCreateDm: () => void }) => {
+const DmChannelGroup = (props: {
+	organizationId: OrganizationId
+	onCreateDm: () => void
+	unreadByChannel: Map<string, number>
+}) => {
 	const { user } = useAuth()
-	const { unreadByChannel } = useChannelUnreadCountMap()
 
 	const { data: userDmChannels } = useLiveQuery(
 		(q) =>
@@ -217,7 +222,7 @@ const DmChannelGroup = (props: { organizationId: OrganizationId; onCreateDm: () 
 				<DmChannelItem
 					key={channel.id}
 					channelId={channel.id}
-					notificationCount={unreadByChannel.get(channel.id) ?? 0}
+					notificationCount={props.unreadByChannel.get(channel.id) ?? 0}
 				/>
 			))}
 		</SectionGroup>
@@ -230,6 +235,7 @@ export function ChannelsSidebar(props: { openChannelsBrowser: () => void }) {
 	const { user } = useAuth()
 	const commandPaletteHotkeyLabel = useAppHotkeyLabel("commandPalette.open")
 	const { threadsByParent } = useActiveThreads(organizationId ?? null, user?.id as UserId | undefined)
+	const { unreadByChannel } = useChannelUnreadCountMap()
 	const hasTauriTitlebar = isTauriMacOS()
 
 	// Modal hooks
@@ -375,7 +381,10 @@ export function ChannelsSidebar(props: { openChannelsBrowser: () => void }) {
 
 					{organizationId && (
 						<>
-							<FavoriteSection organizationId={organizationId} />
+							<FavoriteSection
+								organizationId={organizationId}
+								unreadByChannel={unreadByChannel}
+							/>
 
 							{/* Default "Channels" section (channels with no section) */}
 							<ChannelSection
@@ -387,6 +396,7 @@ export function ChannelsSidebar(props: { openChannelsBrowser: () => void }) {
 								onJoinChannel={() => joinChannelModal.open()}
 								threadsByParent={threadsByParent}
 								sections={sections ?? []}
+								unreadByChannel={unreadByChannel}
 							/>
 
 							{/* Custom sections */}
@@ -402,12 +412,14 @@ export function ChannelsSidebar(props: { openChannelsBrowser: () => void }) {
 									isEditable
 									threadsByParent={threadsByParent}
 									sections={sections ?? []}
+									unreadByChannel={unreadByChannel}
 								/>
 							))}
 
 							<DmChannelGroup
 								organizationId={organizationId}
 								onCreateDm={() => createDmModal.open()}
+								unreadByChannel={unreadByChannel}
 							/>
 						</>
 					)}

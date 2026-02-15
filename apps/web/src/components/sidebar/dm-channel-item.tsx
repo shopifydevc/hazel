@@ -1,7 +1,7 @@
 import { useAtomSet } from "@effect-atom/atom-react"
 import type { ChannelId, UserId } from "@hazel/schema"
 import { useRouter } from "@tanstack/react-router"
-import { useCallback } from "react"
+import { memo, useCallback } from "react"
 import IconClose from "~/components/icons/icon-close"
 import IconDots from "~/components/icons/icon-dots"
 import IconPhone from "~/components/icons/icon-phone"
@@ -67,7 +67,10 @@ export interface DmChannelItemProps {
 	notificationCount?: number
 }
 
-export const DmChannelItem = ({ channelId, notificationCount }: DmChannelItemProps) => {
+export const DmChannelItem = memo(function DmChannelItem({
+	channelId,
+	notificationCount,
+}: DmChannelItemProps) {
 	const { slug: orgSlug } = useOrganization()
 	const router = useRouter()
 	const scrollRef = useScrollIntoViewOnActive(channelId)
@@ -284,4 +287,4 @@ export const DmChannelItem = ({ channelId, notificationCount }: DmChannelItemPro
 			}
 		/>
 	)
-}
+})

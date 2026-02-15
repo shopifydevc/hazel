@@ -344,16 +344,20 @@ export const useActiveThreads = (organizationId: OrganizationId | null, userId: 
 		[threadIds],
 	)
 
-	// Get user's recent messages to filter by activity
+	// Get user's recent messages in thread channels only to filter by activity
 	const { data: recentMessages } = useLiveQuery(
 		(q) =>
 			q
 				.from({ message: messageCollection })
 				.where(({ message }) =>
-					and(eq(message.authorId, userId ?? ("" as UserId)), gte(message.createdAt, threeDaysAgo)),
+					and(
+						eq(message.authorId, userId ?? ("" as UserId)),
+						gte(message.createdAt, threeDaysAgo),
+						inArray(message.channelId, threadIds.length > 0 ? threadIds : ([""] as ChannelId[])),
+					),
 				)
 				.select(({ message }) => ({ channelId: message.channelId })),
-		[userId, threeDaysAgo],
+		[userId, threeDaysAgo, threadIds],
 	)
 
 	// Filter threads to only those with recent activity, 3+ messages, and group by parent
