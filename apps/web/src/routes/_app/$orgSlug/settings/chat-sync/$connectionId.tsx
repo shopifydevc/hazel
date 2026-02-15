@@ -550,10 +550,7 @@ function ChatSyncConnectionDetailPage() {
 											)
 										}
 										onChangeDirection={(dir) =>
-											handleChangeDirection(
-												link.id as SyncChannelLinkId,
-												dir,
-											)
+											handleChangeDirection(link.id as SyncChannelLinkId, dir)
 										}
 									/>
 								))}
@@ -800,29 +797,14 @@ function ChannelLinkRow({
 					<MenuContent placement="bottom end">
 						<MenuSubMenu>
 							<MenuItem>
-								<DirectionIcon
-									direction={direction}
-									className="size-4"
-									data-slot="icon"
-								/>
+								<DirectionIcon direction={direction} className="size-4" data-slot="icon" />
 								<MenuLabel>Change direction</MenuLabel>
 							</MenuItem>
 							<MenuContent>
-								{(
-									["both", "hazel_to_external", "external_to_hazel"] as const
-								).map((dir) => (
-									<MenuItem
-										key={dir}
-										onAction={() => onChangeDirection(dir)}
-									>
-										<DirectionIcon
-											direction={dir}
-											className="size-4"
-											data-slot="icon"
-										/>
-										<MenuLabel>
-											{DIRECTION_DISPLAY[dir].label}
-										</MenuLabel>
+								{(["both", "hazel_to_external", "external_to_hazel"] as const).map((dir) => (
+									<MenuItem key={dir} onAction={() => onChangeDirection(dir)}>
+										<DirectionIcon direction={dir} className="size-4" data-slot="icon" />
+										<MenuLabel>{DIRECTION_DISPLAY[dir].label}</MenuLabel>
 									</MenuItem>
 								))}
 							</MenuContent>
@@ -833,9 +815,7 @@ function ChannelLinkRow({
 							) : (
 								<IconPlay className="size-4" />
 							)}
-							<MenuLabel>
-								{link.isActive ? "Pause sync" : "Resume sync"}
-							</MenuLabel>
+							<MenuLabel>{link.isActive ? "Pause sync" : "Resume sync"}</MenuLabel>
 						</MenuItem>
 						<MenuSeparator />
 						<MenuItem intent="danger" onAction={onDelete}>

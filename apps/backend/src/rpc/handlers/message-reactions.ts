@@ -129,9 +129,7 @@ export const MessageReactionRpcLive = MessageReactionRpcs.toLayer(
 					const txResult = yield* db
 						.transaction(
 							Effect.gen(function* () {
-								const existing = yield* MessageReactionRepo.findById(id).pipe(
-									withSystemActor,
-								)
+								const existing = yield* MessageReactionRepo.findById(id).pipe(withSystemActor)
 								const deletedSyncPayload = Option.match(existing, {
 									onNone: () => null as null,
 									onSome: (value) =>

@@ -94,10 +94,7 @@ export function NotificationSoundProvider({ children }: NotificationSoundProvide
 		}
 	}, [settings, doNotDisturb, quietHoursStart, quietHoursEnd, sessionStartTime, currentChannelId])
 
-	const soundSink = useMemo(
-		() => new SoundNotificationSink({ notificationSoundManager }),
-		[],
-	)
+	const soundSink = useMemo(() => new SoundNotificationSink({ notificationSoundManager }), [])
 	const nativeSink = useMemo(() => new NativeNotificationSink(), [])
 
 	useEffect(() => {
@@ -137,8 +134,7 @@ export function NotificationSoundProvider({ children }: NotificationSoundProvide
 						latest.quietHoursEnd,
 					)(),
 					isWindowFocused: typeof document !== "undefined" ? document.hasFocus() : false,
-					visibilityState:
-						typeof document !== "undefined" ? document.visibilityState : "hidden",
+					visibilityState: typeof document !== "undefined" ? document.visibilityState : "hidden",
 					now: Date.now(),
 				}
 			},
@@ -146,32 +142,39 @@ export function NotificationSoundProvider({ children }: NotificationSoundProvide
 			soundSink,
 			nativeSink,
 		})
-	}, [soundSink, nativeSink, settings, doNotDisturb, quietHoursStart, quietHoursEnd, sessionStartTime, currentChannelId])
+	}, [
+		soundSink,
+		nativeSink,
+		settings,
+		doNotDisturb,
+		quietHoursStart,
+		quietHoursEnd,
+		sessionStartTime,
+		currentChannelId,
+	])
 
 	useEffect(() => {
 		if (!recentNotifications || recentNotifications.length === 0) {
 			return
 		}
 
-		const events: NotificationEvent[] = [...recentNotifications]
-			.reverse()
-			.map((notification) => {
-				const messageId = notification.resourceId as MessageId | null
-				const channelId = notification.targetedResourceId as ChannelId | null
+		const events: NotificationEvent[] = [...recentNotifications].reverse().map((notification) => {
+			const messageId = notification.resourceId as MessageId | null
+			const channelId = notification.targetedResourceId as ChannelId | null
 
-				const message = messageId ? messageCollection.state.get(messageId) : undefined
-				const author = message?.authorId ? userCollection.state.get(message.authorId) : undefined
-				const channel = channelId ? channelCollection.state.get(channelId) : undefined
+			const message = messageId ? messageCollection.state.get(messageId) : undefined
+			const author = message?.authorId ? userCollection.state.get(message.authorId) : undefined
+			const channel = channelId ? channelCollection.state.get(channelId) : undefined
 
-				return {
-					id: notification.id,
-					notification,
-					message,
-					author,
-					channel,
-					receivedAt: Date.now(),
-				}
-			})
+			return {
+				id: notification.id,
+				notification,
+				message,
+				author,
+				channel,
+				receivedAt: Date.now(),
+			}
+		})
 
 		notificationOrchestrator.enqueue(events)
 	}, [recentNotifications])

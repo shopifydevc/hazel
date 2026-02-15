@@ -192,7 +192,10 @@ export class ChatSyncEventReceiptRepo extends Effect.Service<ChatSyncEventReceip
 											schema.chatSyncEventReceiptsTable.syncConnectionId,
 											data.syncConnectionId,
 										),
-										gte(schema.chatSyncEventReceiptsTable.processedAt, data.processedAfter),
+										gte(
+											schema.chatSyncEventReceiptsTable.processedAt,
+											data.processedAfter,
+										),
 									),
 								),
 						),

@@ -2,10 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto"
 import { HttpApiBuilder, HttpApiClient, HttpServerRequest } from "@effect/platform"
 import { and, Database, eq, isNull, schema, sql } from "@hazel/db"
 import { Cluster, WorkflowInitializationError, withSystemActor } from "@hazel/domain"
-import {
-	GitHubWebhookResponse,
-	InvalidGitHubWebhookSignature,
-} from "@hazel/domain/http"
+import { GitHubWebhookResponse, InvalidGitHubWebhookSignature } from "@hazel/domain/http"
 import type {
 	SequinWebhookEvent,
 	SequinMessageReactionRecord,
@@ -23,9 +20,8 @@ import { DiscordSyncWorker } from "../services/chat-sync/discord-sync-worker"
 const isSequinMessageRecord = (record: SequinWebhookRecord): record is SequinMessageRecord =>
 	"authorId" in record
 
-const isSequinMessageReactionRecord = (
-	record: SequinWebhookRecord,
-): record is SequinMessageReactionRecord => "userId" in record
+const isSequinMessageReactionRecord = (record: SequinWebhookRecord): record is SequinMessageReactionRecord =>
+	"userId" in record
 
 type SequinWebhookSyncWorker = {
 	syncHazelMessageCreateToAllConnections: (
@@ -74,9 +70,7 @@ export const compareSequinWebhookEventsByCommitOrder = (
 	return left.record.id.localeCompare(right.record.id)
 }
 
-export const sortSequinWebhookEventsByCommitOrder = (
-	events: ReadonlyArray<SequinWebhookEvent>,
-) => {
+export const sortSequinWebhookEventsByCommitOrder = (events: ReadonlyArray<SequinWebhookEvent>) => {
 	return [...events].sort(compareSequinWebhookEventsByCommitOrder)
 }
 
@@ -107,8 +101,14 @@ export const syncSequinWebhookEventToDiscord = (
 					event.action === "insert"
 						? discordSyncWorker.syncHazelMessageCreateToAllConnections(event.record.id, dedupeKey)
 						: event.action === "delete" || isSoftDeleteUpdate
-							? discordSyncWorker.syncHazelMessageDeleteToAllConnections(event.record.id, dedupeKey)
-							: discordSyncWorker.syncHazelMessageUpdateToAllConnections(event.record.id, dedupeKey)
+							? discordSyncWorker.syncHazelMessageDeleteToAllConnections(
+									event.record.id,
+									dedupeKey,
+								)
+							: discordSyncWorker.syncHazelMessageUpdateToAllConnections(
+									event.record.id,
+									dedupeKey,
+								)
 				).pipe(
 					Effect.catchAll((error) =>
 						Effect.logWarning("Failed to sync Sequin message event to Discord", {
@@ -122,7 +122,10 @@ export const syncSequinWebhookEventToDiscord = (
 			}
 		}
 
-		if (event.metadata.table_name === "message_reactions" && isSequinMessageReactionRecord(event.record)) {
+		if (
+			event.metadata.table_name === "message_reactions" &&
+			isSequinMessageReactionRecord(event.record)
+		) {
 			if (event.record.userId === integrationBotUserId) {
 				yield* Effect.logDebug("Skipping Sequin reaction event from integration bot", {
 					tableName: event.metadata.table_name,
@@ -134,7 +137,10 @@ export const syncSequinWebhookEventToDiscord = (
 
 				yield* (
 					event.action === "insert"
-						? discordSyncWorker.syncHazelReactionCreateToAllConnections(event.record.id, dedupeKey)
+						? discordSyncWorker.syncHazelReactionCreateToAllConnections(
+								event.record.id,
+								dedupeKey,
+							)
 						: event.action === "delete"
 							? discordSyncWorker.syncHazelReactionDeleteToAllConnections(
 									{
@@ -290,7 +296,7 @@ export const HttpWebhookLive = HttpApiBuilder.group(HazelApi, "webhooks", (handl
 
 				// Process each event in deterministic commit order.
 				yield* processSequinWebhookEventsInCommitOrder(payload.data, (event) =>
-						Effect.gen(function* () {
+					Effect.gen(function* () {
 						// Log each event
 						yield* Effect.logDebug("Processing Sequin event", {
 							action: event.action,
@@ -299,11 +305,11 @@ export const HttpWebhookLive = HttpApiBuilder.group(HazelApi, "webhooks", (handl
 							channelId: event.record.channelId,
 						})
 
-							yield* syncSequinWebhookEventToDiscord(
-								event,
-								integrationBotUserId,
-								sequinDiscordSyncWorker,
-							)
+						yield* syncSequinWebhookEventToDiscord(
+							event,
+							integrationBotUserId,
+							sequinDiscordSyncWorker,
+						)
 
 						// Notification and thread-naming workflows are insert-only.
 						if (event.metadata.table_name !== "messages" || event.action !== "insert") {
@@ -315,10 +321,13 @@ export const HttpWebhookLive = HttpApiBuilder.group(HazelApi, "webhooks", (handl
 							return
 						}
 						if (!isSequinMessageRecord(event.record)) {
-							yield* Effect.logWarning("Skipping unexpected Sequin payload for message workflow", {
-								tableName: event.metadata.table_name,
-								recordId: event.record.id,
-							})
+							yield* Effect.logWarning(
+								"Skipping unexpected Sequin payload for message workflow",
+								{
+									tableName: event.metadata.table_name,
+									recordId: event.record.id,
+								},
+							)
 							return
 						}
 						const messageRecord = event.record
@@ -411,12 +420,12 @@ export const HttpWebhookLive = HttpApiBuilder.group(HazelApi, "webhooks", (handl
 									client
 										.select({ count: sql<number>`count(*)::int` })
 										.from(schema.messagesTable)
-									.where(
-										and(
-											eq(schema.messagesTable.channelId, messageRecord.channelId),
-											isNull(schema.messagesTable.deletedAt),
+										.where(
+											and(
+												eq(schema.messagesTable.channelId, messageRecord.channelId),
+												isNull(schema.messagesTable.deletedAt),
+											),
 										),
-									),
 								)
 								.pipe(
 									Effect.catchTags({
@@ -433,7 +442,10 @@ export const HttpWebhookLive = HttpApiBuilder.group(HazelApi, "webhooks", (handl
 											.select({ id: schema.messagesTable.id })
 											.from(schema.messagesTable)
 											.where(
-												eq(schema.messagesTable.threadChannelId, messageRecord.channelId),
+												eq(
+													schema.messagesTable.threadChannelId,
+													messageRecord.channelId,
+												),
 											)
 											.limit(1),
 									)

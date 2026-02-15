@@ -110,41 +110,37 @@ export const SyncConnectionId = Schema.UUID.pipe(Schema.brand("@HazelChat/SyncCo
 })
 export type SyncConnectionId = Schema.Schema.Type<typeof SyncConnectionId>
 
-export const ExternalChannelId = Schema.String.pipe(
-	Schema.brand("@HazelChat/ExternalChannelId"),
-).annotations({
-	description: "The external channel identifier from a synced provider",
-	title: "External Channel ID",
-})
+export const ExternalChannelId = Schema.String.pipe(Schema.brand("@HazelChat/ExternalChannelId")).annotations(
+	{
+		description: "The external channel identifier from a synced provider",
+		title: "External Channel ID",
+	},
+)
 export type ExternalChannelId = Schema.Schema.Type<typeof ExternalChannelId>
 
-export const ExternalMessageId = Schema.String.pipe(
-	Schema.brand("@HazelChat/ExternalMessageId"),
-).annotations({
-	description: "The external message identifier from a synced provider",
-	title: "External Message ID",
-})
+export const ExternalMessageId = Schema.String.pipe(Schema.brand("@HazelChat/ExternalMessageId")).annotations(
+	{
+		description: "The external message identifier from a synced provider",
+		title: "External Message ID",
+	},
+)
 export type ExternalMessageId = Schema.Schema.Type<typeof ExternalMessageId>
 
-export const ExternalWebhookId = Schema.String.pipe(
-	Schema.brand("@HazelChat/ExternalWebhookId"),
-).annotations({
-	description: "The external webhook identifier from a synced provider",
-	title: "External Webhook ID",
-})
+export const ExternalWebhookId = Schema.String.pipe(Schema.brand("@HazelChat/ExternalWebhookId")).annotations(
+	{
+		description: "The external webhook identifier from a synced provider",
+		title: "External Webhook ID",
+	},
+)
 export type ExternalWebhookId = Schema.Schema.Type<typeof ExternalWebhookId>
 
-export const ExternalUserId = Schema.String.pipe(
-	Schema.brand("@HazelChat/ExternalUserId"),
-).annotations({
+export const ExternalUserId = Schema.String.pipe(Schema.brand("@HazelChat/ExternalUserId")).annotations({
 	description: "The external user identifier from a synced provider",
 	title: "External User ID",
 })
 export type ExternalUserId = Schema.Schema.Type<typeof ExternalUserId>
 
-export const ExternalThreadId = Schema.String.pipe(
-	Schema.brand("@HazelChat/ExternalThreadId"),
-).annotations({
+export const ExternalThreadId = Schema.String.pipe(Schema.brand("@HazelChat/ExternalThreadId")).annotations({
 	description: "The external thread identifier from a synced provider",
 	title: "External Thread ID",
 })
@@ -162,10 +158,12 @@ export const SyncMessageLinkId = Schema.UUID.pipe(Schema.brand("@HazelChat/SyncM
 })
 export type SyncMessageLinkId = Schema.Schema.Type<typeof SyncMessageLinkId>
 
-export const SyncEventReceiptId = Schema.UUID.pipe(Schema.brand("@HazelChat/SyncEventReceiptId")).annotations({
-	description: "The ID of a chat sync event receipt",
-	title: "Sync Event Receipt ID",
-})
+export const SyncEventReceiptId = Schema.UUID.pipe(Schema.brand("@HazelChat/SyncEventReceiptId")).annotations(
+	{
+		description: "The ID of a chat sync event receipt",
+		title: "Sync Event Receipt ID",
+	},
+)
 export type SyncEventReceiptId = Schema.Schema.Type<typeof SyncEventReceiptId>
 
 export const IntegrationTokenId = Schema.UUID.pipe(Schema.brand("@HazelChat/IntegrationTokenId")).annotations(

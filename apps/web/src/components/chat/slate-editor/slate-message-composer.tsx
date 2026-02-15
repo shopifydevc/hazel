@@ -42,6 +42,7 @@ export const SlateMessageComposer = ({ placeholder = "Type a message..." }: Slat
 			<Composer.DropZone>
 				<Composer.AttachmentPreviews />
 				<Composer.ReplyIndicator />
+				<Composer.EditIndicator />
 				<Composer.Frame>
 					<Composer.Editor />
 					<Composer.Actions />

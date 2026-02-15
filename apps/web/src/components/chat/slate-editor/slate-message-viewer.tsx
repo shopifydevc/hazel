@@ -2,7 +2,7 @@
 
 import { useAtomValue } from "@effect-atom/atom-react"
 import type { OrganizationId } from "@hazel/schema"
-import { memo, useCallback, useMemo } from "react"
+import { memo, useCallback, useEffect, useMemo } from "react"
 import { customEmojiMapAtomFamily } from "~/atoms/custom-emoji-atoms"
 import { createEditor, Editor, Element as SlateElement } from "slate"
 import { withHistory } from "slate-history"
@@ -45,6 +45,12 @@ const SlateMessageViewerBase = memo(
 
 		// Deserialize markdown content to Slate value
 		const value = useMemo(() => deserializeFromMarkdown(content), [content])
+
+		// Update read-only editor when content changes (initialValue is only used on first mount)
+		useEffect(() => {
+			editor.children = value
+			editor.onChange()
+		}, [editor, value])
 
 		// Check if content contains only emojis
 		const isOnlyEmojis = useMemo(() => isEmojiOnly(content), [content])

@@ -44,13 +44,11 @@ const normalizeChannelLinkSettings = (
 	settings: Record<string, unknown> | null | undefined,
 ): Record<string, unknown> => ({
 	...(settings ?? {}),
-	outboundIdentity:
-		settings?.outboundIdentity ??
-		{
-			enabled: false,
-			strategy: "webhook",
-			providers: {},
-		},
+	outboundIdentity: settings?.outboundIdentity ?? {
+		enabled: false,
+		strategy: "webhook",
+		providers: {},
+	},
 })
 
 export const HttpChatSyncLive = HttpApiBuilder.group(HazelApi, "chat-sync", (handlers) =>
@@ -226,19 +224,19 @@ export const HttpChatSyncLive = HttpApiBuilder.group(HazelApi, "chat-sync", (han
 						)
 					}
 
-				const [link] = yield* channelLinkRepo
-							.insert({
-								syncConnectionId: path.syncConnectionId,
-								hazelChannelId: payload.hazelChannelId,
+					const [link] = yield* channelLinkRepo
+						.insert({
+							syncConnectionId: path.syncConnectionId,
+							hazelChannelId: payload.hazelChannelId,
 							externalChannelId: payload.externalChannelId,
 							externalChannelName: payload.externalChannelName ?? null,
 							direction: payload.direction ?? "both",
 							isActive: true,
 							settings: normalizeChannelLinkSettings(payload.settings),
 							lastSyncedAt: null,
-								deletedAt: null,
-							})
-							.pipe(withSystemActor)
+							deletedAt: null,
+						})
+						.pipe(withSystemActor)
 
 					const brandedLink = {
 						...link,

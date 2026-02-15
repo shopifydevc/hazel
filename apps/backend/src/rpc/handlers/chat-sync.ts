@@ -37,13 +37,11 @@ const normalizeChannelLinkSettings = (
 	settings: Record<string, unknown> | null | undefined,
 ): Record<string, unknown> => ({
 	...(settings ?? {}),
-	outboundIdentity:
-		settings?.outboundIdentity ??
-		{
-			enabled: false,
-			strategy: "webhook",
-			providers: {},
-		},
+	outboundIdentity: settings?.outboundIdentity ?? {
+		enabled: false,
+		strategy: "webhook",
+		providers: {},
+	},
 })
 
 export const ChatSyncRpcLive = ChatSyncRpcs.toLayer(
@@ -253,9 +251,9 @@ export const ChatSyncRpcLive = ChatSyncRpcs.toLayer(
 								)
 							}
 
-								const [link] = yield* channelLinkRepo
-									.insert({
-										syncConnectionId: payload.syncConnectionId,
+							const [link] = yield* channelLinkRepo
+								.insert({
+									syncConnectionId: payload.syncConnectionId,
 									hazelChannelId: payload.hazelChannelId,
 									externalChannelId: payload.externalChannelId,
 									externalChannelName: payload.externalChannelName ?? null,
@@ -265,19 +263,19 @@ export const ChatSyncRpcLive = ChatSyncRpcs.toLayer(
 									lastSyncedAt: null,
 									deletedAt: null,
 								})
-									.pipe(withSystemActor)
+								.pipe(withSystemActor)
 
-								const brandedLink = {
-									...link,
-									externalChannelId: link.externalChannelId as ExternalChannelId,
-								}
-								const txid = yield* generateTransactionId()
-								return new ChatSyncChannelLinkResponse({
-									data: brandedLink,
-									transactionId: txid,
-								})
-							}),
-						)
+							const brandedLink = {
+								...link,
+								externalChannelId: link.externalChannelId as ExternalChannelId,
+							}
+							const txid = yield* generateTransactionId()
+							return new ChatSyncChannelLinkResponse({
+								data: brandedLink,
+								transactionId: txid,
+							})
+						}),
+					)
 					.pipe(
 						Effect.catchTag("ParseError", (error) =>
 							Effect.fail(

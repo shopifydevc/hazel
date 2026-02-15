@@ -1,5 +1,10 @@
 import type { NotificationSoundManager } from "~/lib/notification-sound-manager"
-import type { NotificationDecision, NotificationEvent, NotificationSink, NotificationSinkResult } from "../types"
+import type {
+	NotificationDecision,
+	NotificationEvent,
+	NotificationSink,
+	NotificationSinkResult,
+} from "../types"
 
 interface SoundSinkDependencies {
 	notificationSoundManager: NotificationSoundManager

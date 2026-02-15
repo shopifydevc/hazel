@@ -181,9 +181,7 @@ export function ImageViewerModal({
 					<div className="flex">
 						{images.map((image, index) => {
 							const imageUrl =
-								image.type === "attachment"
-									? getAttachmentUrl(image.attachment)
-									: image.url
+								image.type === "attachment" ? getAttachmentUrl(image.attachment) : image.url
 							const imageAlt =
 								image.type === "attachment" ? image.attachment.fileName : image.alt
 							const key =

@@ -27,16 +27,22 @@ describe("native-notifications", () => {
 	it("formats titles by channel type", () => {
 		expect(formatNotificationTitle({ firstName: "A", lastName: "B" } as any, undefined)).toBe("A B")
 		expect(
-			formatNotificationTitle({ firstName: "A", lastName: "B" } as any, {
-				type: "direct",
-				name: "random",
-			} as any),
+			formatNotificationTitle(
+				{ firstName: "A", lastName: "B" } as any,
+				{
+					type: "direct",
+					name: "random",
+				} as any,
+			),
 		).toBe("A B")
 		expect(
-			formatNotificationTitle({ firstName: "A", lastName: "B" } as any, {
-				type: "public",
-				name: "general",
-			} as any),
+			formatNotificationTitle(
+				{ firstName: "A", lastName: "B" } as any,
+				{
+					type: "public",
+					name: "general",
+				} as any,
+			),
 		).toBe("A B in #general")
 	})
 

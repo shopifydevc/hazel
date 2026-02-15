@@ -24,8 +24,7 @@ const resolveDiagnosticsDir = (): string => {
 	return path.resolve(process.cwd(), ".artifacts/chat-sync")
 }
 
-const diagnosticsFilePath = (): string =>
-	path.join(resolveDiagnosticsDir(), "chat-sync-diagnostics.jsonl")
+const diagnosticsFilePath = (): string => path.join(resolveDiagnosticsDir(), "chat-sync-diagnostics.jsonl")
 
 export const resetChatSyncDiagnostics = (): void => {
 	const dir = resolveDiagnosticsDir()

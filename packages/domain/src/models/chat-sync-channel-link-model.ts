@@ -1,9 +1,4 @@
-import {
-	ChannelId,
-	ExternalChannelId,
-	SyncChannelLinkId,
-	SyncConnectionId,
-} from "@hazel/schema"
+import { ChannelId, ExternalChannelId, SyncChannelLinkId, SyncConnectionId } from "@hazel/schema"
 import { Schema } from "effect"
 import * as M from "./utils"
 import { JsonDate } from "./utils"
@@ -29,9 +24,7 @@ export const SlackWebhookOutboundIdentityConfig = Schema.Struct({
 	webhookUrl: Schema.NonEmptyTrimmedString,
 	defaultIconUrl: Schema.optional(Schema.NonEmptyTrimmedString),
 })
-export type SlackWebhookOutboundIdentityConfig = Schema.Schema.Type<
-	typeof SlackWebhookOutboundIdentityConfig
->
+export type SlackWebhookOutboundIdentityConfig = Schema.Schema.Type<typeof SlackWebhookOutboundIdentityConfig>
 
 export const ProviderOutboundConfig = Schema.Union(
 	DiscordWebhookOutboundIdentityConfig,

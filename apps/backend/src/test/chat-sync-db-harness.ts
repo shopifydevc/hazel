@@ -53,9 +53,7 @@ export const createChatSyncDbHarness = async (): Promise<ChatSyncDbHarness> => {
 	})
 
 	const run = <A, E, R>(effect: Effect.Effect<A, E, R>) =>
-		Effect.runPromise(
-			(effect as Effect.Effect<A, E, never>).pipe(Effect.provide(dbLayer), Effect.scoped),
-		)
+		Effect.runPromise((effect as Effect.Effect<A, E, never>).pipe(Effect.provide(dbLayer), Effect.scoped))
 
 	const reset = () =>
 		run(

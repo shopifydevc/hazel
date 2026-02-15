@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest"
-import {
-	buildNotificationInsertRows,
-	buildOrgMemberLookup,
-} from "./message-notification-handler"
+import { buildNotificationInsertRows, buildOrgMemberLookup } from "./message-notification-handler"
 
 describe("message-notification-handler utilities", () => {
 	it("builds org-member lookup by user id", () => {
@@ -20,9 +17,7 @@ describe("message-notification-handler utilities", () => {
 			{ id: "cm1", userId: "u1" },
 			{ id: "cm2", userId: "u2" },
 		] as any
-		const orgLookup = new Map([
-			["u1", "om1"],
-		]) as any
+		const orgLookup = new Map([["u1", "om1"]]) as any
 
 		const result = buildNotificationInsertRows(members, orgLookup, {
 			channelId: "ch1",

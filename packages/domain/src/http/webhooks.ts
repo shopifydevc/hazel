@@ -84,10 +84,7 @@ export class SequinMetadata extends Schema.Class<SequinMetadata>("SequinMetadata
 
 export const SequinAction = Schema.Literal("insert", "update", "delete")
 
-export const SequinWebhookRecordSchema = Schema.Union(
-	SequinMessageRecord,
-	SequinMessageReactionRecord,
-)
+export const SequinWebhookRecordSchema = Schema.Union(SequinMessageRecord, SequinMessageReactionRecord)
 export type SequinWebhookRecord = Schema.Schema.Type<typeof SequinWebhookRecordSchema>
 
 // Individual event in the webhook data array

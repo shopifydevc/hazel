@@ -15,6 +15,7 @@ import { createContext, type ReactNode, useCallback, useContext, useMemo, useRef
 import {
 	activeThreadChannelIdAtom,
 	activeThreadMessageIdAtom,
+	editingMessageAtomFamily,
 	isUploadingAtomFamily,
 	replyToMessageAtomFamily,
 	type UploadingFile,
@@ -55,6 +56,7 @@ export interface ChatState {
 	activeThreadChannelId: ChannelId | null
 	activeThreadMessageId: MessageId | null
 	isThreadCreating: boolean
+	editingMessageId: MessageId | null
 }
 
 /**
@@ -73,6 +75,7 @@ export interface ChatActions {
 	openThread: (threadChannelId: ChannelId, originalMessageId: MessageId) => void
 	closeThread: () => void
 	setReplyToMessageId: (messageId: MessageId | null) => void
+	setEditingMessageId: (messageId: MessageId | null) => void
 	addAttachment: (attachmentId: AttachmentId) => void
 	removeAttachment: (attachmentId: AttachmentId) => void
 	clearAttachments: () => void
@@ -186,7 +189,10 @@ export function ChatProvider({ channelId, organizationId, children, onMessageSen
 	const unpinMessageMutation = useAtomSet(unpinMessageAction, { mode: "promiseExit" })
 
 	const replyToMessageId = useAtomValue(replyToMessageAtomFamily(channelId))
-	const setReplyToMessageId = useAtomSet(replyToMessageAtomFamily(channelId))
+	const setReplyToMessageIdRaw = useAtomSet(replyToMessageAtomFamily(channelId))
+
+	const editingMessageId = useAtomValue(editingMessageAtomFamily(channelId))
+	const setEditingMessageIdRaw = useAtomSet(editingMessageAtomFamily(channelId))
 
 	const activeThreadChannelId = useAtomValue(activeThreadChannelIdAtom)
 	const setActiveThreadChannelId = useAtomSet(activeThreadChannelIdAtom)
@@ -247,6 +253,27 @@ export function ChatProvider({ channelId, organizationId, children, onMessageSen
 			setUploadingFiles((prev) => prev.filter((f) => f.fileId !== fileId))
 		},
 		[setUploadingFiles],
+	)
+
+	// Mutual exclusion: entering reply clears edit, and vice versa
+	const setReplyToMessageId = useCallback(
+		(messageId: MessageId | null) => {
+			if (messageId) {
+				setEditingMessageIdRaw(null)
+			}
+			setReplyToMessageIdRaw(messageId)
+		},
+		[setReplyToMessageIdRaw, setEditingMessageIdRaw],
+	)
+
+	const setEditingMessageId = useCallback(
+		(messageId: MessageId | null) => {
+			if (messageId) {
+				setReplyToMessageIdRaw(null)
+			}
+			setEditingMessageIdRaw(messageId)
+		},
+		[setEditingMessageIdRaw, setReplyToMessageIdRaw],
 	)
 
 	// Store pending message data for manual retry
@@ -539,6 +566,7 @@ export function ChatProvider({ channelId, organizationId, children, onMessageSen
 			activeThreadChannelId,
 			activeThreadMessageId,
 			isThreadCreating,
+			editingMessageId,
 		}),
 		[
 			channelId,
@@ -551,6 +579,7 @@ export function ChatProvider({ channelId, organizationId, children, onMessageSen
 			activeThreadChannelId,
 			activeThreadMessageId,
 			isThreadCreating,
+			editingMessageId,
 		],
 	)
 
@@ -567,6 +596,7 @@ export function ChatProvider({ channelId, organizationId, children, onMessageSen
 			openThread,
 			closeThread,
 			setReplyToMessageId,
+			setEditingMessageId,
 			addAttachment,
 			removeAttachment,
 			clearAttachments,
@@ -587,6 +617,7 @@ export function ChatProvider({ channelId, organizationId, children, onMessageSen
 			openThread,
 			closeThread,
 			setReplyToMessageId,
+			setEditingMessageId,
 			addAttachment,
 			removeAttachment,
 			clearAttachments,

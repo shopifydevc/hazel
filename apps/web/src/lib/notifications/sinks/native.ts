@@ -3,7 +3,12 @@ import {
 	type NativeNotificationResult,
 	sendNativeNotification,
 } from "~/lib/native-notifications"
-import type { NotificationDecision, NotificationEvent, NotificationSink, NotificationSinkResult } from "../types"
+import type {
+	NotificationDecision,
+	NotificationEvent,
+	NotificationSink,
+	NotificationSinkResult,
+} from "../types"
 
 const toSinkStatus = (result: NativeNotificationResult): NotificationSinkResult => ({
 	sink: "native",

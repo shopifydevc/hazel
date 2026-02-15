@@ -66,9 +66,7 @@ export interface NativeNotificationResult {
 	error?: unknown
 }
 
-export async function getNativeNotificationPermissionState(): Promise<
-	"granted" | "denied" | "unavailable"
-> {
+export async function getNativeNotificationPermissionState(): Promise<"granted" | "denied" | "unavailable"> {
 	const notification = await getNotificationApi()
 	if (!notification) {
 		return "unavailable"

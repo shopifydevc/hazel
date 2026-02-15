@@ -9,9 +9,10 @@ interface ComposerFrameProps {
 }
 
 export function ComposerFrame({ children, className, compact = false }: ComposerFrameProps) {
-	const { replyToMessageId, attachmentIds, uploadingFiles } = useChat()
+	const { replyToMessageId, editingMessageId, attachmentIds, uploadingFiles } = useChat()
 
-	const hasTopContent = replyToMessageId || attachmentIds.length > 0 || uploadingFiles.length > 0
+	const hasTopContent =
+		replyToMessageId || editingMessageId || attachmentIds.length > 0 || uploadingFiles.length > 0
 
 	return (
 		<div

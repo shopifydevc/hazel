@@ -105,6 +105,10 @@ interface SlateMessageEditorProps {
 	disableGlobalKeyboardFocus?: boolean
 	/** Callback when files are pasted via Cmd+V / Ctrl+V */
 	onFilePaste?: (files: File[]) => void
+	/** Callback when Arrow Up is pressed with an empty editor */
+	onArrowUpEmpty?: () => void
+	/** Callback when Escape is pressed */
+	onEscape?: () => void
 }
 
 // Autoformat plugin to convert markdown shortcuts to block types
@@ -321,6 +325,8 @@ export const SlateMessageEditor = forwardRef<SlateMessageEditorRef, SlateMessage
 			hasAttachments = false,
 			disableGlobalKeyboardFocus = false,
 			onFilePaste,
+			onArrowUpEmpty,
+			onEscape,
 		},
 		ref,
 	) => {
@@ -720,6 +726,20 @@ export const SlateMessageEditor = forwardRef<SlateMessageEditorRef, SlateMessage
 				if (autocomplete.handleKeyDown(event)) {
 					return // Event was handled by autocomplete
 				}
+			}
+
+			// Handle Arrow Up on empty editor → edit last message
+			if (event.key === "ArrowUp" && onArrowUpEmpty && isValueEmpty(value)) {
+				event.preventDefault()
+				onArrowUpEmpty()
+				return
+			}
+
+			// Handle Escape → cancel edit mode
+			if (event.key === "Escape" && onEscape) {
+				event.preventDefault()
+				onEscape()
+				return
 			}
 
 			// Handle Command+A / Ctrl+A for select all

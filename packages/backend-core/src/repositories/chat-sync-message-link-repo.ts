@@ -39,15 +39,22 @@ export class ChatSyncMessageLinkRepo extends Effect.Service<ChatSyncMessageLinkR
 				...row,
 				externalMessageId: row.externalMessageId as ExternalMessageId,
 				rootExternalMessageId:
-					row.rootExternalMessageId === null ? null : (row.rootExternalMessageId as ExternalMessageId),
-				externalThreadId: row.externalThreadId === null ? null : (row.externalThreadId as ExternalThreadId),
+					row.rootExternalMessageId === null
+						? null
+						: (row.rootExternalMessageId as ExternalMessageId),
+				externalThreadId:
+					row.externalThreadId === null ? null : (row.externalThreadId as ExternalThreadId),
 			})
 
-			const normalizeMessageLinkRows = <T extends {
-				externalMessageId: string
-				rootExternalMessageId: string | null
-				externalThreadId: string | null
-			}>(rows: readonly T[]) => rows.map(normalizeMessageLink)
+			const normalizeMessageLinkRows = <
+				T extends {
+					externalMessageId: string
+					rootExternalMessageId: string | null
+					externalThreadId: string | null
+				},
+			>(
+				rows: readonly T[],
+			) => rows.map(normalizeMessageLink)
 
 			const normalizeMessageLinkOption = <
 				T extends {
@@ -60,26 +67,31 @@ export class ChatSyncMessageLinkRepo extends Effect.Service<ChatSyncMessageLinkR
 			) => Option.map(value, normalizeMessageLink)
 
 			const insert = (...args: Parameters<typeof baseRepo.insert>) =>
-				(baseRepo.insert(...args).pipe(Effect.map(normalizeMessageLinkRows)) as ReturnType<
+				baseRepo.insert(...args).pipe(Effect.map(normalizeMessageLinkRows)) as ReturnType<
 					typeof baseRepo.insert
-				>)
+				>
 
 			const findByChannelLink = (channelLinkId: SyncChannelLinkId, tx?: TxFn) =>
-				db.makeQuery(
-					(execute, data: { channelLinkId: SyncChannelLinkId }) =>
-						execute((client) =>
-							client
-								.select()
-								.from(schema.chatSyncMessageLinksTable)
-								.where(
-									and(
-										eq(schema.chatSyncMessageLinksTable.channelLinkId, data.channelLinkId),
-										isNull(schema.chatSyncMessageLinksTable.deletedAt),
+				db
+					.makeQuery(
+						(execute, data: { channelLinkId: SyncChannelLinkId }) =>
+							execute((client) =>
+								client
+									.select()
+									.from(schema.chatSyncMessageLinksTable)
+									.where(
+										and(
+											eq(
+												schema.chatSyncMessageLinksTable.channelLinkId,
+												data.channelLinkId,
+											),
+											isNull(schema.chatSyncMessageLinksTable.deletedAt),
+										),
 									),
-								),
-						),
-					policyRequire("ChatSyncMessageLink", "select"),
-				)({ channelLinkId }, tx).pipe(Effect.map((results) => normalizeMessageLinkRows(results)))
+							),
+						policyRequire("ChatSyncMessageLink", "select"),
+					)({ channelLinkId }, tx)
+					.pipe(Effect.map((results) => normalizeMessageLinkRows(results)))
 
 			const findByHazelMessage = (
 				channelLinkId: SyncChannelLinkId,
@@ -101,16 +113,26 @@ export class ChatSyncMessageLinkRepo extends Effect.Service<ChatSyncMessageLinkR
 									.from(schema.chatSyncMessageLinksTable)
 									.where(
 										and(
-											eq(schema.chatSyncMessageLinksTable.channelLinkId, data.channelLinkId),
-											eq(schema.chatSyncMessageLinksTable.hazelMessageId, data.hazelMessageId),
+											eq(
+												schema.chatSyncMessageLinksTable.channelLinkId,
+												data.channelLinkId,
+											),
+											eq(
+												schema.chatSyncMessageLinksTable.hazelMessageId,
+												data.hazelMessageId,
+											),
 											isNull(schema.chatSyncMessageLinksTable.deletedAt),
 										),
 									)
 									.limit(1),
-						),
-					policyRequire("ChatSyncMessageLink", "select"),
+							),
+						policyRequire("ChatSyncMessageLink", "select"),
 					)({ channelLinkId, hazelMessageId }, tx)
-					.pipe(Effect.map((results) => Option.fromNullable(results[0]).pipe(normalizeMessageLinkOption)))
+					.pipe(
+						Effect.map((results) =>
+							Option.fromNullable(results[0]).pipe(normalizeMessageLinkOption),
+						),
+					)
 
 			const findByExternalMessage = (
 				channelLinkId: SyncChannelLinkId,
@@ -132,7 +154,10 @@ export class ChatSyncMessageLinkRepo extends Effect.Service<ChatSyncMessageLinkR
 									.from(schema.chatSyncMessageLinksTable)
 									.where(
 										and(
-											eq(schema.chatSyncMessageLinksTable.channelLinkId, data.channelLinkId),
+											eq(
+												schema.chatSyncMessageLinksTable.channelLinkId,
+												data.channelLinkId,
+											),
 											eq(
 												schema.chatSyncMessageLinksTable.externalMessageId,
 												data.externalMessageId,
@@ -141,43 +166,54 @@ export class ChatSyncMessageLinkRepo extends Effect.Service<ChatSyncMessageLinkR
 										),
 									)
 									.limit(1),
-						),
-					policyRequire("ChatSyncMessageLink", "select"),
+							),
+						policyRequire("ChatSyncMessageLink", "select"),
 					)({ channelLinkId, externalMessageId }, tx)
-					.pipe(Effect.map((results) => Option.fromNullable(results[0]).pipe(normalizeMessageLinkOption)))
+					.pipe(
+						Effect.map((results) =>
+							Option.fromNullable(results[0]).pipe(normalizeMessageLinkOption),
+						),
+					)
 
 			const findByRootHazelMessage = (
 				channelLinkId: SyncChannelLinkId,
 				rootHazelMessageId: MessageId,
 				tx?: TxFn,
 			) =>
-				db.makeQuery(
-					(
-						execute,
-						data: {
-							channelLinkId: SyncChannelLinkId
-							rootHazelMessageId: MessageId
-						},
-					) =>
-						execute((client) =>
-							client
-								.select()
-								.from(schema.chatSyncMessageLinksTable)
-								.where(
-									and(
-										eq(schema.chatSyncMessageLinksTable.channelLinkId, data.channelLinkId),
-										eq(
-											schema.chatSyncMessageLinksTable.rootHazelMessageId,
-											data.rootHazelMessageId,
+				db
+					.makeQuery(
+						(
+							execute,
+							data: {
+								channelLinkId: SyncChannelLinkId
+								rootHazelMessageId: MessageId
+							},
+						) =>
+							execute((client) =>
+								client
+									.select()
+									.from(schema.chatSyncMessageLinksTable)
+									.where(
+										and(
+											eq(
+												schema.chatSyncMessageLinksTable.channelLinkId,
+												data.channelLinkId,
+											),
+											eq(
+												schema.chatSyncMessageLinksTable.rootHazelMessageId,
+												data.rootHazelMessageId,
+											),
+											isNull(schema.chatSyncMessageLinksTable.deletedAt),
 										),
-										isNull(schema.chatSyncMessageLinksTable.deletedAt),
 									),
-								),
+							),
+						policyRequire("ChatSyncMessageLink", "select"),
+					)({ channelLinkId, rootHazelMessageId }, tx)
+					.pipe(
+						Effect.map((results) =>
+							Option.fromNullable(results[0]).pipe(normalizeMessageLinkOption),
 						),
-					policyRequire("ChatSyncMessageLink", "select"),
-				)({ channelLinkId, rootHazelMessageId }, tx).pipe(
-					Effect.map((results) => Option.fromNullable(results[0]).pipe(normalizeMessageLinkOption)),
-				)
+					)
 
 			const updateLastSyncedAt = (id: SyncMessageLinkId, tx?: TxFn) =>
 				db.makeQuery(

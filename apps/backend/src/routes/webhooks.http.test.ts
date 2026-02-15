@@ -103,10 +103,7 @@ const makeWorkerSpy = () => {
 				calls.push({ method: "syncHazelReactionCreateToAllConnections", id: reactionId, dedupeKey })
 				return { synced: 1, failed: 0 }
 			}),
-		syncHazelReactionDeleteToAllConnections: (
-			payload: { hazelMessageId: string },
-			dedupeKey?: string,
-		) =>
+		syncHazelReactionDeleteToAllConnections: (payload: { hazelMessageId: string }, dedupeKey?: string) =>
 			Effect.sync(() => {
 				calls.push({
 					method: "syncHazelReactionDeleteToAllConnections",
@@ -184,12 +181,7 @@ describe("sequin webhook sorting", () => {
 
 		const sorted = sortSequinWebhookEventsByCommitOrder(events)
 
-		expect(sorted.map((event) => event.record.id)).toEqual([
-			"msg-c",
-			"msg-a",
-			"msg-d",
-			"msg-b",
-		])
+		expect(sorted.map((event) => event.record.id)).toEqual(["msg-c", "msg-a", "msg-d", "msg-b"])
 	})
 
 	it("falls back to deterministic record id when commit metadata is equal", () => {
@@ -208,12 +200,11 @@ describe("sequin webhook sorting", () => {
 			}),
 		]
 
-		expect(
-			sortSequinWebhookEventsByCommitOrder(events).map((event) => event.record.id),
-		).toEqual(["msg-a", "msg-z"])
-		expect(
-			compareSequinWebhookEventsByCommitOrder(events[0], events[1]),
-		).toBeGreaterThan(0)
+		expect(sortSequinWebhookEventsByCommitOrder(events).map((event) => event.record.id)).toEqual([
+			"msg-a",
+			"msg-z",
+		])
+		expect(compareSequinWebhookEventsByCommitOrder(events[0], events[1])).toBeGreaterThan(0)
 	})
 })
 
@@ -274,11 +265,7 @@ describe("sequin webhook processing order", () => {
 				syncSequinWebhookEventToDiscord(event, "integration-bot", worker),
 			),
 		)
-		expect(workerCalls).toEqual([
-			"reaction-create:reaction-1",
-			"create:msg-a",
-			"create:msg-b",
-		])
+		expect(workerCalls).toEqual(["reaction-create:reaction-1", "create:msg-a", "create:msg-b"])
 	})
 
 	it("continues processing when a worker sync fails while keeping order", async () => {
@@ -400,15 +387,9 @@ describe("sequin webhook sync routing matrix", () => {
 			},
 		)
 
-		await Effect.runPromise(
-			syncSequinWebhookEventToDiscord(insertEvent, "integration-bot", worker),
-		)
-		await Effect.runPromise(
-			syncSequinWebhookEventToDiscord(updateEvent, "integration-bot", worker),
-		)
-		await Effect.runPromise(
-			syncSequinWebhookEventToDiscord(deleteEvent, "integration-bot", worker),
-		)
+		await Effect.runPromise(syncSequinWebhookEventToDiscord(insertEvent, "integration-bot", worker))
+		await Effect.runPromise(syncSequinWebhookEventToDiscord(updateEvent, "integration-bot", worker))
+		await Effect.runPromise(syncSequinWebhookEventToDiscord(deleteEvent, "integration-bot", worker))
 		await Effect.runPromise(
 			syncSequinWebhookEventToDiscord(softDeleteUpdateEvent, "integration-bot", worker),
 		)
@@ -457,23 +438,15 @@ describe("sequin webhook sync routing matrix", () => {
 			commit_idx: 2,
 		})
 
-		await Effect.runPromise(
-			syncSequinWebhookEventToDiscord(insertEvent, "integration-bot", worker),
-		)
-		await Effect.runPromise(
-			syncSequinWebhookEventToDiscord(deleteEvent, "integration-bot", worker),
-		)
-		await Effect.runPromise(
-			syncSequinWebhookEventToDiscord(updateEvent, "integration-bot", worker),
-		)
+		await Effect.runPromise(syncSequinWebhookEventToDiscord(insertEvent, "integration-bot", worker))
+		await Effect.runPromise(syncSequinWebhookEventToDiscord(deleteEvent, "integration-bot", worker))
+		await Effect.runPromise(syncSequinWebhookEventToDiscord(updateEvent, "integration-bot", worker))
 
 		expect(calls.map((call) => call.method)).toEqual([
 			"syncHazelReactionCreateToAllConnections",
 			"syncHazelReactionDeleteToAllConnections",
 		])
-		expect(calls.every((call) => call.dedupeKey?.includes("hazel:sequin:message_reactions"))).toBe(
-			true,
-		)
+		expect(calls.every((call) => call.dedupeKey?.includes("hazel:sequin:message_reactions"))).toBe(true)
 	})
 
 	it("filters integration bot authored message/reaction events to prevent loops", async () => {

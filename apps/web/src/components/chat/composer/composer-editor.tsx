@@ -1,6 +1,7 @@
+import type { MessageId } from "@hazel/schema"
 import { and, eq, useLiveQuery } from "@tanstack/react-db"
-import { useCallback, useMemo } from "react"
-import { channelMemberCollection } from "~/db/collections"
+import { useCallback, useEffect, useMemo, useRef } from "react"
+import { channelMemberCollection, messageCollection } from "~/db/collections"
 import { useFileUploadHandler } from "~/hooks/use-file-upload-handler"
 import { useTyping } from "~/hooks/use-typing"
 import { useAuth } from "~/lib/auth"
@@ -19,7 +20,14 @@ export function ComposerEditor({ placeholder, className }: ComposerEditorProps) 
 	const { channelId, organizationId, placeholder: defaultPlaceholder } = state
 	const { editorRef } = meta
 
-	const { sendMessage, attachmentIds, activeThreadChannelId } = useChat()
+	const {
+		sendMessage,
+		editMessage,
+		editingMessageId,
+		setEditingMessageId,
+		attachmentIds,
+		activeThreadChannelId,
+	} = useChat()
 
 	const { handleFilesUpload, isUploading } = useFileUploadHandler({
 		organizationId,
@@ -38,6 +46,41 @@ export function ComposerEditor({ placeholder, className }: ComposerEditorProps) 
 		[channelId, user?.id],
 	)
 
+	// Query the current user's last message in this channel for Arrow Up editing
+	const { data: lastOwnMessage } = useLiveQuery(
+		(q) =>
+			q
+				.from({ message: messageCollection })
+				.where(({ message }) =>
+					and(eq(message.channelId, channelId), eq(message.authorId, user?.id ?? "")),
+				)
+				.orderBy(({ message }) => message.createdAt, "desc")
+				.findOne(),
+		[channelId, user?.id],
+	)
+
+	// Query the message being edited (for toolbar/context menu triggered edits)
+	const { data: editingMessage } = useLiveQuery(
+		(q) =>
+			q
+				.from({ message: messageCollection })
+				.where(({ message }) => eq(message.id, editingMessageId ?? ""))
+				.findOne(),
+		[editingMessageId],
+	)
+
+	// Track previous editingMessageId to detect external changes
+	const prevEditingMessageIdRef = useRef<MessageId | null>(null)
+
+	// Populate editor when editingMessageId is set externally (toolbar/context menu)
+	useEffect(() => {
+		if (editingMessageId && editingMessageId !== prevEditingMessageIdRef.current && editingMessage) {
+			editorRef.current?.setContent(editingMessage.content)
+			editorRef.current?.focus()
+		}
+		prevEditingMessageIdRef.current = editingMessageId
+	}, [editingMessageId, editingMessage, editorRef])
+
 	const currentChannelMember = useMemo(() => {
 		return channelMembersData || null
 	}, [channelMembersData])
@@ -54,8 +97,29 @@ export function ComposerEditor({ placeholder, className }: ComposerEditorProps) 
 		[handleContentChange],
 	)
 
+	const handleArrowUpEmpty = useCallback(() => {
+		if (!lastOwnMessage) return
+
+		setEditingMessageId(lastOwnMessage.id as MessageId)
+	}, [lastOwnMessage, setEditingMessageId])
+
+	const handleEscape = useCallback(() => {
+		if (editingMessageId) {
+			setEditingMessageId(null)
+			editorRef.current?.clearContent()
+		}
+	}, [editingMessageId, setEditingMessageId, editorRef])
+
 	const handleSubmit = useCallback(
-		async (content: string) => {
+		(content: string) => {
+			if (editingMessageId) {
+				if (!content.trim()) return
+				setEditingMessageId(null)
+				editorRef.current?.clearContent()
+				editMessage(editingMessageId, content.trim())
+				return
+			}
+
 			// Allow empty content if there are attachments
 			if (!content.trim() && attachmentIds.length === 0) return
 
@@ -69,7 +133,15 @@ export function ComposerEditor({ placeholder, className }: ComposerEditorProps) 
 			})
 			stopTyping()
 		},
-		[sendMessage, attachmentIds.length, editorRef, stopTyping],
+		[
+			editingMessageId,
+			editMessage,
+			setEditingMessageId,
+			sendMessage,
+			attachmentIds.length,
+			editorRef,
+			stopTyping,
+		],
 	)
 
 	return (
@@ -85,6 +157,8 @@ export function ComposerEditor({ placeholder, className }: ComposerEditorProps) 
 			hasAttachments={attachmentIds.length > 0}
 			disableGlobalKeyboardFocus={!!activeThreadChannelId && channelId !== activeThreadChannelId}
 			onFilePaste={handleFilesUpload}
+			onArrowUpEmpty={handleArrowUpEmpty}
+			onEscape={handleEscape}
 		/>
 	)
 }

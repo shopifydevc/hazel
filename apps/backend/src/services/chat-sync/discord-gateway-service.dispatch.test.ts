@@ -109,9 +109,7 @@ describe("DiscordGatewayService dispatch handlers", () => {
 			expected: "one inbound dispatch for both-direction link",
 			actual: `${harness.calls.create.length} dispatches`,
 		})
-		expect(harness.calls.create[0]?.syncConnectionId).toBe(
-			"00000000-0000-0000-0000-000000000001",
-		)
+		expect(harness.calls.create[0]?.syncConnectionId).toBe("00000000-0000-0000-0000-000000000001")
 		expect(harness.calls.create[0]?.dedupeKey).toBe("discord:gateway:create:223456789012345678")
 	})
 

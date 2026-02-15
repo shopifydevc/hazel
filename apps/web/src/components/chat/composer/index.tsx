@@ -2,6 +2,7 @@ import { ComposerActions } from "./composer-actions"
 import { ComposerAttachmentPreviews } from "./composer-attachment-previews"
 import { ComposerProvider } from "./composer-context"
 import { ComposerDropZone } from "./composer-drop-zone"
+import { ComposerEditIndicator } from "./composer-edit-indicator"
 import { ComposerEditor } from "./composer-editor"
 import { ComposerFrame } from "./composer-frame"
 import { ComposerReplyIndicator } from "./composer-reply-indicator"
@@ -54,6 +55,7 @@ export const Composer = {
 	DropZone: ComposerDropZone,
 	AttachmentPreviews: ComposerAttachmentPreviews,
 	ReplyIndicator: ComposerReplyIndicator,
+	EditIndicator: ComposerEditIndicator,
 	Frame: ComposerFrame,
 	Editor: ComposerEditor,
 	Actions: ComposerActions,

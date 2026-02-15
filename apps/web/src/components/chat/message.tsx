@@ -233,6 +233,8 @@ function MessageFrame({ children }: MessageFrameProps) {
 		isFirstNewMessage,
 		isHighlighted,
 	} = useMessage()
+	const { editingMessageId } = useChat()
+	const isBeingEdited = editingMessageId === message.id
 
 	return (
 		<div
@@ -250,6 +252,8 @@ function MessageFrame({ children }: MessageFrameProps) {
 					? "rounded-l-none border-warning border-l-4 bg-warning/10 pl-2 shadow-sm hover:bg-warning/15"
 					: "",
 				isHighlighted && "bg-accent/20 transition-colors duration-300",
+				isBeingEdited &&
+					"rounded-l-none border-primary border-l-4 bg-primary/10 pl-2 shadow-sm hover:bg-primary/15",
 			)}
 			data-id={message.id}
 		>

@@ -173,11 +173,7 @@ export class DiscordSyncWorker extends Effect.Service<DiscordSyncWorker>()("Disc
 			},
 			dedupeKey?: string,
 		) {
-			return yield* coreWorker.syncHazelReactionDeleteToAllConnections(
-				"discord",
-				payload,
-				dedupeKey,
-			)
+			return yield* coreWorker.syncHazelReactionDeleteToAllConnections("discord", payload, dedupeKey)
 		})
 
 		const ingestMessageCreate = Effect.fn("DiscordSyncWorker.ingestMessageCreate")(function* (

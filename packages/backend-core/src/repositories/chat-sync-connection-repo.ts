@@ -30,7 +30,10 @@ export class ChatSyncConnectionRepo extends Effect.Service<ChatSyncConnectionRep
 								.from(schema.chatSyncConnectionsTable)
 								.where(
 									and(
-										eq(schema.chatSyncConnectionsTable.organizationId, data.organizationId),
+										eq(
+											schema.chatSyncConnectionsTable.organizationId,
+											data.organizationId,
+										),
 										isNull(schema.chatSyncConnectionsTable.deletedAt),
 									),
 								),
@@ -60,7 +63,10 @@ export class ChatSyncConnectionRepo extends Effect.Service<ChatSyncConnectionRep
 									.from(schema.chatSyncConnectionsTable)
 									.where(
 										and(
-											eq(schema.chatSyncConnectionsTable.organizationId, data.organizationId),
+											eq(
+												schema.chatSyncConnectionsTable.organizationId,
+												data.organizationId,
+											),
 											eq(schema.chatSyncConnectionsTable.provider, data.provider),
 											eq(
 												schema.chatSyncConnectionsTable.externalWorkspaceId,

@@ -7,6 +7,7 @@ import {
 	EmojiPickerSearch,
 } from "~/components/emoji-picker"
 import IconCopy from "~/components/icons/icon-copy"
+import IconEdit from "~/components/icons/icon-edit"
 import IconEmojiAdd from "~/components/icons/icon-emoji-add"
 import IconHashtag from "~/components/icons/icon-hashtag"
 import IconReply from "~/components/icons/icon-reply"
@@ -38,6 +39,7 @@ export function MessageContextMenu({ message, children }: MessageContextMenuProp
 	const {
 		handleReaction,
 		handleCopy,
+		handleEdit,
 		handleReply,
 		handleThread,
 		handlePin,
@@ -85,6 +87,14 @@ export function MessageContextMenu({ message, children }: MessageContextMenuProp
 						<ContextMenuLabel>Reply</ContextMenuLabel>
 						<IconReply data-slot="icon" className="ml-auto size-4 text-muted-fg" />
 					</ContextMenuItem>
+
+					{/* Edit Message (own messages only) */}
+					{isOwnMessage && (
+						<ContextMenuItem onAction={handleEdit}>
+							<ContextMenuLabel>Edit Message</ContextMenuLabel>
+							<IconEdit data-slot="icon" className="ml-auto size-4 text-muted-fg" />
+						</ContextMenuItem>
+					)}
 
 					{/* Reply in Thread (only if not in thread channel) */}
 					{channel?.type !== "thread" && (

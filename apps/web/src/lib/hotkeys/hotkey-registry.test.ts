@@ -1,10 +1,6 @@
 import { validateHotkey } from "@tanstack/react-hotkeys"
 import { describe, expect, it } from "vitest"
-import {
-	HOTKEY_DEFINITIONS,
-	HOTKEY_DEFINITIONS_BY_ID,
-	isAppHotkeyActionId,
-} from "./hotkey-registry"
+import { HOTKEY_DEFINITIONS, HOTKEY_DEFINITIONS_BY_ID, isAppHotkeyActionId } from "./hotkey-registry"
 
 describe("hotkey-registry", () => {
 	it("has unique action ids", () => {

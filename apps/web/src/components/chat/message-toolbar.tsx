@@ -10,6 +10,7 @@ import { useSingleModalState } from "~/hooks/use-modal-state"
 import { useMessageHover } from "~/providers/message-hover-provider"
 import IconCopy from "../icons/icon-copy"
 import IconDotsVertical from "../icons/icon-dots-vertical"
+import IconEdit from "../icons/icon-edit"
 import IconEmojiAdd from "../icons/icon-emoji-add"
 import IconReply from "../icons/icon-reply"
 import { IconStar } from "../icons/icon-star"
@@ -26,6 +27,7 @@ export function MessageToolbar({ message }: MessageToolbarProps) {
 	const {
 		handleReaction,
 		handleCopy,
+		handleEdit,
 		handleReply,
 		handleThread,
 		handlePin,
@@ -90,6 +92,22 @@ export function MessageToolbar({ message }: MessageToolbarProps) {
 				</Button>
 				<TooltipContent>Copy message</TooltipContent>
 			</Tooltip>
+
+			{/* Edit Button (Own Messages Only) */}
+			{isOwnMessage && (
+				<Tooltip>
+					<Button
+						size="sq-sm"
+						intent="plain"
+						onPress={handleEdit}
+						aria-label="Edit message"
+						className="p-1.5! hover:bg-secondary"
+					>
+						<IconEdit data-slot="icon" className="size-3.5" />
+					</Button>
+					<TooltipContent>Edit message</TooltipContent>
+				</Tooltip>
+			)}
 
 			{/* Reply Button */}
 			<Tooltip>

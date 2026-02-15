@@ -73,18 +73,18 @@ export function MySettingsSidebar() {
 							</SidebarLink>
 						</SidebarItem>
 						<SidebarItem isCurrent={!!isRouteActive("/$orgSlug/my-settings/linked-accounts")}>
-						<SidebarLink
-							to="/$orgSlug/my-settings/linked-accounts"
-							params={{ orgSlug: slug }}
-							activeProps={{
-								className: "bg-sidebar-accent font-medium text-sidebar-accent-fg",
-							}}
-						>
-							<IconArrowPath data-slot="icon" />
-							<SidebarLabel>Linked Accounts</SidebarLabel>
-						</SidebarLink>
-					</SidebarItem>
-					<SidebarItem isCurrent={!!isRouteActive("/$orgSlug/my-settings/notifications")}>
+							<SidebarLink
+								to="/$orgSlug/my-settings/linked-accounts"
+								params={{ orgSlug: slug }}
+								activeProps={{
+									className: "bg-sidebar-accent font-medium text-sidebar-accent-fg",
+								}}
+							>
+								<IconArrowPath data-slot="icon" />
+								<SidebarLabel>Linked Accounts</SidebarLabel>
+							</SidebarLink>
+						</SidebarItem>
+						<SidebarItem isCurrent={!!isRouteActive("/$orgSlug/my-settings/notifications")}>
 							<SidebarLink
 								to="/$orgSlug/my-settings/notifications"
 								params={{ orgSlug: slug }}

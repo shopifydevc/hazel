@@ -133,7 +133,7 @@ export function useVisibleMessageNotificationCleaner(options: UseVisibleMessageN
 		[messageIdsWithNotifications, processPendingDeletions, debounceMs],
 	)
 
-			// Cleanup on unmount
+	// Cleanup on unmount
 	useEffect(() => {
 		return () => {
 			clearTimeout(debounceTimeoutRef.current)

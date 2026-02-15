@@ -204,63 +204,73 @@ export class ChatSyncProviderRegistry extends Effect.Service<ChatSyncProviderReg
 						yield* validateDiscordId(params.externalChannelId, "externalChannelId")
 						yield* validateDiscordMessage(params.content)
 						if (params.replyToExternalMessageId) {
-							yield* validateDiscordId(params.replyToExternalMessageId, "replyToExternalMessageId")
+							yield* validateDiscordId(
+								params.replyToExternalMessageId,
+								"replyToExternalMessageId",
+							)
 						}
-							return yield* discordApiClient.createMessage({
+						return yield* discordApiClient
+							.createMessage({
 								channelId: params.externalChannelId,
 								content: params.content,
 								replyToMessageId: params.replyToExternalMessageId,
 								botToken: token,
-							}).pipe(
-							Effect.retry({
-								while: isRetryableDiscordError,
-								schedule: DISCORD_SYNC_RETRY_SCHEDULE,
-							}),
-							Effect.mapError(
-								(error) =>
-									new ChatSyncProviderApiError({
-										provider: "discord",
-										message: error.message,
-										status: getStatusCode(error),
-										detail: `discord_api_status_${getStatusCode(error) ?? "unknown"}`,
-									}),
+							})
+							.pipe(
+								Effect.retry({
+									while: isRetryableDiscordError,
+									schedule: DISCORD_SYNC_RETRY_SCHEDULE,
+								}),
+								Effect.mapError(
+									(error) =>
+										new ChatSyncProviderApiError({
+											provider: "discord",
+											message: error.message,
+											status: getStatusCode(error),
+											detail: `discord_api_status_${getStatusCode(error) ?? "unknown"}`,
+										}),
 								),
 								Effect.map((messageId) => messageId as ExternalMessageId),
 							)
-						}),
+					}),
 				createMessageWithAttachments: (params) =>
 					Effect.gen(function* () {
 						const token = yield* getDiscordToken()
 						yield* validateDiscordId(params.externalChannelId, "externalChannelId")
 						if (params.replyToExternalMessageId) {
-							yield* validateDiscordId(params.replyToExternalMessageId, "replyToExternalMessageId")
+							yield* validateDiscordId(
+								params.replyToExternalMessageId,
+								"replyToExternalMessageId",
+							)
 						}
 						const content = toDiscordContent({
 							content: params.content,
 							attachments: params.attachments,
 						})
 						yield* validateDiscordMessage(content)
-						return yield* discordApiClient.createMessage({
-							channelId: params.externalChannelId,
-							content,
-							replyToMessageId: params.replyToExternalMessageId,
-							botToken: token,
-						}).pipe(
-							Effect.retry({
-								while: isRetryableDiscordError,
-								schedule: DISCORD_SYNC_RETRY_SCHEDULE,
-							}),
-							Effect.mapError(
-								(error) =>
-									new ChatSyncProviderApiError({
-										provider: "discord",
-										message: error.message,
-										status: getStatusCode(error),
-										detail: `discord_api_status_${getStatusCode(error) ?? "unknown"}`,
-									}),
-							),
-							Effect.map((messageId) => messageId as ExternalMessageId),
-						)
+						return yield* discordApiClient
+							.createMessage({
+								channelId: params.externalChannelId,
+								content,
+								replyToMessageId: params.replyToExternalMessageId,
+								botToken: token,
+							})
+							.pipe(
+								Effect.retry({
+									while: isRetryableDiscordError,
+									schedule: DISCORD_SYNC_RETRY_SCHEDULE,
+								}),
+								Effect.mapError(
+									(error) =>
+										new ChatSyncProviderApiError({
+											provider: "discord",
+											message: error.message,
+											status: getStatusCode(error),
+											detail: `discord_api_status_${getStatusCode(error) ?? "unknown"}`,
+										}),
+								),
+								Effect.map((messageId) => messageId as ExternalMessageId),
+							)
 					}),
 				updateMessage: (params) =>
 					Effect.gen(function* () {
@@ -268,78 +278,84 @@ export class ChatSyncProviderRegistry extends Effect.Service<ChatSyncProviderReg
 						yield* validateDiscordId(params.externalChannelId, "externalChannelId")
 						yield* validateDiscordId(params.externalMessageId, "externalMessageId")
 						yield* validateDiscordMessage(params.content)
-						yield* discordApiClient.updateMessage({
-							channelId: params.externalChannelId,
-							messageId: params.externalMessageId,
-							content: params.content,
-							botToken: token,
-						}).pipe(
-							Effect.retry({
-								while: isRetryableDiscordError,
-								schedule: DISCORD_SYNC_RETRY_SCHEDULE,
-							}),
-							Effect.mapError(
-								(error) =>
-									new ChatSyncProviderApiError({
-										provider: "discord",
-										message: error.message,
-										status: getStatusCode(error),
-										detail: `discord_api_status_${getStatusCode(error) ?? "unknown"}`,
-											}),
-										),
-									)
+						yield* discordApiClient
+							.updateMessage({
+								channelId: params.externalChannelId,
+								messageId: params.externalMessageId,
+								content: params.content,
+								botToken: token,
+							})
+							.pipe(
+								Effect.retry({
+									while: isRetryableDiscordError,
+									schedule: DISCORD_SYNC_RETRY_SCHEDULE,
 								}),
-					deleteMessage: (params) =>
-						Effect.gen(function* () {
-							const token = yield* getDiscordToken()
+								Effect.mapError(
+									(error) =>
+										new ChatSyncProviderApiError({
+											provider: "discord",
+											message: error.message,
+											status: getStatusCode(error),
+											detail: `discord_api_status_${getStatusCode(error) ?? "unknown"}`,
+										}),
+								),
+							)
+					}),
+				deleteMessage: (params) =>
+					Effect.gen(function* () {
+						const token = yield* getDiscordToken()
 						yield* validateDiscordId(params.externalChannelId, "externalChannelId")
 						yield* validateDiscordId(params.externalMessageId, "externalMessageId")
-						yield* discordApiClient.deleteMessage({
-							channelId: params.externalChannelId,
-							messageId: params.externalMessageId,
-							botToken: token,
-						}).pipe(
-							Effect.retry({
-								while: isRetryableDiscordError,
-								schedule: DISCORD_SYNC_RETRY_SCHEDULE,
-							}),
-									Effect.mapError(
-										(error) =>
-											new ChatSyncProviderApiError({
-												provider: "discord",
-												message: error.message,
-												status: getStatusCode(error),
-												detail: `discord_api_status_${getStatusCode(error) ?? "unknown"}`,
-											}),
-									),
-								)
-							}),
+						yield* discordApiClient
+							.deleteMessage({
+								channelId: params.externalChannelId,
+								messageId: params.externalMessageId,
+								botToken: token,
+							})
+							.pipe(
+								Effect.retry({
+									while: isRetryableDiscordError,
+									schedule: DISCORD_SYNC_RETRY_SCHEDULE,
+								}),
+								Effect.mapError(
+									(error) =>
+										new ChatSyncProviderApiError({
+											provider: "discord",
+											message: error.message,
+											status: getStatusCode(error),
+											detail: `discord_api_status_${getStatusCode(error) ?? "unknown"}`,
+										}),
+								),
+							)
+					}),
 				addReaction: (params) =>
 					Effect.gen(function* () {
 						const token = yield* getDiscordToken()
 						yield* validateDiscordId(params.externalChannelId, "externalChannelId")
 						yield* validateDiscordId(params.externalMessageId, "externalMessageId")
 						yield* validateDiscordEmoji(params.emoji)
-						yield* discordApiClient.addReaction({
-							channelId: params.externalChannelId,
-							messageId: params.externalMessageId,
-							emoji: params.emoji,
-							botToken: token,
-						}).pipe(
-							Effect.retry({
-								while: isRetryableDiscordError,
-								schedule: DISCORD_SYNC_RETRY_SCHEDULE,
-							}),
-							Effect.mapError(
-								(error) =>
-									new ChatSyncProviderApiError({
-										provider: "discord",
-										message: error.message,
-										status: getStatusCode(error),
-										detail: `discord_api_status_${getStatusCode(error) ?? "unknown"}`,
-									}),
-							),
-						)
+						yield* discordApiClient
+							.addReaction({
+								channelId: params.externalChannelId,
+								messageId: params.externalMessageId,
+								emoji: params.emoji,
+								botToken: token,
+							})
+							.pipe(
+								Effect.retry({
+									while: isRetryableDiscordError,
+									schedule: DISCORD_SYNC_RETRY_SCHEDULE,
+								}),
+								Effect.mapError(
+									(error) =>
+										new ChatSyncProviderApiError({
+											provider: "discord",
+											message: error.message,
+											status: getStatusCode(error),
+											detail: `discord_api_status_${getStatusCode(error) ?? "unknown"}`,
+										}),
+								),
+							)
 					}),
 				removeReaction: (params) =>
 					Effect.gen(function* () {
@@ -347,43 +363,47 @@ export class ChatSyncProviderRegistry extends Effect.Service<ChatSyncProviderReg
 						yield* validateDiscordId(params.externalChannelId, "externalChannelId")
 						yield* validateDiscordId(params.externalMessageId, "externalMessageId")
 						yield* validateDiscordEmoji(params.emoji)
-						yield* discordApiClient.removeReaction({
-							channelId: params.externalChannelId,
-							messageId: params.externalMessageId,
-							emoji: params.emoji,
-							botToken: token,
-						}).pipe(
-							Effect.retry({
-								while: isRetryableDiscordError,
-								schedule: DISCORD_SYNC_RETRY_SCHEDULE,
-							}),
-							Effect.mapError(
-								(error) =>
-									new ChatSyncProviderApiError({
-										provider: "discord",
-										message: error.message,
-										status: getStatusCode(error),
-										detail: `discord_api_status_${getStatusCode(error) ?? "unknown"}`,
-									}),
-							),
-						)
+						yield* discordApiClient
+							.removeReaction({
+								channelId: params.externalChannelId,
+								messageId: params.externalMessageId,
+								emoji: params.emoji,
+								botToken: token,
+							})
+							.pipe(
+								Effect.retry({
+									while: isRetryableDiscordError,
+									schedule: DISCORD_SYNC_RETRY_SCHEDULE,
+								}),
+								Effect.mapError(
+									(error) =>
+										new ChatSyncProviderApiError({
+											provider: "discord",
+											message: error.message,
+											status: getStatusCode(error),
+											detail: `discord_api_status_${getStatusCode(error) ?? "unknown"}`,
+										}),
+								),
+							)
 					}),
-					createThread: (params) =>
-						Effect.gen(function* () {
-							const token = yield* getDiscordToken()
-							yield* validateDiscordId(params.externalChannelId, "externalChannelId")
-							yield* validateDiscordId(params.externalMessageId, "externalMessageId")
-							yield* validateDiscordThreadName(params.name)
-						return yield* discordApiClient.createThread({
-							channelId: params.externalChannelId,
-							messageId: params.externalMessageId,
-							name: params.name,
-							botToken: token,
-						}).pipe(
-							Effect.retry({
-								while: isRetryableDiscordError,
-								schedule: DISCORD_SYNC_RETRY_SCHEDULE,
-							}),
+				createThread: (params) =>
+					Effect.gen(function* () {
+						const token = yield* getDiscordToken()
+						yield* validateDiscordId(params.externalChannelId, "externalChannelId")
+						yield* validateDiscordId(params.externalMessageId, "externalMessageId")
+						yield* validateDiscordThreadName(params.name)
+						return yield* discordApiClient
+							.createThread({
+								channelId: params.externalChannelId,
+								messageId: params.externalMessageId,
+								name: params.name,
+								botToken: token,
+							})
+							.pipe(
+								Effect.retry({
+									while: isRetryableDiscordError,
+									schedule: DISCORD_SYNC_RETRY_SCHEDULE,
+								}),
 								Effect.mapError(
 									(error) =>
 										new ChatSyncProviderApiError({
@@ -395,7 +415,7 @@ export class ChatSyncProviderRegistry extends Effect.Service<ChatSyncProviderReg
 								),
 								Effect.map((threadId) => threadId as ExternalThreadId),
 							)
-						}),
+					}),
 			}
 
 			const adapters = {

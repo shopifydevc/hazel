@@ -10,6 +10,14 @@ export const replyToMessageAtomFamily = Atom.family((_channelId: ChannelId) =>
 )
 
 /**
+ * Per-channel edit mode state
+ * Stores the MessageId being edited, or null if not editing
+ */
+export const editingMessageAtomFamily = Atom.family((_channelId: ChannelId) =>
+	Atom.make<MessageId | null>(null).pipe(Atom.keepAlive),
+)
+
+/**
  * Global active thread channel ID
  * Threads are app-wide, not per-channel
  */

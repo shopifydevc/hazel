@@ -146,7 +146,7 @@ function DebugSettings() {
 
 				{/* React-Scan Toggle Section */}
 				<div className="flex flex-col gap-5">
-						<div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(200px,280px)_1fr] lg:gap-8">
+					<div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(200px,280px)_1fr] lg:gap-8">
 						<SectionLabel.Root
 							size="sm"
 							title="React Performance Scanner"
@@ -254,86 +254,97 @@ function DebugSettings() {
 									</span>
 								</div>
 							</div>
-							</div>
 						</div>
+					</div>
 
-						<hr className="h-px w-full border-none bg-border" />
+					<hr className="h-px w-full border-none bg-border" />
 
-						<div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(200px,280px)_1fr] lg:gap-8">
-							<SectionLabel.Root
-								size="sm"
-								title="Notification Diagnostics"
-								description="Inspect orchestrator decisions and sink outcomes."
-							/>
+					<div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(200px,280px)_1fr] lg:gap-8">
+						<SectionLabel.Root
+							size="sm"
+							title="Notification Diagnostics"
+							description="Inspect orchestrator decisions and sink outcomes."
+						/>
 
-							<div className="space-y-4 rounded-lg border border-border bg-secondary/50 p-4">
-								<div className="grid grid-cols-1 gap-2 font-mono text-xs sm:grid-cols-2">
-									<div>
-										<span className="text-muted-fg">Native permission:</span>{" "}
-										<span>{notificationPermission}</span>
-									</div>
-									<div>
-										<span className="text-muted-fg">Sound primed:</span>{" "}
-										<span>{notificationSoundManager.getIsPrimed() ? "yes" : "no"}</span>
-									</div>
-									<div className="sm:col-span-2">
-										<span className="text-muted-fg">Diagnostics records:</span>{" "}
-										<span>{notificationDiagnostics.length}</span>
-									</div>
+						<div className="space-y-4 rounded-lg border border-border bg-secondary/50 p-4">
+							<div className="grid grid-cols-1 gap-2 font-mono text-xs sm:grid-cols-2">
+								<div>
+									<span className="text-muted-fg">Native permission:</span>{" "}
+									<span>{notificationPermission}</span>
 								</div>
-
-								<div className="flex flex-wrap gap-2">
-									<Button size="sm" intent="secondary" onPress={handleSyntheticNotification}>
-										Run synthetic notification
-									</Button>
-									<Button size="sm" intent="outline" onPress={() => notificationSoundManager.testSound()}>
-										Test sound
-									</Button>
-									<Button size="sm" intent="outline" onPress={handleTestNativeNotification}>
-										Test native
-									</Button>
-									<Button
-										size="sm"
-										intent="plain"
-										onPress={() => {
-											clearNotificationDiagnostics()
-										}}
-									>
-										Clear diagnostics
-									</Button>
+								<div>
+									<span className="text-muted-fg">Sound primed:</span>{" "}
+									<span>{notificationSoundManager.getIsPrimed() ? "yes" : "no"}</span>
 								</div>
+								<div className="sm:col-span-2">
+									<span className="text-muted-fg">Diagnostics records:</span>{" "}
+									<span>{notificationDiagnostics.length}</span>
+								</div>
+							</div>
 
-								<div className="max-h-64 overflow-auto rounded border border-border bg-bg p-2">
-									{latestDiagnostics.length === 0 ? (
-										<p className="text-muted-fg text-xs">No diagnostics yet.</p>
-									) : (
-										<div className="space-y-2">
-											{latestDiagnostics.map((record) => (
-												<div key={`${record.eventId}-${record.finishedAt}`} className="rounded border border-border/60 p-2 text-xs">
-													<div className="font-mono text-muted-fg">
-														{new Date(record.finishedAt).toLocaleTimeString()} · {record.durationMs}ms
-													</div>
-													<div className="mt-1 font-mono">
-														event={record.eventId} decision(sound=
-														{record.decision.playSound ? "1" : "0"}, native=
-														{record.decision.sendNative ? "1" : "0"})
-													</div>
-													<div className="mt-1 flex flex-wrap gap-1">
-														{record.results.map((result) => (
-															<span key={`${record.eventId}-${result.sink}`} className="rounded border border-border px-1.5 py-0.5 font-mono text-muted-fg">
-																{result.sink}:{result.status}:{result.reason}
-															</span>
-														))}
-													</div>
+							<div className="flex flex-wrap gap-2">
+								<Button size="sm" intent="secondary" onPress={handleSyntheticNotification}>
+									Run synthetic notification
+								</Button>
+								<Button
+									size="sm"
+									intent="outline"
+									onPress={() => notificationSoundManager.testSound()}
+								>
+									Test sound
+								</Button>
+								<Button size="sm" intent="outline" onPress={handleTestNativeNotification}>
+									Test native
+								</Button>
+								<Button
+									size="sm"
+									intent="plain"
+									onPress={() => {
+										clearNotificationDiagnostics()
+									}}
+								>
+									Clear diagnostics
+								</Button>
+							</div>
+
+							<div className="max-h-64 overflow-auto rounded border border-border bg-bg p-2">
+								{latestDiagnostics.length === 0 ? (
+									<p className="text-muted-fg text-xs">No diagnostics yet.</p>
+								) : (
+									<div className="space-y-2">
+										{latestDiagnostics.map((record) => (
+											<div
+												key={`${record.eventId}-${record.finishedAt}`}
+												className="rounded border border-border/60 p-2 text-xs"
+											>
+												<div className="font-mono text-muted-fg">
+													{new Date(record.finishedAt).toLocaleTimeString()} ·{" "}
+													{record.durationMs}ms
 												</div>
-											))}
-										</div>
-									)}
-								</div>
+												<div className="mt-1 font-mono">
+													event={record.eventId} decision(sound=
+													{record.decision.playSound ? "1" : "0"}, native=
+													{record.decision.sendNative ? "1" : "0"})
+												</div>
+												<div className="mt-1 flex flex-wrap gap-1">
+													{record.results.map((result) => (
+														<span
+															key={`${record.eventId}-${result.sink}`}
+															className="rounded border border-border px-1.5 py-0.5 font-mono text-muted-fg"
+														>
+															{result.sink}:{result.status}:{result.reason}
+														</span>
+													))}
+												</div>
+											</div>
+										))}
+									</div>
+								)}
 							</div>
 						</div>
 					</div>
-				</form>
+				</div>
+			</form>
 
 			{/* Mock Data Generation Modal */}
 			<Modal>

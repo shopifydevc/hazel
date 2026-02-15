@@ -1,4 +1,4 @@
-import type { PinnedMessageId } from "@hazel/schema"
+import type { MessageId, PinnedMessageId } from "@hazel/schema"
 import { useCallback, useMemo } from "react"
 import { toast } from "sonner"
 import type { MessageWithPinned } from "~/atoms/chat-query-atoms"
@@ -14,6 +14,7 @@ export function useMessageActions(message: MessageWithPinned) {
 	const {
 		addReaction,
 		setReplyToMessageId,
+		setEditingMessageId,
 		deleteMessage,
 		pinMessage,
 		unpinMessage,
@@ -42,6 +43,10 @@ export function useMessageActions(message: MessageWithPinned) {
 			description: "Message content has been copied to your clipboard.",
 		})
 	}, [message.content])
+
+	const handleEdit = useCallback(() => {
+		setEditingMessageId(message.id as MessageId)
+	}, [setEditingMessageId, message.id])
 
 	const handleReply = useCallback(() => {
 		setReplyToMessageId(message.id)
@@ -75,6 +80,7 @@ export function useMessageActions(message: MessageWithPinned) {
 			// Actions
 			handleReaction,
 			handleCopy,
+			handleEdit,
 			handleReply,
 			handleThread,
 			handlePin,
@@ -89,6 +95,7 @@ export function useMessageActions(message: MessageWithPinned) {
 		[
 			handleReaction,
 			handleCopy,
+			handleEdit,
 			handleReply,
 			handleThread,
 			handlePin,

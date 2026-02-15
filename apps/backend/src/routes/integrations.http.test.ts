@@ -40,7 +40,9 @@ describe("integration connect API key helpers", () => {
 		})
 
 		it("parses double URL-encoded JSON state (legacy)", () => {
-			const parsed = parseOAuthStateParam(encodeURIComponent(encodeURIComponent(JSON.stringify(baseState))))
+			const parsed = parseOAuthStateParam(
+				encodeURIComponent(encodeURIComponent(JSON.stringify(baseState))),
+			)
 			expect(parsed.organizationId).toBe(baseState.organizationId)
 			expect(parsed.userId).toBe(baseState.userId)
 			expect(parsed.level).toBe(baseState.level)

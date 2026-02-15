@@ -379,7 +379,8 @@ const makeWorkerLayer = (
 		} as unknown as ChannelAccessSyncService),
 		Layer.succeed(Discord.DiscordApiClient, {
 			createWebhook: () => Effect.fail(new Error("not used in deterministic integration tests")),
-			executeWebhookMessage: () => Effect.fail(new Error("not used in deterministic integration tests")),
+			executeWebhookMessage: () =>
+				Effect.fail(new Error("not used in deterministic integration tests")),
 			updateWebhookMessage: () => Effect.fail(new Error("not used in deterministic integration tests")),
 			deleteWebhookMessage: () => Effect.fail(new Error("not used in deterministic integration tests")),
 			createMessage: () => Effect.fail(new Error("not used in deterministic integration tests")),
@@ -504,7 +505,9 @@ describe("ChatSyncCoreWorker integration", () => {
 				)
 				expect(receiptRows.length).toBeGreaterThanOrEqual(3)
 				expect(
-					receiptRows.some((receipt) => receipt.status === "processed" && receipt.source === "hazel"),
+					receiptRows.some(
+						(receipt) => receipt.status === "processed" && receipt.source === "hazel",
+					),
 				).toBe(true)
 			}),
 		)
@@ -547,9 +550,7 @@ describe("ChatSyncCoreWorker integration", () => {
 					client
 						.select()
 						.from(schema.chatSyncMessageLinksTable)
-						.where(
-							eq(schema.chatSyncMessageLinksTable.channelLinkId, linkId),
-						),
+						.where(eq(schema.chatSyncMessageLinksTable.channelLinkId, linkId)),
 				)
 				expect(links[0]?.externalMessageId).toBe(externalMessageId)
 			}),
@@ -592,12 +593,16 @@ describe("ChatSyncCoreWorker integration", () => {
 		)
 
 		const deleteReactionResult = await runEffect(
-			ChatSyncCoreWorker.syncHazelReactionDeleteToProvider(syncConnectionId, {
-				hazelChannelId: ctx.channelId,
-				hazelMessageId: messageId,
-				emoji: "🔥",
-				userId: ctx.authorUserId,
-			}, "hazel:reaction:delete:second-pass").pipe(Effect.provide(workerLayer)),
+			ChatSyncCoreWorker.syncHazelReactionDeleteToProvider(
+				syncConnectionId,
+				{
+					hazelChannelId: ctx.channelId,
+					hazelMessageId: messageId,
+					emoji: "🔥",
+					userId: ctx.authorUserId,
+				},
+				"hazel:reaction:delete:second-pass",
+			).pipe(Effect.provide(workerLayer)),
 		)
 		expect(deleteReactionResult.status).toBe("deleted")
 		expect(recorder.calls.removeReaction).toHaveLength(1)
@@ -719,9 +724,7 @@ describe("ChatSyncCoreWorker integration", () => {
 					client
 						.select()
 						.from(schema.messagesTable)
-						.where(
-							eq(schema.messagesTable.id, hazelMessageId),
-						),
+						.where(eq(schema.messagesTable.id, hazelMessageId)),
 				)
 				expect(deletedMessageRows[0]?.deletedAt).not.toBeNull()
 			}),
