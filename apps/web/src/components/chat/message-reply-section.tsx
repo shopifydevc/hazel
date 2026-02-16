@@ -13,7 +13,7 @@ export function MessageReplySection({ replyToMessageId, onClick }: MessageReplyS
 	const messageResult = useAtomValue(messageWithAuthorAtomFamily(replyToMessageId))
 
 	return (
-		<div className="relative">
+		<div className="relative mb-1">
 			{/* Reply curve SVG */}
 			<svg
 				className="absolute -bottom-1 left-5 rotate-90 text-muted-fg"
