@@ -17,7 +17,7 @@ import { updateChannelMemberAction } from "~/db/actions"
 import { messageCollection } from "~/db/collections"
 import { useChannelWithCurrentUser } from "~/db/hooks"
 import { useOrganization } from "~/hooks/use-organization"
-import { useUserPresence } from "~/hooks/use-presence"
+import { useUserPresence, useUserStatus } from "~/hooks/use-presence"
 import { useScrollIntoViewOnActive } from "~/hooks/use-scroll-into-view-on-active"
 import { useAuth } from "~/lib/auth"
 import { exitToast } from "~/lib/toast-exit"
@@ -49,7 +49,7 @@ function DmAvatar({ member }: DmAvatarProps) {
 }
 
 function DmUserStatusEmoji({ userId }: { userId: UserId }) {
-	const { statusEmoji, customMessage, statusExpiresAt, quietHours } = useUserPresence(userId)
+	const { statusEmoji, customMessage, statusExpiresAt, quietHours } = useUserStatus(userId)
 
 	return (
 		<StatusEmojiWithTooltip

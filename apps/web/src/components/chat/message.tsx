@@ -1,9 +1,10 @@
-import { Result, useAtomValue } from "@effect-atom/atom-react"
+import { Result, useAtomSet, useAtomValue } from "@effect-atom/atom-react"
 import type { MessageId, OrganizationId, UserId } from "@hazel/schema"
 import { format } from "date-fns"
 import { createContext, memo, useCallback, useMemo, useRef, type ReactNode, type RefObject } from "react"
 import type { MessageWithPinned } from "~/atoms/chat-query-atoms"
 import { customEmojiMapAtomFamily } from "~/atoms/custom-emoji-atoms"
+import { emojiUsageAtom } from "~/atoms/emoji-atoms"
 import { isDiscordSyncedMessageAtomFamily, processedReactionsAtomFamily } from "~/atoms/message-atoms"
 import IconDiscord from "~/components/icons/icon-discord"
 import IconPin from "~/components/icons/icon-pin"
@@ -11,8 +12,7 @@ import { extractUrls } from "~/components/link-preview"
 import { StatusEmojiWithTooltip } from "~/components/status/user-status-badge"
 import { Badge } from "~/components/ui/badge"
 import { useChatStable } from "~/hooks/use-chat"
-import { useEmojiStats } from "~/hooks/use-emoji-stats"
-import { useUserPresence } from "~/hooks/use-presence"
+import { useUserStatus } from "~/hooks/use-presence"
 import { useAuth } from "~/lib/auth"
 import { useBotName } from "~/db/hooks"
 import { cn } from "~/lib/utils"
@@ -100,7 +100,7 @@ interface MessageProviderProps {
  */
 function MessageProvider({ message, variants, children }: MessageProviderProps) {
 	const { addReaction } = useChatStable()
-	const { trackEmojiUsage } = useEmojiStats()
+	const setEmojiUsage = useAtomSet(emojiUsageAtom)
 	const { user: currentUser } = useAuth()
 	const messageRef = useRef<HTMLDivElement>(null)
 
@@ -138,10 +138,10 @@ function MessageProvider({ message, variants, children }: MessageProviderProps) 
 	const handleReaction = useCallback(
 		(emoji: string) => {
 			if (!message) return
-			trackEmojiUsage(emoji)
+			setEmojiUsage((prev) => ({ ...prev, [emoji]: (prev[emoji] || 0) + 1 }))
 			addReaction(message.id, message.channelId, emoji)
 		},
-		[message?.id, message?.channelId, trackEmojiUsage, addReaction],
+		[message?.id, message?.channelId, setEmojiUsage, addReaction],
 	)
 
 	// Memoize reply click handler
@@ -250,9 +250,16 @@ function MessageContextMenuWrapper({ children }: MessageContextMenuWrapperProps)
  */
 function MessageAvatar() {
 	const { message, showAvatar } = useMessage()
+	const user = message.author
 
 	if (showAvatar) {
-		return <UserProfilePopover userId={message.authorId} />
+		return (
+			<UserProfilePopover
+				userId={message.authorId}
+				userName={user ? `${user.firstName} ${user.lastName}` : undefined}
+				userAvatarUrl={user?.avatarUrl}
+			/>
+		)
 	}
 
 	return (
@@ -265,10 +272,10 @@ function MessageAvatar() {
 /**
  * Renders the message author header with name, status, timestamp, and badges.
  */
-function MessageHeader() {
+const MessageHeader = memo(function MessageHeader() {
 	const { message, showAvatar, isPinned } = useMessage()
 	const user = message.author
-	const { statusEmoji, customMessage, statusExpiresAt, quietHours } = useUserPresence(message.authorId)
+	const { statusEmoji, customMessage, statusExpiresAt, quietHours } = useUserStatus(message.authorId)
 	const isDiscordSyncedResult = useAtomValue(isDiscordSyncedMessageAtomFamily(message.id))
 	const isDiscordSynced = Result.getOrElse(isDiscordSyncedResult, () => []).length > 0
 
@@ -316,7 +323,7 @@ function MessageHeader() {
 			)}
 		</div>
 	)
-}
+})
 
 /**
  * Renders the reply section when the message is a reply to another message.

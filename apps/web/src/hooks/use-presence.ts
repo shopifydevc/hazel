@@ -563,6 +563,41 @@ export function useCurrentUserStatus() {
 }
 
 /**
+ * Lightweight hook for another user's status display (emoji, message, quiet hours).
+ * Does NOT subscribe to presenceNowSignal — avoids 5-second re-render cycle.
+ * Use this in message headers and other places that don't need live online/offline status.
+ */
+export function useUserStatus(userId: UserId) {
+	const presenceResult = useAtomValue(currentUserPresenceAtomFamily(userId))
+	const presence = Result.getOrElse(presenceResult, () => undefined)
+	const userSettingsResult = useAtomValue(userSettingsAtomFamily(userId))
+	const userSettings = Result.getOrElse(userSettingsResult, () => undefined)
+
+	const quietHours = useMemo((): QuietHoursInfo | undefined => {
+		if (userSettings?.settings?.showQuietHoursInStatus === false) return undefined
+		const start = userSettings?.settings?.quietHoursStart ?? null
+		const end = userSettings?.settings?.quietHoursEnd ?? null
+		if (!start || !end) return undefined
+		return {
+			isActive: isInQuietHours(start, end),
+			start,
+			end,
+		}
+	}, [
+		userSettings?.settings?.showQuietHoursInStatus,
+		userSettings?.settings?.quietHoursStart,
+		userSettings?.settings?.quietHoursEnd,
+	])
+
+	return {
+		statusEmoji: presence?.statusEmoji,
+		customMessage: presence?.customMessage,
+		statusExpiresAt: presence?.statusExpiresAt,
+		quietHours,
+	}
+}
+
+/**
  * Hook to get another user's presence
  */
 export function useUserPresence(userId: UserId) {

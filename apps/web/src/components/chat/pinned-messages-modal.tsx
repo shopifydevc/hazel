@@ -128,7 +128,15 @@ export function PinnedMessagesModal() {
 
 											{/* Message Content */}
 											<div className="flex gap-3 pr-8">
-												<UserProfilePopover userId={pinnedMessage.message.authorId} />
+												<UserProfilePopover
+													userId={pinnedMessage.message.authorId}
+													userName={
+														user
+															? `${user.firstName} ${user.lastName}`
+															: undefined
+													}
+													userAvatarUrl={user?.avatarUrl}
+												/>
 												<div className="min-w-0 flex-1">
 													{/* Message Author Header */}
 													<div className="flex items-baseline gap-2">

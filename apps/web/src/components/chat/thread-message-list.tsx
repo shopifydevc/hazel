@@ -122,11 +122,7 @@ function ThreadMessageListContent({ threadChannelId }: ThreadMessageListProps) {
 			)}
 
 			{processedMessages.map(({ message, groupPosition }) => (
-				<ThreadMessageItem
-					key={message.id}
-					message={message}
-					variants={{ groupPosition, highlight: "none" }}
-				/>
+				<ThreadMessageItem key={message.id} message={message} groupPosition={groupPosition} />
 			))}
 
 			{/* Toolbar portal - renders floating toolbar when hovering a message */}

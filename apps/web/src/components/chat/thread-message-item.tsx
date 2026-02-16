@@ -1,14 +1,11 @@
 import { memo } from "react"
 import type { MessageWithPinned } from "~/atoms/chat-query-atoms"
-import { Message, type MessageVariants } from "./message"
+import { Message, type MessageGroupPosition, type MessageHighlight } from "./message"
 
 interface ThreadMessageItemProps {
 	message: MessageWithPinned
-	/**
-	 * Variant configuration for the message item
-	 * @example { groupPosition: 'start', highlight: 'none' }
-	 */
-	variants?: MessageVariants
+	groupPosition?: MessageGroupPosition
+	highlight?: MessageHighlight
 }
 
 /**
@@ -38,10 +35,11 @@ interface ThreadMessageItemProps {
  */
 export const ThreadMessageItem = memo(function ThreadMessageItem({
 	message,
-	variants,
+	groupPosition = "standalone",
+	highlight = "none",
 }: ThreadMessageItemProps) {
 	return (
-		<Message.Provider message={message} variants={variants}>
+		<Message.Provider message={message} variants={{ groupPosition, highlight }}>
 			<Message.ContextMenu>
 				<Message.Frame>
 					{/* Reply Section */}

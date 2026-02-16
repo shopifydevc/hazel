@@ -99,13 +99,8 @@ const MessageVirtualList = memo(
 					) : (
 						<MessageItem
 							message={props.item.message}
-							variants={{
-								groupPosition: toGroupPosition(
-									props.item.isGroupStart,
-									props.item.isGroupEnd,
-								),
-								highlight: toHighlight(props.item.isFirstNewMessage, props.item.isPinned),
-							}}
+							groupPosition={toGroupPosition(props.item.isGroupStart, props.item.isGroupEnd)}
+							highlight={toHighlight(props.item.isFirstNewMessage, props.item.isPinned)}
 						/>
 					)
 				}
