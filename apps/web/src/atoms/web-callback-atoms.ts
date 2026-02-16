@@ -5,7 +5,6 @@
  */
 
 import { Atom } from "@effect-atom/atom-react"
-import { FetchHttpClient } from "@effect/platform"
 import {
 	MissingAuthCodeError,
 	OAuthCallbackError,
@@ -13,6 +12,7 @@ import {
 	TokenExchangeError,
 } from "@hazel/domain/errors"
 import { Effect, Layer } from "effect"
+import { appRegistry } from "~/lib/registry"
 import { runtime } from "~/lib/services/common/runtime"
 import { TokenExchange } from "~/lib/services/desktop/token-exchange"
 import { WebTokenStorage } from "~/lib/services/web/token-storage"
@@ -63,7 +63,7 @@ export const webCallbackStatusAtom = Atom.make<WebCallbackStatus>({ _tag: "idle"
 // ============================================================================
 
 const WebTokenStorageLive = WebTokenStorage.Default
-const TokenExchangeLive = TokenExchange.Default.pipe(Layer.provide(FetchHttpClient.layer))
+const TokenExchangeLive = TokenExchange.Default
 
 // ============================================================================
 // Error Handling
@@ -104,20 +104,6 @@ function getErrorInfo(error: CallbackError): {
 }
 
 // ============================================================================
-// Getter Interface
-// ============================================================================
-
-/**
- * Getter interface for atom actions (matches what Atom.make provides)
- */
-interface AtomGetter {
-	<T>(atom: Atom.Atom<T>): T
-	set<T>(atom: Atom.Writable<T>, value: T): void
-	addFinalizer(fn: () => void): void
-	refresh<T>(atom: Atom.Atom<T>): void
-}
-
-// ============================================================================
 // Core Callback Logic
 // ============================================================================
 
@@ -130,7 +116,7 @@ const processedCodes = new Set<string>()
 /**
  * Effect that handles the web callback - exchanges code for tokens and stores them
  */
-const handleCallback = (params: WebCallbackParams, get: AtomGetter) =>
+const handleCallback = (params: WebCallbackParams) =>
 	Effect.gen(function* () {
 		// Guard against double-execution (React StrictMode, hot reload)
 		// OAuth codes are one-time use, so we track processed codes
@@ -139,19 +125,12 @@ const handleCallback = (params: WebCallbackParams, get: AtomGetter) =>
 			return
 		}
 
-		// Also check if we're already in a terminal state
-		const currentStatus = get(webCallbackStatusAtom)
-		if (currentStatus._tag === "exchanging" || currentStatus._tag === "success") {
-			yield* Effect.log(`[web-callback] Already in ${currentStatus._tag} state, skipping`)
-			return
-		}
-
 		// Mark code as being processed
 		if (params.code) {
 			processedCodes.add(params.code)
 		}
 
-		get.set(webCallbackStatusAtom, { _tag: "exchanging" })
+		appRegistry.set(webCallbackStatusAtom, { _tag: "exchanging" })
 
 		// Check for OAuth errors from WorkOS
 		if (params.error) {
@@ -162,7 +141,7 @@ const handleCallback = (params: WebCallbackParams, get: AtomGetter) =>
 			})
 			const errorInfo = getErrorInfo(error)
 			console.error("[web-callback] OAuth error:", error)
-			get.set(webCallbackStatusAtom, { _tag: "error", ...errorInfo })
+			appRegistry.set(webCallbackStatusAtom, { _tag: "error", ...errorInfo })
 			return
 		}
 
@@ -171,7 +150,7 @@ const handleCallback = (params: WebCallbackParams, get: AtomGetter) =>
 			const error = new MissingAuthCodeError({ message: "Missing authorization code" })
 			const errorInfo = getErrorInfo(error)
 			console.error("[web-callback] Missing code:", error)
-			get.set(webCallbackStatusAtom, { _tag: "error", ...errorInfo })
+			appRegistry.set(webCallbackStatusAtom, { _tag: "error", ...errorInfo })
 			return
 		}
 		const code = params.code
@@ -181,7 +160,7 @@ const handleCallback = (params: WebCallbackParams, get: AtomGetter) =>
 			const error = new MissingAuthCodeError({ message: "Missing state parameter" })
 			const errorInfo = getErrorInfo(error)
 			console.error("[web-callback] Missing state:", error)
-			get.set(webCallbackStatusAtom, { _tag: "error", ...errorInfo })
+			appRegistry.set(webCallbackStatusAtom, { _tag: "error", ...errorInfo })
 			return
 		}
 
@@ -197,7 +176,7 @@ const handleCallback = (params: WebCallbackParams, get: AtomGetter) =>
 				const error = new MissingAuthCodeError({ message: "Invalid state parameter" })
 				const errorInfo = getErrorInfo(error)
 				console.error("[web-callback] Invalid state JSON:", params.state)
-				get.set(webCallbackStatusAtom, { _tag: "error", ...errorInfo })
+				appRegistry.set(webCallbackStatusAtom, { _tag: "error", ...errorInfo })
 				return
 			}
 		} else {
@@ -222,21 +201,21 @@ const handleCallback = (params: WebCallbackParams, get: AtomGetter) =>
 			// Store tokens in localStorage
 			yield* tokenStorage.storeTokens(tokens.accessToken, tokens.refreshToken, tokens.expiresIn)
 
-			// Update atom state
+			// Update atom state via global registry (not `get.set()` which can be
+			// stale if React StrictMode unmounted the atom that forked this fiber)
 			const expiresAt = Date.now() + tokens.expiresIn * 1000
-			get.set(webTokensAtom, {
+			appRegistry.set(webTokensAtom, {
 				accessToken: tokens.accessToken,
 				refreshToken: tokens.refreshToken,
 				expiresAt,
 			})
-			get.set(webAuthStatusAtom, "authenticated")
+			appRegistry.set(webAuthStatusAtom, "authenticated")
 
 			yield* Effect.log("[web-callback] Token exchange successful")
 
 			return { success: true as const, returnTo }
 		}).pipe(
-			Effect.provide(TokenExchangeLive),
-			Effect.provide(WebTokenStorageLive),
+			Effect.provide(Layer.mergeAll(TokenExchangeLive, WebTokenStorageLive)),
 			// Preserve typed errors (OAuthCodeExpiredError, TokenExchangeError, etc.)
 			Effect.catchTag("OAuthCodeExpiredError", (error) => {
 				console.error("[web-callback] OAuth code expired:", error)
@@ -265,14 +244,14 @@ const handleCallback = (params: WebCallbackParams, get: AtomGetter) =>
 		)
 
 		if (result.success) {
-			get.set(webCallbackStatusAtom, { _tag: "success", returnTo: result.returnTo })
+			appRegistry.set(webCallbackStatusAtom, { _tag: "success", returnTo: result.returnTo })
 		} else {
 			const errorInfo = getErrorInfo(result.error)
 			// Allow retry for retryable errors by clearing the processed code
 			if (errorInfo.isRetryable && code) {
 				processedCodes.delete(code)
 			}
-			get.set(webCallbackStatusAtom, { _tag: "error", ...errorInfo })
+			appRegistry.set(webCallbackStatusAtom, { _tag: "error", ...errorInfo })
 		}
 	})
 
@@ -285,29 +264,31 @@ const handleCallback = (params: WebCallbackParams, get: AtomGetter) =>
  * The atom runs the callback effect when mounted via useAtomValue
  */
 export const createWebCallbackInitAtom = (params: WebCallbackParams) =>
-	Atom.make((get) => {
-		const callbackEffect = handleCallback(params, get)
+	Atom.make(() => {
+		// Reset for fresh login flow (handles re-login after session expiry
+		// where client-side navigation preserves stale atom state)
+		appRegistry.set(webCallbackStatusAtom, { _tag: "idle" })
 
-		const fiber = runtime.runFork(callbackEffect)
-
-		get.addFinalizer(() => {
-			// Check if we completed successfully before cleanup
-			const status = get(webCallbackStatusAtom)
-			if (status._tag !== "success") {
-				// Interrupted before success - clean up so next mount can try
-				if (params.code) {
-					processedCodes.delete(params.code)
-				}
-				// Reset to idle if we were mid-exchange
-				if (status._tag === "exchanging") {
-					get.set(webCallbackStatusAtom, { _tag: "idle" })
-				}
-			}
-			fiber.unsafeInterruptAsFork(fiber.id())
-		})
+		// No finalizer — let the OAuth exchange complete even if Strict Mode
+		// unmounts/remounts. processedCodes prevents re-execution on remount.
+		// All atom updates use appRegistry.set() so they survive unmount.
+		runtime.runFork(handleCallback(params))
 
 		return null
 	})
+
+// ============================================================================
+// State Reset
+// ============================================================================
+
+/**
+ * Reset callback state for a fresh login flow.
+ * Called during logout to clear stale state that survives client-side navigation.
+ */
+export const resetCallbackState = () => {
+	processedCodes.clear()
+	appRegistry.set(webCallbackStatusAtom, { _tag: "idle" })
+}
 
 // ============================================================================
 // Action Atoms
@@ -318,7 +299,7 @@ export const createWebCallbackInitAtom = (params: WebCallbackParams) =>
  * Takes params directly instead of reading from a params atom
  */
 export const retryWebCallbackAtom = Atom.fn(
-	Effect.fnUntraced(function* (params: WebCallbackParams, get) {
-		yield* handleCallback(params, get)
+	Effect.fnUntraced(function* (params: WebCallbackParams) {
+		yield* handleCallback(params)
 	}),
 )
