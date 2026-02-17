@@ -1,11 +1,30 @@
 "use client"
 
 import { useMatchRoute } from "@tanstack/react-router"
+import { Button as PrimitiveButton } from "react-aria-components"
+import { useModal } from "~/atoms/modal-atoms"
+import { IconChevronUpDown } from "~/components/icons/icon-chevron-up-down"
+import IconArrowPath from "~/components/icons/icon-arrow-path"
 import IconBell from "~/components/icons/icon-bell"
 import IconCube from "~/components/icons/icon-cube"
+import IconGear from "~/components/icons/icon-gear"
 import IconPaintbrush from "~/components/icons/icon-paintbrush"
-import IconArrowPath from "~/components/icons/icon-arrow-path"
 import IconUser from "~/components/icons/icon-user"
+import IconUsers from "~/components/icons/icon-users"
+import IconUsersPlus from "~/components/icons/icon-users-plus"
+import { IconServers } from "~/components/icons/icon-servers"
+import { SwitchServerMenu } from "~/components/sidebar/switch-server-menu"
+import { UserMenu } from "~/components/sidebar/user-menu"
+import { Avatar } from "~/components/ui/avatar"
+import {
+	Menu,
+	MenuContent,
+	MenuItem,
+	MenuLabel,
+	MenuSection,
+	MenuSeparator,
+	MenuSubMenu,
+} from "~/components/ui/menu"
 import {
 	Sidebar,
 	SidebarContent,
@@ -16,15 +35,18 @@ import {
 	SidebarLink,
 	SidebarSection,
 	SidebarSectionGroup,
+	useSidebar,
 } from "~/components/ui/sidebar"
-import { UserMenu } from "~/components/sidebar/user-menu"
 import { useOrganization } from "~/hooks/use-organization"
 import { isTauri, isTauriMacOS } from "~/lib/tauri"
 
 export function MySettingsSidebar() {
-	const { slug } = useOrganization()
+	const { isMobile } = useSidebar()
+	const { organization, slug } = useOrganization()
 	const matchRoute = useMatchRoute()
 	const hasTauriTitlebar = isTauriMacOS()
+	const createOrgModal = useModal("create-organization")
+	const emailInviteModal = useModal("email-invite")
 
 	const isRouteActive = (to: string, exact = false) => {
 		return matchRoute({
@@ -38,14 +60,81 @@ export function MySettingsSidebar() {
 		<Sidebar collapsible="none" className="flex flex-1">
 			<SidebarHeader
 				data-tauri-drag-region
-				className={`border-b py-4 ${hasTauriTitlebar ? "pt-14 relative before:absolute before:top-10 before:left-0 before:right-0 before:h-px before:bg-sidebar-border" : "h-14"}`}
+				className={`border-b ${hasTauriTitlebar ? "pt-14 relative before:absolute before:top-10 before:left-0 before:right-0 before:h-px before:bg-sidebar-border" : "h-14"}`}
 			>
-				<span className="text-muted-fg text-xs font-medium uppercase tracking-wider">
-					My Settings
-				</span>
+				<Menu>
+					<PrimitiveButton className="group/switcher relative flex items-center justify-between gap-x-2 font-semibold outline-hidden text-fg/80 hover:text-fg transition-colors focus-visible:ring focus-visible:ring-primary">
+						<div className="flex w-full items-center gap-1">
+							<span className="flex gap-x-2 font-medium text-sm/6">
+								<Avatar
+									isSquare
+									size="sm"
+									src={organization?.logoUrl ?? undefined}
+									seed={organization?.name ?? undefined}
+								/>
+								{organization?.name}
+							</span>
+							<IconChevronUpDown className="ml-auto size-4 text-muted-fg group-hover/switcher:text-fg transition-colors" />
+						</div>
+					</PrimitiveButton>
+					<MenuContent className="min-w-(--trigger-width)">
+						{isMobile ? (
+							<SwitchServerMenu onCreateOrganization={() => createOrgModal.open()} />
+						) : (
+							<>
+								<MenuSection>
+									<MenuItem onAction={() => emailInviteModal.open()}>
+										<IconUsersPlus />
+										<MenuLabel>Invite people</MenuLabel>
+									</MenuItem>
+									<MenuItem
+										href={{
+											to: "/$orgSlug/settings/team",
+											params: { orgSlug: slug },
+										}}
+									>
+										<IconUsers />
+										<MenuLabel>Manage members</MenuLabel>
+									</MenuItem>
+								</MenuSection>
+
+								<MenuSubMenu>
+									<MenuItem>
+										<IconServers />
+										<MenuLabel>Switch Server</MenuLabel>
+									</MenuItem>
+									<MenuContent>
+										<SwitchServerMenu
+											onCreateOrganization={() => createOrgModal.open()}
+										/>
+									</MenuContent>
+								</MenuSubMenu>
+
+								<MenuSeparator />
+
+								<MenuSection>
+									<MenuItem
+										href={{
+											to: "/$orgSlug/settings",
+											params: { orgSlug: slug },
+										}}
+									>
+										<IconGear />
+										<MenuLabel>Server settings</MenuLabel>
+									</MenuItem>
+								</MenuSection>
+							</>
+						)}
+					</MenuContent>
+				</Menu>
 			</SidebarHeader>
 			<SidebarContent>
 				<SidebarSectionGroup>
+					<div className="px-3 pt-3 pb-1">
+						<span className="text-muted-fg text-xs font-medium uppercase tracking-wider">
+							My Settings
+						</span>
+					</div>
 					<SidebarSection>
 						<SidebarItem isCurrent={!!isRouteActive("/$orgSlug/my-settings", true)}>
 							<SidebarLink
